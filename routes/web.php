@@ -1,0 +1,151 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\ClassController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ExaminationController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\HallTicketController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StaffController;
+use App\Http\Controllers\AttendanceController;
+
+// 1. Guest Routes
+Route::middleware('guest')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('login');
+    });
+    
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.store');
+});
+
+// MFA Verification Routes (Accessible by authenticated users before completing MFA verification)
+Route::get('/login/mfa', [AuthController::class, 'showMfaVerification'])->name('login.mfa');
+Route::post('/login/mfa', [AuthController::class, 'verifyMfa'])->name('login.mfa.verify')->middleware('throttle:login');
+
+// 2. Public Verification Route (QR Verification Portal)
+Route::get('/verify/hall-ticket/{number}', [VerificationController::class, 'verifyPublic'])->name('verification.hall-ticket');
+
+// 3. SECURE AUTHENTICATED ROUTES
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/change-password', [AuthController::class, 'updatePassword'])->name('password.update');
+
+    // ============================================
+    // SUPER ADMIN (BOARD) ROUTES
+    // ============================================
+    Route::middleware('role:super-admin')->prefix('admin')->name('admin.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [DashboardController::class, 'superAdmin'])->name('dashboard');
+        Route::get('/activity-logs', [DashboardController::class, 'activityLogs'])->name('activity-logs');
+
+        // MFA Setup
+        Route::get('/mfa/setup', [AuthController::class, 'showMfaSetup'])->name('mfa.setup');
+        Route::post('/mfa/enable', [AuthController::class, 'enableMfa'])->name('mfa.enable');
+        Route::post('/mfa/disable', [AuthController::class, 'disableMfa'])->name('mfa.disable');
+
+        // Staff Management
+        Route::resource('staff', StaffController::class);
+
+        // Profile
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+        // Schools Management
+        Route::post('/schools/{school}/toggle-status', [SchoolController::class, 'toggleStatus'])->name('schools.toggle-status');
+        Route::post('/schools/{school}/assign-admin', [SchoolController::class, 'assignAdmin'])->name('schools.assign-admin');
+        Route::post('/schools/{school}/reset-password', [SchoolController::class, 'resetPassword'])->name('schools.reset-password');
+        Route::resource('schools', SchoolController::class);
+
+        // Class Master Management
+        Route::post('/classes/{class}/toggle-status', [ClassController::class, 'toggleStatus'])->name('classes.toggle-status');
+        Route::resource('classes', ClassController::class)->except(['show']);
+
+        // Category Master Management
+        Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
+        Route::resource('categories', CategoryController::class)->except(['show']);
+
+        // Examination Management
+        Route::post('/examinations/{examination}/status', [ExaminationController::class, 'updateStatus'])->name('examinations.update-status');
+        Route::resource('examinations', ExaminationController::class);
+
+        // Verification & Approval Management
+        Route::get('/verification', [VerificationController::class, 'index'])->name('verification.index');
+        Route::get('/verification/{student}', [VerificationController::class, 'show'])->name('verification.show');
+        Route::post('/verification/{student}/verify', [VerificationController::class, 'verify'])->name('verification.verify');
+
+        // Hall Ticket Management
+        Route::get('/hall-tickets', [HallTicketController::class, 'adminIndex'])->name('hall-tickets.index');
+        Route::post('/hall-tickets/{student}/generate', [HallTicketController::class, 'generateSingle'])->name('hall-tickets.generate-single');
+        Route::post('/hall-tickets/generate-bulk', [HallTicketController::class, 'generateBulk'])->name('hall-tickets.generate-bulk');
+        Route::get('/hall-tickets/{student}/print', [HallTicketController::class, 'printSingle'])->name('hall-tickets.print-single');
+        Route::get('/hall-tickets/print-bulk', [HallTicketController::class, 'printBulk'])->name('hall-tickets.print-bulk');
+
+        // Reports
+        Route::get('/reports', [ReportController::class, 'adminIndex'])->name('reports.index');
+        Route::get('/reports/export', [ReportController::class, 'adminExport'])->name('reports.export');
+
+        // Attendance Management
+        Route::get('/attendance', [AttendanceController::class, 'adminAttendanceIndex'])->name('attendance.index');
+        Route::post('/attendance/mark', [AttendanceController::class, 'adminAttendanceMark'])->name('attendance.mark');
+    });
+
+    // ============================================
+    // SCHOOL ADMIN ROUTES
+    // ============================================
+    Route::middleware('role:school-admin')->prefix('school')->name('school.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [DashboardController::class, 'schoolAdmin'])->name('dashboard');
+
+        // Profile
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+        // Student Registration
+        Route::get('/students-import/template', [StudentController::class, 'downloadTemplate'])->name('students.import.template');
+        Route::post('/students-import', [StudentController::class, 'importExcel'])->name('students.import');
+        Route::post('/students/{student}/submit', [StudentController::class, 'submitStudent'])->name('students.submit');
+        Route::resource('students', StudentController::class);
+
+        // Hall Ticket Download
+        Route::get('/hall-tickets', [HallTicketController::class, 'schoolIndex'])->name('hall-tickets.index');
+        Route::get('/hall-tickets/{student}/download', [HallTicketController::class, 'downloadSingle'])->name('hall-tickets.download-single');
+        Route::get('/hall-tickets/download-bulk', [HallTicketController::class, 'downloadBulk'])->name('hall-tickets.download-bulk');
+
+        // Reports
+        Route::get('/reports', [ReportController::class, 'schoolIndex'])->name('reports.index');
+        Route::get('/reports/export', [ReportController::class, 'schoolExport'])->name('reports.export');
+
+        // Attendance Report
+        Route::get('/attendance', [AttendanceController::class, 'schoolAttendanceIndex'])->name('attendance.index');
+    });
+
+    // ============================================
+    // INVIGILATOR ROUTES
+    // ============================================
+    Route::middleware('role:invigilator')->prefix('invigilator')->name('invigilator.')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    });
+
+    // ============================================
+    // ATTENDANCE & SCANNER ROUTES (Invigilator / Super Admin)
+    // ============================================
+    Route::middleware('role:invigilator|super-admin')->group(function () {
+        Route::get('/attendance/scanner', [AttendanceController::class, 'scanner'])->name('attendance.scanner');
+        Route::post('/attendance/verify-scan', [AttendanceController::class, 'verifyScan'])->name('attendance.verify-scan');
+        Route::post('/attendance/mark-present', [AttendanceController::class, 'markPresent'])->name('attendance.mark-present');
+        Route::get('/attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
+    });
+});
