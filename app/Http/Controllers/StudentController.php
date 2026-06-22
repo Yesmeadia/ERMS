@@ -77,6 +77,7 @@ class StudentController extends Controller
             'gender' => ['required', 'in:Male,Female,Other'],
             'dob' => ['required', 'date', 'before:today'],
             'father_name' => ['required', 'string', 'max:255'],
+            'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree], // Max 3MB + Virus scan
         ]);
@@ -154,6 +155,7 @@ class StudentController extends Controller
             'gender' => ['required', 'in:Male,Female,Other'],
             'dob' => ['required', 'date', 'before:today'],
             'father_name' => ['required', 'string', 'max:255'],
+            'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
         ]);

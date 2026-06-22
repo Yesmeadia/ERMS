@@ -46,14 +46,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
             }
         }
 
-        // Duplicate check 1: admission_number
-        $duplicateAdmission = Student::where('school_id', $this->schoolId)
-            ->where('examination_id', $this->examinationId)
-            ->where('admission_number', trim($row['admission_number']))
-            ->exists();
-        if ($duplicateAdmission) {
-            throw new \Exception("Student with admission number '" . trim($row['admission_number']) . "' is already registered in this school/exam session.");
-        }
+
 
         // Duplicate check 2: name + dob + father_name
         $duplicatePerson = Student::where('school_id', $this->schoolId)
@@ -77,7 +70,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
             'father_name' => trim($row['father_name']),
             'mother_name' => trim($row['mother_name']),
             'mobile_number' => trim($row['mobile_number']),
-            'admission_number' => trim($row['admission_number']),
+
             'status' => 'Draft',
         ]);
     }
@@ -91,7 +84,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
             '*.father_name' => ['required', 'string', 'max:255'],
             '*.mother_name' => ['required', 'string', 'max:255'],
             '*.mobile_number' => ['required'],
-            '*.admission_number' => ['required'],
+
             '*.class_code' => ['required', 'exists:classes,code'],
             '*.category_code' => ['required', 'exists:categories,code'],
         ];

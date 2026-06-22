@@ -93,12 +93,7 @@
                 <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200">Academic & Examination Details</h3>
             </div>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Admission Number <span class="text-rose-500">*</span></label>
-                <input type="text" name="admission_number" value="{{ old('admission_number', $student->admission_number) }}" required placeholder="Enter unique school admission number"
-                       class="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-                @error('admission_number') <p class="text-xs text-rose-400 mt-1">{{ $message }}</p> @enderror
-            </div>
+
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -165,7 +160,7 @@
     </div>
 
     {{-- Form Buttons --}}
-    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/60">
+    <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-800/60">
         <a href="{{ route('school.students.index') }}" 
            class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl transition-all">
             Cancel

@@ -278,31 +278,7 @@ class SchoolAdminTest extends TestCase
             'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
-            'mobile_number' => '1111111111'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            ,
-        ,
+            'mobile_number' => '1111111111',
             'status' => 'Draft',
         ]);
 

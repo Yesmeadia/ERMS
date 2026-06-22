@@ -188,7 +188,7 @@
         </div>
 
         {{-- Form Buttons --}}
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/60">
+        <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-slate-800/60">
             <a href="{{ route('school.students.index') }}"
                 class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl transition-all">
                 Cancel

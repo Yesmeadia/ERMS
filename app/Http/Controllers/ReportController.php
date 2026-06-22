@@ -612,7 +612,7 @@ class ReportController extends Controller
                 break;
 
             default:
-                $headings = ['Reg. Number', 'Admission Num', 'Student Name', 'Class', 'Category', 'Exam Session', 'Status', 'HT Number'];
+                $headings = ['Reg. Number', 'Student Name', 'Class', 'Category', 'Exam Session', 'Status', 'HT Number'];
                 $query->join('classes', 'students.class_id', '=', 'classes.id');
 
                 switch ($type) {
@@ -633,7 +633,7 @@ class ReportController extends Controller
 
                 $data = $query->select(
                     'students.registration_number',
-                    'students.admission_number',
+
                     'students.name as student_name',
                     'classes.name as class_name',
                     'categories.name as category_name',
@@ -646,7 +646,7 @@ class ReportController extends Controller
                 foreach ($data as $item) {
                     $row = [
                         $item->registration_number ?? 'N/A',
-                        $item->admission_number,
+
                         $item->student_name,
                         $item->class_name,
                         $item->category_name,

@@ -80,10 +80,7 @@
                         Academic Information
                     </h3>
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Admission Number</p>
-                            <p class="text-sm text-slate-200 font-medium">{{ $student->admission_number }}</p>
-                        </div>
+
                         <div>
                             <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Registration Number</p>
                             <p class="text-sm text-indigo-400 font-medium">

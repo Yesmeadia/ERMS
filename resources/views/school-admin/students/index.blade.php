@@ -94,9 +94,18 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div>
+                        <div x-data="{ excelName: '' }">
                             <label class="block text-xs font-medium text-slate-400 mb-1.5">Select Excel/CSV File</label>
-                            <input type="file" name="excel_file" required accept=".xlsx,.xls,.csv" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/10 file:text-indigo-400 hover:file:bg-indigo-600/20 file:cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <input type="file" x-ref="excelInput" name="excel_file" required accept=".xlsx,.xls,.csv" class="hidden"
+                                       @change="excelName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                                <button type="button" @click="$refs.excelInput.click()"
+                                        class="px-4 py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 text-indigo-400 rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                                    Choose File
+                                </button>
+                                <span class="text-xs text-slate-400 truncate" x-text="excelName || 'No file chosen'"></span>
+                            </div>
                         </div>
                         <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl transition-all cursor-pointer">Upload and Import</button>
                     </form>
@@ -128,7 +137,7 @@
             <thead>
                 <tr class="border-b border-slate-800/60">
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Candidate</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admission No</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Mobile Number</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Academic Details</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Exam Session</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Status</th>
@@ -147,7 +156,7 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-slate-300 font-medium">{{ $student->admission_number }}</td>
+                    <td class="px-6 py-4 text-slate-300 font-medium">{{ $student->mobile_number }}</td>
                     <td class="px-6 py-4 hidden md:table-cell">
                         <div>
                             <p class="text-slate-300 font-medium text-xs">{{ $student->class->name }}</p>

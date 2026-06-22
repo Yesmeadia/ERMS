@@ -17,8 +17,8 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullCo
             'Father Name',
             'Mother Name',
             'Mobile Number',
-            'Class',
-            'Category'
+            'Class_id',
+            'Category_id'
         ];
     }
 
@@ -33,8 +33,8 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullCo
                 'MOHD IMRAN',
                 'SULTANA',
                 '9876543210',
-                '3RD',
-                'RAINBOW 3'
+                'C3',
+                'RB3',
             ]
         ];
     }

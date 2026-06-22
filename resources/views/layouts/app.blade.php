@@ -420,12 +420,12 @@
             @endif
 
             <!-- Main Dynamic Content -->
-            <div class="flex-1">
+            <div class="flex-1 mb-12">
                 @yield('content')
             </div>
 
             <!-- Footer -->
-            <footer class="mt-12 pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 shrink-0">
+            <footer class="mt-20 pt-8 pb-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 shrink-0">
                 <div>
                     &copy; {{ date('Y') }} YES INDIA FOUNDATION. All rights reserved.
                 </div>

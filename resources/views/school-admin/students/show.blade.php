@@ -24,8 +24,6 @@
                     class="w-32 h-32 rounded-2xl object-cover border-2 border-indigo-500/20 shadow-lg shadow-indigo-600/5 mb-4">
 
                 <h2 class="text-lg font-bold text-white leading-tight">{{ $student->name }}</h2>
-                <p class="text-xs text-slate-500 mt-1">Admission No: <span
-                        class="font-semibold text-slate-400">{{ $student->admission_number }}</span></p>
 
                 {{-- Status Badge --}}
                 @php

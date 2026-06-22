@@ -11,7 +11,7 @@
 
     {{-- Filters --}}
     <form method="GET" class="flex flex-wrap gap-3 mb-6">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, reg no, admission no…"
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, reg no…"
             class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64">
         <select name="status"
             class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
@@ -90,8 +90,7 @@
                         <td class="px-6 py-4">
                             <div>
                                 <p class="font-semibold text-slate-200">{{ $student->name }}</p>
-                                <p class="text-xs text-slate-500 mt-0.5">{{ $student->registration_number ?? 'No Reg. #' }} ·
-                                    {{ $student->admission_number }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ $student->registration_number ?? 'No Reg. #' }}</p>
                             </div>
                         </td>
                         <td class="px-6 py-4 text-slate-400 text-xs hidden md:table-cell">{{ $student->school->name ?? '—' }}

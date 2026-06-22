@@ -179,8 +179,8 @@
                                 <span class="value">{{ $student->name }}</span>
                             </td>
                             <td style="width: 50%;">
-                                <span class="label">Admission Number</span>
-                                <span class="value">{{ $student->admission_number }}</span>
+                                <span class="label">Mobile Number</span>
+                                <span class="value">{{ $student->mobile_number }}</span>
                             </td>
                         </tr>
                         <tr>

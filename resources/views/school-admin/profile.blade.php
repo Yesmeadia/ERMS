@@ -36,9 +36,14 @@
                             </template>
                         </div>
                         <div class="flex-1">
-                            <input type="file" name="profile_image" accept="image/jpeg,image/png,image/jpg"
+                            <input type="file" x-ref="profilePhotoInput" name="profile_image" accept="image/jpeg,image/png,image/jpg"
                                    @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { imgPreview = e.target.result; }; reader.readAsDataURL(file); }"
-                                   class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/10 file:text-indigo-400 hover:file:bg-indigo-600/20 file:cursor-pointer">
+                                   class="hidden">
+                            <button type="button" @click="$refs.profilePhotoInput.click()"
+                                    class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                                Upload Photo
+                            </button>
                             <p class="text-xs text-slate-500 mt-2">Max size: 2MB. Formats: JPEG, JPG, PNG.</p>
                         </div>
                     </div>
@@ -70,10 +75,9 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-slate-300 mb-2">School Name <span class="text-rose-400">*</span></label>
-                    <input type="text" name="school_name" value="{{ old('school_name', $school->name) }}" required
-                           class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('school_name') border-rose-500 @enderror">
-                    @error('school_name')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+                    <label class="block text-sm font-medium text-slate-500 mb-2">School Name (Read-Only)</label>
+                    <input type="text" name="school_name" value="{{ $school->name }}" readonly
+                           class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-400 text-sm cursor-not-allowed">
                 </div>
 
                 <div>
@@ -113,7 +117,7 @@
                 </div>
             </div>
 
-            <div class="flex gap-4 pt-2 border-t border-slate-800/60">
+            <div class="flex gap-4 mt-8 pt-6 border-t border-slate-800/60">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-all text-sm cursor-pointer shadow-md shadow-indigo-600/10">Save All Changes</button>
             </div>
         </div>
@@ -152,7 +156,7 @@
                            placeholder="Confirm new password">
                 </div>
             </div>
-            <div class="flex gap-4 pt-2 border-t border-slate-800/60">
+            <div class="flex gap-4 mt-8 pt-6 border-t border-slate-800/60">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-all text-sm cursor-pointer shadow-md shadow-indigo-600/10">
                     Update Password
                 </button>
