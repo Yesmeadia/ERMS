@@ -37,23 +37,28 @@ jobs:
           mkdir -p database
           touch database/database.sqlite
 
-      - name: Clear Application Cache
-        run: |
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan route:clear
-          php artisan view:clear
-
       - name: Run Migrations and Seeders
         env:
           APP_ENV: testing
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
         run: php artisan migrate:fresh --seed --force
+
+      - name: Clear Application Cache
+        run: |
+          php artisan config:clear
+          php artisan route:clear
+          php artisan view:clear
 
       - name: Run Tests
         env:
           APP_ENV: testing
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
         run: php artisan test --stop-on-failure
