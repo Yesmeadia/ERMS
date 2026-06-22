@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string('mobile_number');
             
             // Academic Details
-            $table->string('admission_number');
             $table->string('registration_number')->nullable()->unique();
             
             // Registration Details

@@ -114,11 +114,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student A1',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father A1',
             'mother_name' => 'Mother A1',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-A1',
             'status' => 'Draft',
         ]);
 
@@ -129,11 +128,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student A2',
             'gender' => 'Female',
-            'dob' => '2012-06-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father A2',
             'mother_name' => 'Mother A2',
             'mobile_number' => '2222222222',
-            'admission_number' => 'ADM-A2',
             'status' => 'Submitted',
         ]);
 
@@ -145,11 +143,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student B1',
             'gender' => 'Male',
-            'dob' => '2012-07-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father B1',
             'mother_name' => 'Mother B1',
             'mobile_number' => '3333333333',
-            'admission_number' => 'ADM-B1',
             'status' => 'Draft',
         ]);
 
@@ -163,9 +160,9 @@ class SchoolAdminTest extends TestCase
         // Check stats passed to view
         $response->assertViewHas('stats', function ($stats) {
             return $stats['total_registered'] === 2 &&
-                   $stats['submitted'] === 1 &&
-                   $stats['approved'] === 0 &&
-                   $stats['rejected'] === 0;
+                $stats['submitted'] === 1 &&
+                $stats['approved'] === 0 &&
+                $stats['rejected'] === 0;
         });
     }
 
@@ -181,11 +178,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Visible Student',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father A1',
             'mother_name' => 'Mother A1',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-A1',
             'status' => 'Draft',
         ]);
 
@@ -196,11 +192,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Hidden Student',
             'gender' => 'Male',
-            'dob' => '2012-07-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father B1',
             'mother_name' => 'Mother B1',
             'mobile_number' => '3333333333',
-            'admission_number' => 'ADM-B1',
             'status' => 'Draft',
         ]);
 
@@ -224,11 +219,10 @@ class SchoolAdminTest extends TestCase
                 'category_id' => $this->category->id,
                 'name' => 'New Student',
                 'gender' => 'Male',
-                'dob' => '2012-10-10',
+                'dob' => '10-10-2000',
                 'father_name' => 'Father Test',
                 'mother_name' => 'Mother Test',
                 'mobile_number' => '9999999999',
-                'admission_number' => 'ADM-NEW',
             ]);
 
         $response->assertRedirect(route('school.students.index'));
@@ -256,11 +250,10 @@ class SchoolAdminTest extends TestCase
                 'category_id' => $this->category->id,
                 'name' => 'Blocked Student',
                 'gender' => 'Male',
-                'dob' => '2012-10-10',
+                'dob' => '10-10-2000',
                 'father_name' => 'Father Test',
                 'mother_name' => 'Mother Test',
                 'mobile_number' => '9999999999',
-                'admission_number' => 'ADM-BLOCKED',
             ]);
 
         $response->assertRedirect(route('school.students.create'));
@@ -282,11 +275,34 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Original Name',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
-            'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-ORIGINAL',
+            'mobile_number' => '1111111111'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            ,
+        ,
             'status' => 'Draft',
         ]);
 
@@ -297,11 +313,10 @@ class SchoolAdminTest extends TestCase
                 'category_id' => $this->category->id,
                 'name' => 'Updated Name',
                 'gender' => 'Male',
-                'dob' => '2012-05-15',
+                'dob' => '10-10-2000',
                 'father_name' => 'Father',
                 'mother_name' => 'Mother',
                 'mobile_number' => '1111111111',
-                'admission_number' => 'ADM-ORIGINAL',
             ]);
 
         $response->assertRedirect(route('school.students.index'));
@@ -324,11 +339,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'School B Student',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-B',
             'status' => 'Draft',
         ]);
 
@@ -339,11 +353,10 @@ class SchoolAdminTest extends TestCase
                 'category_id' => $this->category->id,
                 'name' => 'Hacked Name',
                 'gender' => 'Male',
-                'dob' => '2012-05-15',
+                'dob' => '10-10-2000',
                 'father_name' => 'Father',
                 'mother_name' => 'Mother',
                 'mobile_number' => '1111111111',
-                'admission_number' => 'ADM-B',
             ]);
 
         $response->assertStatus(403);
@@ -365,11 +378,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Submitted Student',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-SUB',
             'status' => 'Submitted',
         ]);
 
@@ -380,11 +392,10 @@ class SchoolAdminTest extends TestCase
                 'category_id' => $this->category->id,
                 'name' => 'Hacked Name',
                 'gender' => 'Male',
-                'dob' => '2012-05-15',
+                'dob' => '10-10-2000',
                 'father_name' => 'Father',
                 'mother_name' => 'Mother',
                 'mobile_number' => '1111111111',
-                'admission_number' => 'ADM-SUB',
             ]);
 
         $response->assertRedirect(route('school.students.index'));
@@ -407,11 +418,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Delete Me',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-DEL',
             'status' => 'Draft',
         ]);
 
@@ -436,11 +446,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Keep Me',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-KEEP',
             'status' => 'Submitted',
         ]);
 
@@ -466,11 +475,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Submit Student',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-SUBMIT',
             'status' => 'Draft',
         ]);
 
@@ -527,11 +535,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'HT Candidate',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-HT',
             'status' => 'Hall Ticket Issued',
             'hall_ticket_number' => 'HT-2027-000001',
             'hall_ticket_issued_at' => now(),
@@ -556,11 +563,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Approved Candidate',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-APP',
             'status' => 'Approved',
         ]);
 
@@ -583,11 +589,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'School B Candidate',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-HT-B',
             'status' => 'Hall Ticket Issued',
             'hall_ticket_number' => 'HT-2027-000002',
             'hall_ticket_issued_at' => now(),
@@ -611,11 +616,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'School A Registered',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-A-REP',
             'status' => 'Submitted',
         ]);
 
@@ -626,11 +630,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'School B Registered',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-B-REP',
             'status' => 'Submitted',
         ]);
 
@@ -654,11 +657,10 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Report Student',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-REP-EXPORT',
             'status' => 'Submitted',
         ]);
 
@@ -716,18 +718,17 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student 3',
             'gender' => 'Male',
-            'dob' => '2015-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-3',
             'status' => 'Approved',
         ]);
 
         $response = $this->actingAs($superAdmin)
             ->post(route('admin.hall-tickets.generate-single', $student3));
         $response->assertRedirect();
-        
+
         $student3->refresh();
         $this->assertEquals('Hall Ticket Issued', $student3->status);
         $this->assertNotNull($student3->registration_number);
@@ -741,17 +742,16 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student 4',
             'gender' => 'Male',
-            'dob' => '2014-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-4',
             'status' => 'Approved',
         ]);
 
         $this->actingAs($superAdmin)
             ->post(route('admin.hall-tickets.generate-single', $student4));
-        
+
         $student4->refresh();
         $this->assertEquals('40001', $student4->registration_number);
 
@@ -763,17 +763,16 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student 4.2',
             'gender' => 'Male',
-            'dob' => '2014-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-4-2',
             'status' => 'Approved',
         ]);
 
         $this->actingAs($superAdmin)
             ->post(route('admin.hall-tickets.generate-single', $student4_2));
-        
+
         $student4_2->refresh();
         $this->assertEquals('40002', $student4_2->registration_number);
 
@@ -785,17 +784,16 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student 5',
             'gender' => 'Male',
-            'dob' => '2013-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-5',
             'status' => 'Approved',
         ]);
 
         $this->actingAs($superAdmin)
             ->post(route('admin.hall-tickets.generate-single', $student5));
-        
+
         $student5->refresh();
         $this->assertEquals('50001', $student5->registration_number);
 
@@ -807,17 +805,16 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student Planet',
             'gender' => 'Male',
-            'dob' => '2012-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-6',
             'status' => 'Approved',
         ]);
 
         $this->actingAs($superAdmin)
             ->post(route('admin.hall-tickets.generate-single', $student6));
-        
+
         $student6->refresh();
         $this->assertEquals('60001', $student6->registration_number);
 
@@ -829,17 +826,16 @@ class SchoolAdminTest extends TestCase
             'examination_id' => $this->examination->id,
             'name' => 'Student Galaxy',
             'gender' => 'Male',
-            'dob' => '2011-05-15',
+            'dob' => '10-10-2000',
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
-            'admission_number' => 'ADM-G',
             'status' => 'Approved',
         ]);
 
         $this->actingAs($superAdmin)
             ->post(route('admin.hall-tickets.generate-single', $studentGalaxy));
-        
+
         $studentGalaxy->refresh();
         $this->assertEquals('90001', $studentGalaxy->registration_number);
     }

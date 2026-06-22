@@ -21,7 +21,6 @@ class Student extends Model
         'father_name',
         'mother_name',
         'mobile_number',
-        'admission_number',
         'registration_number',
         'status',
         'remarks',

@@ -26,9 +26,9 @@ class StudentController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('registration_number', 'like', "%{$search}%");
+                  ->orWhere('registration_number', 'like', "%{$search}%");
             });
         }
 
@@ -77,10 +77,10 @@ class StudentController extends Controller
             'gender' => ['required', 'in:Male,Female,Other'],
             'dob' => ['required', 'date', 'before:today'],
             'father_name' => ['required', 'string', 'max:255'],
-            'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree], // Max 3MB + Virus scan
         ]);
+
         // Validate examination is open
         $exam = Examination::findOrFail($request->examination_id);
         if ($exam->status !== 'Open') {
@@ -88,17 +88,6 @@ class StudentController extends Controller
         }
 
         $school = Auth::user()->school;
-
-        // Duplicate registration check : name + dob + father_name (exact duplicate student check)
-        $duplicatePerson = Student::where('school_id', $school->id)
-            ->where('examination_id', $request->examination_id)
-            ->where('name', $request->name)
-            ->where('dob', $request->dob)
-            ->where('father_name', $request->father_name)
-            ->exists();
-        if ($duplicatePerson) {
-            return back()->withErrors(['name' => 'A student with the same name, date of birth, and father\'s name is already registered for this examination session.'])->withInput();
-        }
 
         $studentData = array_merge($validated, [
             'school_id' => $school->id,
@@ -165,7 +154,6 @@ class StudentController extends Controller
             'gender' => ['required', 'in:Male,Female,Other'],
             'dob' => ['required', 'date', 'before:today'],
             'father_name' => ['required', 'string', 'max:255'],
-            'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
         ]);
@@ -176,18 +164,6 @@ class StudentController extends Controller
         }
 
         $school = Auth::user()->school;
-
-        // Duplicate registration check : name + dob + father_name
-        $duplicatePerson = Student::where('school_id', $school->id)
-            ->where('examination_id', $request->examination_id)
-            ->where('name', $request->name)
-            ->where('dob', $request->dob)
-            ->where('father_name', $request->father_name)
-            ->where('id', '!=', $student->id)
-            ->exists();
-        if ($duplicatePerson) {
-            return back()->withErrors(['name' => 'A student with the same name, date of birth, and father\'s name is already registered for this examination session.'])->withInput();
-        }
 
         $studentData = $validated;
 
