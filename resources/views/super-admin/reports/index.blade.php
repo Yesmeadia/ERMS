@@ -91,6 +91,43 @@
 </div>
 @endif
 
+{{-- Report Data Table --}}
+<div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b border-slate-800/60">
+        <h3 class="text-sm font-semibold text-slate-200">{{ ucwords(str_replace('_', ' ', $reportType)) }} Report</h3>
+        <p class="text-xs text-slate-500 mt-0.5">{{ count($reportData['rows']) }} record(s) found</p>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead>
+                <tr class="border-b border-slate-800/60">
+                    @foreach($reportData['headings'] as $heading)
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ $heading }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/40">
+                @forelse($reportData['rows'] as $row)
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    @foreach($row as $cell)
+                    <td class="px-6 py-4 text-slate-300 text-sm">{{ $cell }}</td>
+                    @endforeach
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="{{ count($reportData['headings']) }}" class="px-6 py-16 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mx-auto text-slate-700 mb-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                        </svg>
+                        <p class="text-slate-500 font-medium">No data available for this report</p>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
 @if(!empty($reportCharts))
 <div class="mb-6">
     <div class="flex items-center justify-between gap-4 mb-4">
@@ -130,43 +167,6 @@
     </div>
 </div>
 @endif
-
-{{-- Report Data Table --}}
-<div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-800/60">
-        <h3 class="text-sm font-semibold text-slate-200">{{ ucwords(str_replace('_', ' ', $reportType)) }} Report</h3>
-        <p class="text-xs text-slate-500 mt-0.5">{{ count($reportData['rows']) }} record(s) found</p>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-            <thead>
-                <tr class="border-b border-slate-800/60">
-                    @foreach($reportData['headings'] as $heading)
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ $heading }}</th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/40">
-                @forelse($reportData['rows'] as $row)
-                <tr class="hover:bg-slate-800/30 transition-colors">
-                    @foreach($row as $cell)
-                    <td class="px-6 py-4 text-slate-300 text-sm">{{ $cell }}</td>
-                    @endforeach
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="{{ count($reportData['headings']) }}" class="px-6 py-16 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mx-auto text-slate-700 mb-3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
-                        </svg>
-                        <p class="text-slate-500 font-medium">No data available for this report</p>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
 
 @if(!empty($reportCharts))
 @push('scripts')

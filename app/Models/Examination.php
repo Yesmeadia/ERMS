@@ -32,4 +32,12 @@ class Examination extends Model
     {
         return $this->hasMany(Student::class, 'examination_id');
     }
+
+    /**
+     * Get the results registered for this examination session.
+     */
+    public function results(): HasMany
+    {
+        return $this->hasMany(StudentResult::class, 'examination_id');
+    }
 }

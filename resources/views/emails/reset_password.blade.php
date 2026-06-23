@@ -21,47 +21,24 @@
 
         .banner {
             margin: 0 20px;
-            padding: 24px 36px;
+            padding: 20px 28px;
             background-color: #0f172a;
             border-radius: 16px 16px 0 0;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
         }
 
         .banner img {
-            height: 32px;
+            height: 38px;
             width: auto;
             object-fit: contain;
-        }
-
-        .banner .divider {
-            width: 1px;
-            height: 28px;
-            background-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .banner .icon {
-            width: 36px;
-            height: 36px;
-            background-color: rgba(79, 70, 229, 0.18);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-shrink: 0;
-        }
-
-        .banner .icon-inner {
-            width: 10px;
-            height: 10px;
-            background-color: #818cf8;
-            border-radius: 50%;
         }
 
         .banner-text h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: #ffffff;
             letter-spacing: -0.2px;
@@ -69,7 +46,7 @@
 
         .banner-text p {
             margin: 2px 0 0;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: #94a3b8;
             text-transform: uppercase;
@@ -81,7 +58,7 @@
             border-radius: 0 0 16px 16px;
             margin: 0 20px;
             padding: 36px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
             border: 1px solid #e2e8f0;
             border-top: none;
         }
@@ -171,31 +148,21 @@
 
             .banner {
                 margin: 0 12px;
-                padding: 20px;
+                padding: 16px 20px;
                 border-radius: 14px 14px 0 0;
-                flex-wrap: wrap;
-                gap: 10px;
+                gap: 12px;
             }
 
             .banner img {
-                height: 26px;
-            }
-
-            .banner .divider {
-                display: none;
-            }
-
-            .banner .icon {
-                width: 32px;
-                height: 32px;
+                height: 30px;
             }
 
             .banner-text h1 {
-                font-size: 16px;
+                font-size: 15px;
             }
 
             .banner-text p {
-                font-size: 11px;
+                font-size: 10px;
             }
 
             .card {
@@ -235,13 +202,9 @@
 <body>
     <div class="wrapper">
         <div class="banner">
-            @if(file_exists(public_path('1.png')))
-                <img src="{{ $message->embed(public_path('1.png')) }}" alt="Yes Genius Logo">
-                <div class="divider"></div>
+            @if(file_exists(public_path('images/icon.png')))
+                <img src="{{ $message->embed(public_path('images/icon.png')) }}" alt="Yes Genius">
             @endif
-            <div class="icon">
-                <div class="icon-inner"></div>
-            </div>
             <div class="banner-text">
                 <h1>Password Reset</h1>
                 <p>Recovery System</p>

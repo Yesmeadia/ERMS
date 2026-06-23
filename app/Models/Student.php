@@ -75,6 +75,14 @@ class Student extends Model
     }
 
     /**
+     * Get the result associated with the student.
+     */
+    public function result(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(StudentResult::class, 'student_id');
+    }
+
+    /**
      * Get the attendance records for the student.
      */
     public function attendances(): \Illuminate\Database\Eloquent\Relations\HasMany

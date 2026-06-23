@@ -96,13 +96,13 @@
         .qr-box {
             text-align: right;
             vertical-align: bottom;
-            width: 110px;
+            width: 140px;
         }
         .qr-img {
-            width: 90px;
-            height: 90px;
+            width: 130px;
+            height: 130px;
             border: 1px solid #e2e8f0;
-            padding: 3px;
+            padding: 4px;
             background-color: #ffffff;
         }
         .footer-table {

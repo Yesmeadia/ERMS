@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Admin Account Created</title>
+    <title>Super Admin Account Created</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -102,7 +102,7 @@
 
         .info-box {
             background-color: #f8fafc;
-            border-left: 3px solid #94a3b8;
+            border-left: 3px solid #4f46e5;
             padding: 14px 16px;
             border-radius: 0 10px 10px 0;
             margin-top: 24px;
@@ -206,24 +206,18 @@
                 <img src="{{ $message->embed(public_path('images/icon.png')) }}" alt="Yes Genius">
             @endif
             <div class="banner-text">
-                <h1>Account Created</h1>
-                <p>Welcome to Portal</p>
+                <h1>Board Account Created</h1>
+                <p>Welcome to ERMS Portal</p>
             </div>
         </div>
 
         <div class="card">
-            <p>Dear <strong>{{ $school->contact_person }}</strong>,</p>
-            <p>We are pleased to inform you that your school admin account for <strong>{{ $school->name }}</strong> has
-                been successfully created. You can now access the portal to register students, download hall tickets,
-                and manage examination reports.</p>
+            <p>Dear <strong>{{ $user->name }}</strong>,</p>
+            <p>Your Board Super Admin account has been successfully created. You can now access the ERMS portal to manage schools, students, examinations, and system administrators.</p>
 
             <div class="info-box">
-                <p><strong>School Information:</strong></p>
-                <p>&bull; <strong>School Name:</strong> {{ $school->name }}</p>
-                <p>&bull; <strong>School Code:</strong> {{ $school->code }}</p>
-
-                <p style="margin-top: 10px;"><strong>Login Credentials:</strong></p>
-                <p>&bull; <strong>Username / Email:</strong> <code>{{ $user->email }}</code></p>
+                <p><strong>Login Credentials:</strong></p>
+                <p style="margin-top: 6px;">&bull; <strong>Username / Email:</strong> <code>{{ $user->email }}</code></p>
                 <p>&bull; <strong>Temporary Password:</strong> <code>{{ $password }}</code></p>
             </div>
 
@@ -231,13 +225,12 @@
                 <a href="{{ route('login') }}" class="btn-primary" target="_blank">Access Login Portal</a>
             </div>
 
-            <p class="link-fallback">If the button above does not work, copy and paste this link into your
-                browser:<br><a href="{{ route('login') }}">{{ route('login') }}</a></p>
+            <p class="link-fallback">If the button above does not work, copy and paste this link into your browser:<br>
+                <a href="{{ route('login') }}">{{ route('login') }}</a>
+            </p>
 
             <div class="info-box" style="border-left: 3px solid #f59e0b;">
-                <p style="color: #d97706;"><strong>Security Notice:</strong> This is a temporary password. You are
-                    required to log in and change your password immediately upon your first login under <strong>My
-                        Profile > Update Password</strong>.</p>
+                <p style="color: #d97706;"><strong>Security Notice:</strong> This is a temporary password. You are required to log in and change your password immediately upon your first login under <strong>My Profile > Update Password</strong>.</p>
             </div>
 
             <p class="signature">Warm regards,<br><strong>Yes Genius Exam Board</strong></p>

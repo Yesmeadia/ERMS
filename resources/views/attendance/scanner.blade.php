@@ -4,24 +4,38 @@
 
     <style>
         @keyframes scanLaser {
-            0% {
-                top: 0%;
-                opacity: 0.8;
-            }
-
-            50% {
-                top: 100%;
-                opacity: 1;
-            }
-
-            100% {
-                top: 0%;
-                opacity: 0.8;
-            }
+            0%   { top: 0%;   opacity: 0.8; }
+            50%  { top: 100%; opacity: 1; }
+            100% { top: 0%;   opacity: 0.8; }
+        }
+        .animate-scanner-laser {
+            animation: scanLaser 2.5s infinite linear;
         }
 
-        .animate-scanner-laser {
-            animation: scanLaser 3s infinite linear;
+        /* Responsive reader container */
+        #reader {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        /* Override html5-qrcode internal styles for responsive fit */
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
+        #reader img {
+            display: none !important;
+        }
+        /* Hide the default html5-qrcode header/footer shading boxes */
+        #reader__scan_region {
+            border: none !important;
+        }
+        #reader__dashboard {
+            display: none !important;
+        }
+        #reader__camera_selection,
+        #reader__camera_permission_button {
+            display: none !important;
         }
     </style>
 
@@ -38,53 +52,39 @@
                         </p>
                     </div>
 
-                    {{-- Camera Viewfinder Container --}}
-                    <div
-                        class="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden border-2 border-indigo-500/20 bg-slate-950 shadow-2xl flex items-center justify-center">
+                    {{-- Camera Viewfinder Container (responsive square) --}}
+                    <div class="relative w-full rounded-2xl overflow-hidden border-2 border-indigo-500/20 bg-slate-950 shadow-2xl"
+                         style="aspect-ratio: 1/1;">
                         {{-- Camera Feed --}}
-                        <div id="reader" class="w-full h-full object-cover"></div>
+                        <div id="reader" class="absolute inset-0"></div>
 
                         {{-- Viewfinder Reticle (Hidden if stopped) --}}
                         <div class="absolute inset-0 pointer-events-none flex items-center justify-center"
                             x-show="scanning">
-                            <div
-                                class="relative w-56 h-56 border-2 border-indigo-400/40 rounded-xl flex items-center justify-center">
+                            <div class="relative border-2 border-indigo-400/30 rounded-xl"
+                                 style="width: 70%; height: 70%;">
                                 {{-- Laser line --}}
-                                <div
-                                    class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 shadow-[0_0_10px_#818cf8] animate-scanner-laser">
-                                </div>
+                                <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent shadow-[0_0_12px_#818cf8] animate-scanner-laser"></div>
                                 {{-- Viewfinder corners --}}
-                                <div
-                                    class="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-indigo-400 rounded-tl-lg">
-                                </div>
-                                <div
-                                    class="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-indigo-400 rounded-tr-lg">
-                                </div>
-                                <div
-                                    class="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-indigo-400 rounded-bl-lg">
-                                </div>
-                                <div
-                                    class="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-indigo-400 rounded-br-lg">
-                                </div>
+                                <div class="absolute -top-0.5 -left-0.5 w-6 h-6 border-t-4 border-l-4 border-indigo-400 rounded-tl-lg"></div>
+                                <div class="absolute -top-0.5 -right-0.5 w-6 h-6 border-t-4 border-r-4 border-indigo-400 rounded-tr-lg"></div>
+                                <div class="absolute -bottom-0.5 -left-0.5 w-6 h-6 border-b-4 border-l-4 border-indigo-400 rounded-bl-lg"></div>
+                                <div class="absolute -bottom-0.5 -right-0.5 w-6 h-6 border-b-4 border-r-4 border-indigo-400 rounded-br-lg"></div>
                             </div>
                         </div>
 
                         {{-- Stopped overlay --}}
-                        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 text-center p-6"
+                        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4 text-center p-6"
                             x-show="!scanning">
-                            <div
-                                class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                    stroke="currentColor" class="w-8 h-8">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                            <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                                 </svg>
                             </div>
                             <div>
                                 <p class="text-sm font-semibold text-slate-300">Scanner Inactive</p>
-                                <p class="text-xs text-slate-500 mt-1">Select a camera below and start scanning</p>
+                                <p class="text-xs text-slate-500 mt-1">Press "Start Camera" to begin scanning</p>
                             </div>
                         </div>
                     </div>
@@ -396,18 +396,33 @@
                     startScanner() {
                         if (!this.selectedCameraId) return;
 
+                        // Calculate qrbox from the rendered element size for accuracy
+                        const readerEl = document.getElementById('reader');
+                        const elWidth  = readerEl ? readerEl.offsetWidth  : 300;
+                        const elHeight = readerEl ? readerEl.offsetHeight : 300;
+
                         const config = {
-                            fps: 10,
-                            qrbox: (width, height) => {
-                                const minDim = Math.min(width, height);
-                                const size = Math.floor(minDim * 0.7);
-                                return { width: size, height: size };
-                            }
+                            fps: 15,
+                            // Use a fixed-pixel scan region (70% of smallest dim) — more reliable than % callback
+                            qrbox: {
+                                width:  Math.floor(Math.min(elWidth, elHeight) * 0.72),
+                                height: Math.floor(Math.min(elWidth, elHeight) * 0.72)
+                            },
+                            // Allow both front & rear camera aspect ratios
+                            aspectRatio: 1.0,
+                            // Use the modern BarcodeDetector API when available (much faster + accurate)
+                            experimentalFeatures: {
+                                useBarCodeDetectorIfSupported: true
+                            },
+                            // Scan all supported barcode formats for max compatibility
+                            supportedScanTypes: [
+                                Html5QrcodeScanType.SCAN_TYPE_CAMERA
+                            ]
                         };
 
                         let cameraSource = this.selectedCameraId;
                         if (cameraSource === 'environment' || cameraSource === 'user') {
-                            cameraSource = { facingMode: cameraSource };
+                            cameraSource = { facingMode: { ideal: cameraSource } };
                         }
 
                         this.html5QrCode.start(
@@ -417,20 +432,24 @@
                                 this.onQrCodeSuccess(decodedText);
                             },
                             (errorMessage) => {
-                                // ignore scan failures
+                                // Per-frame decode failures are normal; ignore them
                             }
                         ).then(() => {
                             this.scanning = true;
-                            // Query cameras list after successful permission grant to show labels
+                            // Enumerate cameras after permission is granted so labels are visible
                             if (this.cameras.length === 0) {
                                 Html5Qrcode.getCameras().then(devices => {
                                     this.cameras = devices;
                                 }).catch(e => console.warn("Failed to get cameras after start", e));
                             }
                         }).catch(err => {
-                            console.error("Unable to start scanner", err);
+                            console.error("Unable to start scanner:", err);
+                            // Provide an actionable error with HTTP/HTTPS hint
+                            const isInsecure = !window.isSecureContext;
                             this.state = 'error';
-                            this.message = "Could not initialize camera feed. Please ensure camera permission is granted in your browser settings.";
+                            this.message = isInsecure
+                                ? "Camera requires HTTPS. Open this page over a secure (https://) connection."
+                                : "Could not start camera. Please grant camera permission in your browser settings and try again.";
                         });
                     },
 

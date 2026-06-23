@@ -7,3 +7,41 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Add gap below table containers and footer */
+.bg-slate-900\/60:has(table) {
+    margin-bottom: 2.5rem;
+}
+
+/* Custom dialog animations */
+.dialog-scale-in {
+    animation: dialogScaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.dialog-scale-out {
+    animation: dialogScaleOut 0.15s ease-in forwards;
+}
+
+@keyframes dialogScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes dialogScaleOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+}
+
+

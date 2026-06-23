@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
+use App\Models\School;
 use App\Models\ClassMaster;
 use App\Models\CategoryMaster;
 use App\Models\Examination;
@@ -15,6 +16,107 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
+    /**
+     * Super Admin: List ALL students across all schools with full filters.
+     */
+    public function adminIndex(Request $request)
+    {
+        $query = Student::with(['class', 'category', 'school', 'examination', 'attendances']);
+
+        if ($request->filled('examination_id')) {
+            $query->where('examination_id', $request->examination_id);
+        }
+
+        if ($request->filled('school_id')) {
+            $query->where('school_id', $request->school_id);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
+        if ($request->filled('status')) {
+            $filterStatus = $request->status;
+            // 'Present' and 'Absent' are virtual — filter via attendance
+            if ($filterStatus === 'Present') {
+                $query->whereHas('attendances', function ($q) {
+                    $q->where('status', 'Present');
+                });
+            } elseif ($filterStatus === 'Absent') {
+                $query->whereIn('status', ['Approved', 'Hall Ticket Issued'])
+                      ->whereDoesntHave('attendances', function ($q) {
+                          $q->where('status', 'Present');
+                      });
+            } else {
+                $query->where('status', $filterStatus);
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('registration_number', 'like', "%{$search}%")
+                  ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+            });
+        }
+
+        $students     = $query->latest()->paginate(20)->withQueryString();
+        $examinations = Examination::all();
+        $schools      = School::where('status', true)->get();
+        $categories   = CategoryMaster::where('status', true)->get();
+        $genders      = ['Male', 'Female', 'Other'];
+        $statuses     = ['Draft', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued', 'Present', 'Absent'];
+
+        // Stats
+        $totalCount    = Student::count();
+        $draftCount    = Student::where('status', 'Draft')->count();
+        $submittedCount = Student::where('status', 'Submitted')->count();
+        $approvedCount = Student::whereIn('status', ['Approved', 'Hall Ticket Issued'])->count();
+
+        return view('super-admin.students.index', compact(
+            'students', 'examinations', 'schools', 'categories',
+            'genders', 'statuses', 'totalCount', 'draftCount',
+            'submittedCount', 'approvedCount'
+        ));
+    }
+
+    /**
+     * Super Admin: Issue a Registration Number for a student.
+     */
+    public function adminIssueRegistration(Student $student)
+    {
+        if ($student->registration_number) {
+            return back()->with('info', 'Registration number already issued: ' . $student->registration_number);
+        }
+
+        if (!in_array($student->status, ['Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'])) {
+            return back()->with('error', 'Registration number can only be issued for submitted or approved students.');
+        }
+
+        $student->registration_number = $student->issueRegistrationNumber();
+        $student->save();
+
+        activity()
+            ->performedOn($student)
+            ->log("Issued registration number ({$student->registration_number}) for student: {$student->name}");
+
+        return back()->with('success', "Registration number {$student->registration_number} issued for {$student->name}.");
+    }
+
+    /**
+     * Super Admin: View a student's full profile.
+     */
+    public function adminShow(Student $student)
+    {
+        $student->load(['class', 'category', 'school', 'examination', 'hallTicket', 'result', 'attendances']);
+        return view('super-admin.students.show', compact('student'));
+    }
+
     /**
      * Display a listing of the resource.
      */

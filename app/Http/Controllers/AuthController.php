@@ -108,6 +108,16 @@ class AuthController extends Controller
                 ->causedBy($user)
                 ->log('User logged in');
 
+            if ($user->hasRole('super-admin')) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($user->email)->send(
+                        new \App\Mail\SuperAdminLoginAlertMail($user, $request->ip(), $request->userAgent(), now()->toDayDateTimeString())
+                    );
+                } catch (\Exception $e) {
+                    report($e);
+                }
+            }
+
             return $this->redirectUser($user);
         }
 
@@ -312,6 +322,14 @@ class AuthController extends Controller
             activity()
                 ->causedBy($user)
                 ->log('Super Admin logged in successfully with MFA');
+
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(
+                    new \App\Mail\SuperAdminLoginAlertMail($user, $request->ip(), $request->userAgent(), now()->toDayDateTimeString())
+                );
+            } catch (\Exception $e) {
+                report($e);
+            }
 
             return $this->redirectUser($user);
         }

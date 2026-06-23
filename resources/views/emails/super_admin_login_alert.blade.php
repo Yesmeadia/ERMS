@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Admin Account Created</title>
+    <title>Super Admin Login Alert</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -48,7 +48,7 @@
             margin: 2px 0 0;
             font-size: 11px;
             font-weight: 600;
-            color: #94a3b8;
+            color: #f59e0b;
             text-transform: uppercase;
             letter-spacing: 0.6px;
         }
@@ -70,40 +70,10 @@
             margin: 0 0 20px;
         }
 
-        .button-wrapper {
-            text-align: center;
-            margin: 28px 0;
-        }
-
-        .btn-primary {
-            display: inline-block;
-            padding: 13px 32px;
-            background: #4f46e5;
-            color: #ffffff !important;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            border-radius: 10px;
-            letter-spacing: 0.01em;
-        }
-
-        .link-fallback {
-            font-size: 12px;
-            color: #94a3b8;
-            word-break: break-all;
-            margin-top: 8px;
-            text-align: center;
-        }
-
-        .link-fallback a {
-            color: #4f46e5;
-            text-decoration: none;
-        }
-
         .info-box {
             background-color: #f8fafc;
-            border-left: 3px solid #94a3b8;
-            padding: 14px 16px;
+            border-left: 3px solid #f59e0b;
+            padding: 18px 20px;
             border-radius: 0 10px 10px 0;
             margin-top: 24px;
             margin-bottom: 24px;
@@ -112,8 +82,12 @@
         .info-box p {
             margin: 0;
             font-size: 13px;
-            color: #64748b;
-            line-height: 1.55;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .info-box p strong {
+            color: #0f172a;
         }
 
         .signature {
@@ -139,7 +113,6 @@
             color: #cbd5e1;
         }
 
-        /* ===== Mobile styles ===== */
         @media only screen and (max-width: 600px) {
             .wrapper {
                 width: 100% !important;
@@ -176,20 +149,8 @@
                 line-height: 1.6;
             }
 
-            .button-wrapper {
-                margin: 22px 0;
-            }
-
-            .btn-primary {
-                display: block;
-                width: 100%;
-                box-sizing: border-box;
-                padding: 14px 0;
-                font-size: 15px;
-            }
-
-            .info-box p {
-                font-size: 12.5px;
+            .info-box {
+                padding: 14px;
             }
 
             .footer {
@@ -206,45 +167,30 @@
                 <img src="{{ $message->embed(public_path('images/icon.png')) }}" alt="Yes Genius">
             @endif
             <div class="banner-text">
-                <h1>Account Created</h1>
-                <p>Welcome to Portal</p>
+                <h1>Security Notification</h1>
+                <p>Super Admin Login Detected</p>
             </div>
         </div>
 
         <div class="card">
-            <p>Dear <strong>{{ $school->contact_person }}</strong>,</p>
-            <p>We are pleased to inform you that your school admin account for <strong>{{ $school->name }}</strong> has
-                been successfully created. You can now access the portal to register students, download hall tickets,
-                and manage examination reports.</p>
+            <p>Dear <strong>{{ $user->name }}</strong>,</p>
+            <p>We detected a new successful login to your Super Admin account. Below are the details of the login session:</p>
 
             <div class="info-box">
-                <p><strong>School Information:</strong></p>
-                <p>&bull; <strong>School Name:</strong> {{ $school->name }}</p>
-                <p>&bull; <strong>School Code:</strong> {{ $school->code }}</p>
-
-                <p style="margin-top: 10px;"><strong>Login Credentials:</strong></p>
-                <p>&bull; <strong>Username / Email:</strong> <code>{{ $user->email }}</code></p>
-                <p>&bull; <strong>Temporary Password:</strong> <code>{{ $password }}</code></p>
+                <p style="margin-bottom: 8px;"><strong>Session Information:</strong></p>
+                <p style="margin-bottom: 4px;">&bull; <strong>Account:</strong> {{ $user->email }}</p>
+                <p style="margin-bottom: 4px;">&bull; <strong>Time:</strong> {{ $time }}</p>
+                <p style="margin-bottom: 4px;">&bull; <strong>IP Address:</strong> <code>{{ $ip }}</code></p>
+                <p>&bull; <strong>Device / Browser:</strong> <code>{{ $userAgent }}</code></p>
             </div>
 
-            <div class="button-wrapper">
-                <a href="{{ route('login') }}" class="btn-primary" target="_blank">Access Login Portal</a>
-            </div>
-
-            <p class="link-fallback">If the button above does not work, copy and paste this link into your
-                browser:<br><a href="{{ route('login') }}">{{ route('login') }}</a></p>
-
-            <div class="info-box" style="border-left: 3px solid #f59e0b;">
-                <p style="color: #d97706;"><strong>Security Notice:</strong> This is a temporary password. You are
-                    required to log in and change your password immediately upon your first login under <strong>My
-                        Profile > Update Password</strong>.</p>
-            </div>
+            <p>If this login was authorized by you, no further action is required. If you do not recognize this activity, please change your password immediately or contact the system administrator to secure your account.</p>
 
             <p class="signature">Warm regards,<br><strong>Yes Genius Exam Board</strong></p>
         </div>
 
         <div class="footer">
-            <p>This is an automated notification. Please do not reply to this email.</p>
+            <p>This is an automated security alert. Please do not reply to this email.</p>
             <p class="legal">&copy; {{ date('Y') }} YES INDIA FOUNDATION &middot; All rights reserved.</p>
         </div>
     </div>

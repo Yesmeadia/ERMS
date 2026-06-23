@@ -213,8 +213,9 @@ class HallTicketController extends Controller
         ]);
 
         $verifyUrl = route('verification.hall-ticket', $student->hall_ticket_number);
-        
-        $qrSvg = QrCode::size(200)->margin(0)->generate($qrPayload);
+
+        // SVG with quiet-zone margin — margin(2) is critical for camera-based scanning
+        $qrSvg = QrCode::size(220)->margin(2)->generate($qrPayload);
         $qrDataUri = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
 
         $pdf = Pdf::loadView('pdf.hall-ticket', compact('student', 'qrDataUri', 'verifyUrl'));
@@ -258,8 +259,9 @@ class HallTicketController extends Controller
         ]);
 
         $verifyUrl = route('verification.hall-ticket', $student->hall_ticket_number);
-        
-        $qrSvg = QrCode::size(200)->margin(0)->generate($qrPayload);
+
+        // SVG with quiet-zone margin — margin(2) is critical for camera-based scanning
+        $qrSvg = QrCode::size(220)->margin(2)->generate($qrPayload);
         $qrDataUri = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
 
         // Increment downloaded count or log activity
@@ -316,7 +318,8 @@ class HallTicketController extends Controller
             ]);
 
             $verifyUrl = route('verification.hall-ticket', $student->hall_ticket_number);
-            $qrSvg = QrCode::size(200)->margin(0)->generate($qrPayload);
+            // SVG with quiet-zone margin — margin(2) is critical for camera-based scanning
+            $qrSvg = QrCode::size(220)->margin(2)->generate($qrPayload);
             $qrDataUri = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
 
             $studentsData[] = [
@@ -375,7 +378,8 @@ class HallTicketController extends Controller
             ]);
 
             $verifyUrl = route('verification.hall-ticket', $student->hall_ticket_number);
-            $qrSvg = QrCode::size(200)->margin(0)->generate($qrPayload);
+            // SVG with quiet-zone margin — margin(2) is critical for camera-based scanning
+            $qrSvg = QrCode::size(220)->margin(2)->generate($qrPayload);
             $qrDataUri = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
 
             $studentsData[] = [

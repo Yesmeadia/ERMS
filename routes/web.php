@@ -14,6 +14,9 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\ResultController;
+
 
 // 1. Guest Routes
 Route::middleware('guest')->group(function () {
@@ -37,6 +40,11 @@ Route::post('/login/mfa', [AuthController::class, 'verifyMfa'])->name('login.mfa
 // 2. Public Verification Route (QR Verification Portal)
 Route::get('/verify/hall-ticket/{number}', [VerificationController::class, 'verifyPublic'])->name('verification.hall-ticket');
 
+// Public Results Portal
+Route::get('/results/check', [ResultController::class, 'showPublicCheckForm'])->name('results.check-form');
+Route::post('/results/check', [ResultController::class, 'checkPublicResult'])->name('results.check-submit');
+Route::get('/results/{student}/marksheet', [ResultController::class, 'showPublicResult'])->name('results.marksheet');
+
 // 3. SECURE AUTHENTICATED ROUTES
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -57,6 +65,9 @@ Route::middleware('auth')->group(function () {
 
         // Staff Management
         Route::resource('staff', StaffController::class);
+
+        // Super Admin Management
+        Route::resource('admins', SuperAdminController::class)->except(['show']);
 
         // Profile
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -85,6 +96,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/verification/{student}', [VerificationController::class, 'show'])->name('verification.show');
         Route::post('/verification/{student}/verify', [VerificationController::class, 'verify'])->name('verification.verify');
 
+        // Students Management (Super Admin)
+        Route::get('/students', [StudentController::class, 'adminIndex'])->name('students.index');
+        Route::get('/students/{student}', [StudentController::class, 'adminShow'])->name('students.show');
+        Route::post('/students/{student}/issue-registration', [StudentController::class, 'adminIssueRegistration'])->name('students.issue-registration');
+
         // Hall Ticket Management
         Route::get('/hall-tickets', [HallTicketController::class, 'adminIndex'])->name('hall-tickets.index');
         Route::post('/hall-tickets/{student}/generate', [HallTicketController::class, 'generateSingle'])->name('hall-tickets.generate-single');
@@ -99,6 +115,16 @@ Route::middleware('auth')->group(function () {
         // Attendance Management
         Route::get('/attendance', [AttendanceController::class, 'adminAttendanceIndex'])->name('attendance.index');
         Route::post('/attendance/mark', [AttendanceController::class, 'adminAttendanceMark'])->name('attendance.mark');
+
+        // Results Management
+        Route::get('/results', [ResultController::class, 'adminIndex'])->name('results.index');
+        Route::get('/results/create/{student}', [ResultController::class, 'create'])->name('results.create');
+        Route::post('/results', [ResultController::class, 'store'])->name('results.store');
+        Route::get('/results/{result}/edit', [ResultController::class, 'edit'])->name('results.edit');
+        Route::put('/results/{result}', [ResultController::class, 'update'])->name('results.update');
+        Route::delete('/results/{result}', [ResultController::class, 'destroy'])->name('results.destroy');
+        Route::get('/results/import', [ResultController::class, 'showImportForm'])->name('results.import-form');
+        Route::post('/results/import', [ResultController::class, 'import'])->name('results.import');
     });
 
     // ============================================
