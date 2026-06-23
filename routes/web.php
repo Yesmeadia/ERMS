@@ -173,5 +173,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/attendance/verify-scan', [AttendanceController::class, 'verifyScan'])->name('attendance.verify-scan');
         Route::post('/attendance/mark-present', [AttendanceController::class, 'markPresent'])->name('attendance.mark-present');
         Route::get('/attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
+        Route::get('/attendance/count', [AttendanceController::class, 'scanCount'])->name('attendance.count'); // F1: Lightweight counter API
     });
 });

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERMS - Examination Registration Management System</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -357,11 +357,11 @@
             <!-- Center Branding Wrapper -->
             <div class="w-full max-w-md relative z-10 text-center px-6">
                 <div class="mb-8 flex justify-center">
-                    @if(file_exists(public_path('images/logo-w.png')))
-                        <img src="{{ asset('images/logo-w.png') }}" alt="Logo"
+                    @if(file_exists(public_path('logo-w.png')))
+                        <img src="{{ asset('logo-w.png') }}" alt="Logo"
                             class="max-w-[200px] w-full h-auto filter drop-shadow-[0_0_25px_rgba(0,212,255,0.15)]">
-                    @elseif(file_exists(public_path('images/logo.png')))
-                        <img src="{{ asset('images/logo.png') }}" alt="Logo"
+                    @elseif(file_exists(public_path('logo.png')))
+                        <img src="{{ asset('logo.png') }}" alt="Logo"
                             class="max-w-[200px] w-full h-auto filter drop-shadow-[0_0_25px_rgba(0,212,255,0.15)]">
                     @else
                         <div

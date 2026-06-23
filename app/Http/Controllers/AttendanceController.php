@@ -12,6 +12,8 @@ use App\Models\ClassMaster;
 use App\Models\CategoryMaster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class AttendanceController extends Controller
 {
@@ -82,6 +84,12 @@ class AttendanceController extends Controller
         
         if (!$payload) {
             return response()->json(['error' => 'No QR data received.'], 400);
+        }
+
+        // F7: Reject oversized payloads before any processing (DoS / injection guard)
+        if (strlen($payload) > 2000) {
+            $this->logAction(null, 'scan_tampered', $request);
+            return response()->json(['status' => 'error', 'message' => 'QR payload rejected: data exceeds maximum allowed size.'], 422);
         }
 
         // 1. Parse JSON
@@ -185,33 +193,51 @@ class AttendanceController extends Controller
         $user = Auth::user();
         $today = now()->toDateString();
 
-        // Prevent concurrent duplicates
-        $alreadyMarked = Attendance::where('student_id', $studentId)
-            ->where('exam_id', $examId)
-            ->where('attendance_date', $today)
-            ->first();
+        try {
+            // F5: Wrap in a transaction so the duplicate check + insert are atomic.
+            // The DB unique constraint (student_id, exam_id, attendance_date) is the
+            // final safety net if two requests race past the pre-check simultaneously.
+            $student = DB::transaction(function () use ($studentId, $examId, $today, $user, $request) {
+                // Re-verify inside the transaction to close the race window
+                $alreadyMarked = Attendance::where('student_id', $studentId)
+                    ->where('exam_id', $examId)
+                    ->where('attendance_date', $today)
+                    ->exists();
 
-        if ($alreadyMarked) {
+                if ($alreadyMarked) {
+                    // Throw a specific exception to break out of the transaction cleanly
+                    throw new \RuntimeException('duplicate');
+                }
+
+                Attendance::create([
+                    'student_id' => $studentId,
+                    'exam_id' => $examId,
+                    'attendance_date' => $today,
+                    'attendance_time' => now()->toTimeString(),
+                    'marked_by' => $user->id,
+                    'status' => 'Present',
+                ]);
+
+                $this->logAction($studentId, 'mark_present', $request);
+
+                return Student::find($studentId);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            // Caught when two concurrent requests both passed the pre-check and
+            // the DB unique constraint blocked the second insert.
             return response()->json([
                 'status' => 'duplicate',
                 'message' => 'Attendance was already marked for this student today.'
             ]);
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'duplicate') {
+                return response()->json([
+                    'status' => 'duplicate',
+                    'message' => 'Attendance was already marked for this student today.'
+                ]);
+            }
+            throw $e;
         }
-
-        // Insert attendance
-        $attendance = Attendance::create([
-            'student_id' => $studentId,
-            'exam_id' => $examId,
-            'attendance_date' => $today,
-            'attendance_time' => now()->toTimeString(),
-            'marked_by' => $user->id,
-            'status' => 'Present',
-        ]);
-
-        // Log action
-        $this->logAction($studentId, 'mark_present', $request);
-
-        $student = Student::find($studentId);
 
         return response()->json([
             'status' => 'success',
@@ -222,6 +248,19 @@ class AttendanceController extends Controller
                 'scan_time' => now()->format('d M Y, h:i A')
             ]
         ]);
+    }
+
+    /**
+     * F1: Lightweight attendance count API for the scanner counter panel.
+     * Returns only the today's present-mark count for the authenticated user.
+     */
+    public function scanCount()
+    {
+        $count = Attendance::where('marked_by', Auth::id())
+            ->whereDate('attendance_date', now()->toDateString())
+            ->count();
+
+        return response()->json(['count' => $count]);
     }
 
     /**

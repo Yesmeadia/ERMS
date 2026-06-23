@@ -96,7 +96,7 @@
             <!-- Certificate Header -->
             <div class="text-center border-b border-slate-800/80 pb-6 mb-8 print-border-slate">
                 <div class="flex justify-center mb-4">
-                    <img src="{{ asset('images/icon.png') }}" alt="ERMS Logo" class="w-16 h-16 rounded-xl object-contain filter drop-shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                    <img src="{{ asset('icon.png') }}" alt="ERMS Logo" class="w-16 h-16 rounded-xl object-contain filter drop-shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                 </div>
                 <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white print-text-dark">YES INDIA FOUNDATION</h1>
                 <p class="text-xs uppercase font-bold tracking-widest text-indigo-400 mt-1">Examination Board Portal</p>

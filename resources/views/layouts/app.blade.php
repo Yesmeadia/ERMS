@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ERMS - Examination Registration Management System</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,7 +68,7 @@
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
         <!-- Logo & Header -->
         <div class="flex items-center gap-3 px-6 h-20 border-b border-slate-800/60">
-            <img src="{{ asset('images/icon.png') }}" alt="ERMS Logo" class="w-10 h-10 rounded-xl object-contain">
+            <img src="{{ asset('icon.png') }}" alt="ERMS Logo" class="w-10 h-10 rounded-xl object-contain">
             <div>
                 <h2
                     class="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">
@@ -468,7 +468,7 @@
                 <div class="flex items-center gap-2">
                     <span>Designed and developed by</span>
                     <a href="https://cyberduce.com" target="_blank" rel="noopener noreferrer" class="hover:opacity-85 transition-opacity flex items-center">
-                        <img src="{{ asset('images/cyberduce.png') }}" alt="Cyberduce" class="h-5 w-auto object-contain">
+                        <img src="{{ asset('cyberduce.png') }}" alt="Cyberduce" class="h-5 w-auto object-contain">
                     </a>
                 </div>
             </footer>

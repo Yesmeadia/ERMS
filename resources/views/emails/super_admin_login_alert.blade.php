@@ -163,8 +163,8 @@
 <body>
     <div class="wrapper">
         <div class="banner">
-            @if(file_exists(public_path('images/icon.png')))
-                <img src="{{ $message->embed(public_path('images/icon.png')) }}" alt="Yes Genius">
+            @if(file_exists(public_path('icon.png')))
+                <img src="{{ $message->embed(public_path('icon.png')) }}" alt="Yes Genius">
             @endif
             <div class="banner-text">
                 <h1>Security Notification</h1>

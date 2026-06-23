@@ -30,63 +30,65 @@
 
 {{-- Table --}}
 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden shadow-xl">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-slate-800/60">
-                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student & School</th>
-                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Activity Action</th>
-                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Device & User IP</th>
-                <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Scan Time</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-800/60">
-            @forelse($logs as $log)
-            <tr class="hover:bg-slate-800/20 transition-colors">
-                <td class="px-6 py-4">
-                    @if($log->student)
-                        <div>
-                            <p class="font-semibold text-slate-200">{{ $log->student->name }}</p>
-                            <p class="text-xs text-slate-500 mt-0.5">{{ $log->student->hall_ticket_number }} · {{ $log->student->school->name }}</p>
-                        </div>
-                    @else
-                        <span class="text-xs text-rose-400 italic">Unknown/Corrupt Student Record</span>
-                    @endif
-                </td>
-                <td class="px-6 py-4">
-                    @if($log->action === 'mark_present')
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Marked Present
-                        </span>
-                    @elseif($log->action === 'scan_success')
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Verified Success
-                        </span>
-                    @elseif($log->action === 'scan_duplicate')
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Duplicate Attempt
-                        </span>
-                    @else
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Invalid Ticket
-                        </span>
-                    @endif
-                </td>
-                <td class="px-6 py-4 text-slate-400 hidden md:table-cell">
-                    <p class="truncate max-w-xs text-xs font-mono" title="{{ $log->device_info }}">{{ $log->device_info }}</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5 font-mono">IP: {{ $log->ip_address }}</p>
-                </td>
-                <td class="px-6 py-4 text-right text-slate-400 font-medium">{{ $log->scan_time->format('d M Y, h:i A') }}</td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="4" class="px-6 py-16 text-center text-slate-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mx-auto mb-3 text-slate-700"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    No scans logged today.
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-slate-800/60">
+                    <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student & School</th>
+                    <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Activity Action</th>
+                    <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Device & User IP</th>
+                    <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Scan Time</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+                @forelse($logs as $log)
+                <tr class="hover:bg-slate-800/20 transition-colors">
+                    <td class="px-6 py-4">
+                        @if($log->student)
+                            <div>
+                                <p class="font-semibold text-slate-200">{{ $log->student->name }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ $log->student->hall_ticket_number }} · {{ $log->student->school->name }}</p>
+                            </div>
+                        @else
+                            <span class="text-xs text-rose-400 italic">Unknown/Corrupt Student Record</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4">
+                        @if($log->action === 'marked_present' || $log->action === 'mark_present')
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Marked Present
+                            </span>
+                        @elseif($log->action === 'scan_success')
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Verified Success
+                            </span>
+                        @elseif($log->action === 'scan_duplicate')
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Duplicate Attempt
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Invalid Ticket
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-slate-400 hidden md:table-cell">
+                        <p class="truncate max-w-xs text-xs font-mono" title="{{ $log->device_info }}">{{ $log->device_info }}</p>
+                        <p class="text-[10px] text-slate-500 mt-0.5 font-mono">IP: {{ $log->ip_address }}</p>
+                    </td>
+                    <td class="px-6 py-4 text-right text-slate-400 font-medium">{{ $log->scan_time->format('d M Y, h:i A') }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" class="px-6 py-16 text-center text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mx-auto mb-3 text-slate-700"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        No scans logged today.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
     @if($logs->hasPages())
     <div class="px-6 py-4 border-t border-slate-800/60">{{ $logs->withQueryString()->links() }}</div>
     @endif
