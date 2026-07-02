@@ -259,6 +259,38 @@
                 </div>
             </div>
 
+            {{-- Payment / Transaction Details --}}
+            @if($student->payment_status === 'Paid' && $student->payments->isNotEmpty())
+                <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
+                    <h3 class="text-sm font-bold border-b border-slate-800 pb-3 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-emerald-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-emerald-400">Payment / Transaction Details</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                        @foreach($student->payments as $payment)
+                            <div>
+                                <span class="block text-slate-500 text-xs">Transaction ID</span>
+                                <span class="text-indigo-400 font-mono font-semibold mt-1 block">{{ $payment->transaction_id }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-slate-500 text-xs">Amount Paid</span>
+                                <span class="text-slate-200 font-semibold mt-1 block">₹{{ number_format($payment->amount, 2) }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-slate-500 text-xs">Payment Method</span>
+                                <span class="text-slate-200 font-semibold mt-1 block uppercase">{{ $payment->payment_method }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-slate-500 text-xs">Paid On</span>
+                                <span class="text-slate-200 font-semibold mt-1 block">{{ $payment->paid_at ? $payment->paid_at->format('d M Y, h:i A') : '—' }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             {{-- Attendance Record --}}
             @if($student->attendances->count() > 0)
                 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">

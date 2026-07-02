@@ -41,4 +41,12 @@ class School extends Model
     {
         return $this->hasMany(Student::class, 'school_id');
     }
+
+    /**
+     * Get the payments made by this school.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'school_id');
+    }
 }

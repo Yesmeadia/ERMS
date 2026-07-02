@@ -33,6 +33,7 @@ class ClassController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', 'unique:classes,code'],
             'description' => ['nullable', 'string'],
+            'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $class = ClassMaster::create($validated);
@@ -61,6 +62,7 @@ class ClassController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', "unique:classes,code,{$class->id}"],
             'description' => ['nullable', 'string'],
+            'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $class->update($validated);

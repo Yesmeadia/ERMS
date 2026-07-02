@@ -58,7 +58,7 @@ class VerificationController extends Controller
      */
     public function show(Student $student)
     {
-        $student->load(['school', 'class', 'category', 'examination']);
+        $student->load(['school', 'class', 'category', 'examination', 'payments']);
         return view('super-admin.verification.show', compact('student'));
     }
 
