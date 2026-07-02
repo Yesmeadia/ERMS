@@ -16,6 +16,7 @@ class ClassMaster extends Model
         'name',
         'code',
         'description',
+        'registration_fee',
         'status',
     ];
 

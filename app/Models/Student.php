@@ -23,6 +23,7 @@ class Student extends Model
         'mobile_number',
         'registration_number',
         'status',
+        'payment_status',
         'remarks',
         'photograph',
         'hall_ticket_number',
@@ -80,6 +81,16 @@ class Student extends Model
     public function result(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(StudentResult::class, 'student_id');
+    }
+
+    /**
+     * Get the payments associated with the student.
+     */
+    public function payments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Payment::class, 'payment_student', 'student_id', 'payment_id')
+            ->withPivot('amount')
+            ->withTimestamps();
     }
 
     /**

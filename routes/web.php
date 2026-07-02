@@ -16,12 +16,13 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\ResultController;
+use App\Http\Controllers\PaymentController;
 
 
 // 1. Guest Routes
 Route::middleware('guest')->group(function () {
     Route::get('/', function () {
-        return redirect()->route('login');
+        return view('welcome');
     });
     
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -112,6 +113,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [ReportController::class, 'adminIndex'])->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'adminExport'])->name('reports.export');
 
+        // Payments & Payouts Report
+        Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
+        Route::get('/payments/export', [PaymentController::class, 'adminExport'])->name('payments.export');
+
         // Attendance Management
         Route::get('/attendance', [AttendanceController::class, 'adminAttendanceIndex'])->name('attendance.index');
         Route::post('/attendance/mark', [AttendanceController::class, 'adminAttendanceMark'])->name('attendance.mark');
@@ -152,6 +157,14 @@ Route::middleware('auth')->group(function () {
         // Reports
         Route::get('/reports', [ReportController::class, 'schoolIndex'])->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'schoolExport'])->name('reports.export');
+
+        // Payments & Balance Sheet
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::post('/payments/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout');
+        Route::post('/payments/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+        Route::get('/payments/{payment}/gateway', [PaymentController::class, 'gateway'])->name('payments.gateway');
+        Route::post('/payments/process', [PaymentController::class, 'process'])->name('payments.process');
+        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
 
         // Attendance Report
         Route::get('/attendance', [AttendanceController::class, 'schoolAttendanceIndex'])->name('attendance.index');

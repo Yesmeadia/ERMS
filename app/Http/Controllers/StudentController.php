@@ -113,7 +113,7 @@ class StudentController extends Controller
      */
     public function adminShow(Student $student)
     {
-        $student->load(['class', 'category', 'school', 'examination', 'hallTicket', 'result', 'attendances']);
+        $student->load(['class', 'category', 'school', 'examination', 'hallTicket', 'result', 'attendances', 'payments']);
         return view('super-admin.students.show', compact('student'));
     }
 
@@ -216,6 +216,7 @@ class StudentController extends Controller
     public function show(Student $student)
     {
         $this->authorizeAccess($student);
+        $student->load(['class', 'category', 'school', 'examination', 'payments']);
         return view('school-admin.students.show', compact('student'));
     }
 

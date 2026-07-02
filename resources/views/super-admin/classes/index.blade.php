@@ -18,6 +18,7 @@
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Class Name</th>
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Code</th>
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Description</th>
+                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Registration Fee</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                 <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
             </tr>
@@ -28,6 +29,7 @@
                 <td class="px-6 py-4 font-semibold text-slate-200">{{ $class->name }}</td>
                 <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-lg bg-indigo-600/10 text-indigo-400 text-xs font-mono font-semibold border border-indigo-500/20">{{ $class->code }}</span></td>
                 <td class="px-6 py-4 text-slate-400 hidden md:table-cell">{{ $class->description ?? '—' }}</td>
+                <td class="px-6 py-4 text-slate-200 font-semibold">₹{{ number_format($class->registration_fee, 2) }}</td>
                 <td class="px-6 py-4 text-center">
                     @if($class->status)
                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Active</span>

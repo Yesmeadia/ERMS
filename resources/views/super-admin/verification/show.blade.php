@@ -1,7 +1,21 @@
 @extends('layouts.app')
 @section('page_title', 'Review Registration')
 @section('content')
-    <div class="max-w-4xl mx-auto">
+<div class="w-full py-6" id="review-page-wrapper">
+    <style>
+        /* Force page-level full width of review page wrapper and its layout ancestors */
+        #review-page-wrapper,
+        #review-page-wrapper > .grid {
+            width: 100% !important;
+            max-width: none !important;
+        }
+        /* Override layout's content wrapper constraint if any exists */
+        main div.pb-20,
+        main .flex-1.pb-20 {
+            max-width: none !important;
+            width: 100% !important;
+        }
+    </style>
         <div class="flex items-center gap-3 mb-6">
             <a href="{{ route('admin.verification.index') }}"
                 class="p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
@@ -26,9 +40,9 @@
             </span>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
             {{-- Student Details --}}
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-8 space-y-6 w-full">
                 {{-- Personal Information --}}
                 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
                     <h3 class="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
@@ -107,16 +121,49 @@
                     </div>
                 </div>
 
-                @if($student->remarks)
-                    <div class="bg-rose-950/30 border border-rose-800/40 rounded-2xl p-6">
-                        <h3 class="text-sm font-semibold text-rose-300 mb-2">Rejection Remarks</h3>
-                        <p class="text-sm text-rose-200">{{ $student->remarks }}</p>
+            {{-- Payment / Transaction Details --}}
+            @if($student->payment_status === 'Paid' && $student->payments->isNotEmpty())
+                <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
+                    <h3 class="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2 text-emerald-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Payment / Transaction Details
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        @foreach($student->payments as $payment)
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Transaction ID</p>
+                                <p class="text-sm text-indigo-400 font-mono font-semibold">{{ $payment->transaction_id }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Amount Paid</p>
+                                <p class="text-sm text-slate-200 font-semibold">₹{{ number_format($payment->amount, 2) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Payment Method</p>
+                                <p class="text-sm text-slate-200 font-semibold uppercase">{{ $payment->payment_method }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Paid On</p>
+                                <p class="text-sm text-slate-200 font-semibold">{{ $payment->paid_at ? $payment->paid_at->format('d M Y, h:i A') : '—' }}</p>
+                            </div>
+                        @endforeach
                     </div>
-                @endif
-            </div>
+                </div>
+            @endif
+
+            @if($student->remarks)
+                <div class="bg-rose-950/30 border border-rose-800/40 rounded-2xl p-6">
+                    <h3 class="text-sm font-semibold text-rose-300 mb-2">Rejection Remarks</h3>
+                    <p class="text-sm text-rose-200">{{ $student->remarks }}</p>
+                </div>
+            @endif
+        </div>
 
             {{-- Sidebar Actions --}}
-            <div class="space-y-6">
+            <div class="lg:col-span-4 space-y-6 w-full">
                 {{-- Photo --}}
                 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 text-center">
                     <img src="{{ $student->photo_url }}" alt="{{ $student->name }}"
