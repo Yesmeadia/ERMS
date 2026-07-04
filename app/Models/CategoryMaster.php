@@ -15,11 +15,13 @@ class CategoryMaster extends Model
     protected $fillable = [
         'name',
         'code',
+        'registration_fee',
         'status',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'registration_fee' => 'decimal:2',
     ];
 
     /**

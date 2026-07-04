@@ -318,7 +318,7 @@
                     @forelse($students as $student)
                     @php
                         $isPayable = $student->payment_status === 'Unpaid' && in_array($student->status, ['Draft', 'Rejected']);
-                        $fee = $student->class->registration_fee;
+                        $fee = $student->registration_fee;
                     @endphp
                     <tr class="hover:bg-slate-850/30 transition-all duration-150 border-b border-slate-800/20"
                         :class="selectedIds.includes('{{ $student->id }}') ? 'bg-indigo-950/15 border-indigo-800/40' : ''">

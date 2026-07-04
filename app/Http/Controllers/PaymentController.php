@@ -9,6 +9,8 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Razorpay\Api\Api;
+use Razorpay\Api\Errors\SignatureVerificationError;
 
 class PaymentController extends Controller
 {
@@ -64,9 +66,11 @@ class PaymentController extends Controller
 
         // --- 2. Payment Transaction History ---
         $payments = Payment::where('school_id', $school->id)
+            ->with(['students.class'])
             ->withCount('students')
             ->latest()
-            ->paginate(10);
+            ->take(3)
+            ->get();
 
         return view('school-admin.payments.index', compact(
             'balanceSheet',
@@ -77,6 +81,22 @@ class PaymentController extends Controller
             'totalPaidAmount',
             'totalOutstandingAmount'
         ));
+    }
+
+    /**
+     * School Admin: Display paginated Payment Transaction History activity list.
+     */
+    public function transactions(Request $request)
+    {
+        $school = Auth::user()->school;
+
+        $payments = Payment::where('school_id', $school->id)
+            ->with(['students.class'])
+            ->withCount('students')
+            ->latest()
+            ->paginate(15);
+
+        return view('school-admin.payments.transactions', compact('payments'));
     }
 
     /**
@@ -110,7 +130,7 @@ class PaymentController extends Controller
         foreach ($students as $student) {
             $classId = $student->class_id;
             $className = $student->class->name;
-            $fee = $student->class->registration_fee;
+            $fee = $student->registration_fee;
 
             $totalAmount += $fee;
 
@@ -130,7 +150,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * School Admin: Initiate payment and redirect to Axis/Freecharge Sandbox simulator.
+     * School Admin: Create a Razorpay order and redirect back to checkout with order details.
      */
     public function initiate(Request $request)
     {
@@ -142,7 +162,7 @@ class PaymentController extends Controller
 
         $school = Auth::user()->school;
 
-        // Fetch unpaid draft/rejected students
+        // Fetch unpaid students belonging to this school
         $students = Student::where('school_id', $school->id)
             ->whereIn('id', $studentIds)
             ->where('payment_status', 'Unpaid')
@@ -155,95 +175,144 @@ class PaymentController extends Controller
 
         $totalAmount = 0.00;
         foreach ($students as $student) {
-            $totalAmount += $student->class->registration_fee;
+            $totalAmount += $student->registration_fee;
         }
+
+        // Create Razorpay order (amount in paise)
+        $api = new Api(
+            config('services.razorpay.key_id'),
+            config('services.razorpay.key_secret')
+        );
+
+        $razorpayOrder = $api->order->create([
+            'receipt'         => 'ERMS_' . strtoupper(bin2hex(random_bytes(4))),
+            'amount'          => (int) round($totalAmount * 100), // paise
+            'currency'        => 'INR',
+            'payment_capture' => 1, // auto-capture
+        ]);
 
         // Create a Pending payment record
         $payment = Payment::create([
-            'school_id' => $school->id,
-            'transaction_id' => 'TXN_' . strtoupper(bin2hex(random_bytes(6))),
-            'amount' => $totalAmount,
-            'payment_method' => 'Axis-Freecharge PG',
-            'status' => 'Pending',
-            'paid_at' => null,
+            'school_id'         => $school->id,
+            'razorpay_order_id' => $razorpayOrder->id,
+            'amount'            => $totalAmount,
+            'payment_method'    => 'Razorpay',
+            'status'            => 'Pending',
+            'paid_at'           => null,
         ]);
 
-        // Attach students
+        // Attach students to this payment record
         foreach ($students as $student) {
-            $payment->students()->attach($student->id, ['amount' => $student->class->registration_fee]);
+            $payment->students()->attach($student->id, ['amount' => $student->registration_fee]);
         }
 
-        return redirect()->route('school.payments.gateway', $payment->id);
+        // Pass checkout details to the checkout view via session
+        session([
+            'razorpay_order_id'    => $razorpayOrder->id,
+            'razorpay_payment_id'  => $payment->id,  // internal DB id
+            'razorpay_amount'      => (int) round($totalAmount * 100),
+            'razorpay_student_ids' => $students->pluck('id')->toArray(),
+        ]);
+
+        // Reload the checkout view with the order now ready
+        $classBreakdown = [];
+        foreach ($students as $student) {
+            $classId   = $student->class_id;
+            $className = $student->class->name;
+            $fee       = $student->registration_fee;
+
+            if (!isset($classBreakdown[$classId])) {
+                $classBreakdown[$classId] = ['name' => $className, 'count' => 0, 'fee' => $fee, 'total' => 0.00];
+            }
+            $classBreakdown[$classId]['count']++;
+            $classBreakdown[$classId]['total'] += $fee;
+        }
+
+        return view('school-admin.payments.checkout', compact('students', 'totalAmount', 'classBreakdown'))
+            ->with([
+                'razorpayOrderId' => $razorpayOrder->id,
+                'razorpayAmount'  => (int) round($totalAmount * 100),
+                'razorpayKeyId'   => config('services.razorpay.key_id'),
+                'paymentDbId'     => $payment->id,
+                'schoolName'      => $school->name,
+                'adminEmail'      => Auth::user()->email,
+                'adminName'       => Auth::user()->name,
+            ]);
     }
 
     /**
-     * School Admin: Display Mock Axis/Freecharge Sandbox Gateway.
+     * School Admin: Handle Razorpay payment callback.
+     * Verifies HMAC-SHA256 signature before marking payment as complete.
      */
-    public function gateway(Payment $payment)
-    {
-        $school = Auth::user()->school;
-
-        if ($payment->school_id !== $school->id || $payment->status !== 'Pending') {
-            return redirect()->route('school.payments.index')->with('error', 'Invalid payment session.');
-        }
-
-        $payment->load(['students.class', 'school']);
-
-        return view('school-admin.payments.gateway', compact('payment'));
-    }
-
-    /**
-     * School Admin: Process Axis/Freecharge Gateway callback status.
-     */
-    public function process(Request $request)
+    public function callback(Request $request)
     {
         $request->validate([
-            'payment_id' => ['required', 'exists:payments,id'],
-            'status' => ['required', 'in:success,failed'],
+            'razorpay_payment_id' => ['required', 'string'],
+            'razorpay_order_id'   => ['required', 'string'],
+            'razorpay_signature'  => ['required', 'string'],
+            'payment_db_id'       => ['required', 'exists:payments,id'],
         ]);
 
-        $payment = Payment::findOrFail($request->payment_id);
-        $school = Auth::user()->school;
+        $payment = Payment::findOrFail($request->payment_db_id);
+        $school  = Auth::user()->school;
 
-        if ($payment->school_id !== $school->id) {
-            abort(403);
+        if ($payment->school_id !== $school->id || $payment->status !== 'Pending') {
+            abort(403, 'Invalid payment session.');
         }
 
-        if ($request->status === 'success') {
-            DB::transaction(function () use ($payment) {
-                $payment->status = 'Paid';
-                $payment->paid_at = now();
-                $payment->save();
+        // Verify HMAC-SHA256 signature
+        $api = new Api(
+            config('services.razorpay.key_id'),
+            config('services.razorpay.key_secret')
+        );
 
-                // Update all attached students
-                foreach ($payment->students as $student) {
-                    $student->payment_status = 'Paid';
-                    $student->status = 'Submitted';
-                    $student->save();
-
-                    activity()
-                        ->performedOn($student)
-                        ->log("Registration payment completed via Axis-Freecharge Gateway. Status updated to Submitted.");
-                }
-
-                activity()
-                    ->performedOn($payment)
-                    ->log("Axis-Freecharge PG Sandbox: Received success callback for ₹" . number_format($payment->amount, 2));
-            });
-
-            return redirect()->route('school.payments.receipt', $payment->id)->with('success', 'Payment collections successful via Axis-Freecharge PG Sandbox! Candidates submitted to board.');
-        } else {
+        try {
+            $api->utility->verifyPaymentSignature([
+                'razorpay_order_id'   => $request->razorpay_order_id,
+                'razorpay_payment_id' => $request->razorpay_payment_id,
+                'razorpay_signature'  => $request->razorpay_signature,
+            ]);
+        } catch (SignatureVerificationError $e) {
+            // Signature mismatch — mark as Failed
             DB::transaction(function () use ($payment) {
                 $payment->status = 'Failed';
                 $payment->save();
 
                 activity()
                     ->performedOn($payment)
-                    ->log("Axis-Freecharge PG Sandbox: Received failed callback.");
+                    ->log('Razorpay: Signature verification failed. Payment marked as Failed.');
             });
 
-            return redirect()->route('school.students.index')->with('error', 'Payment transaction failed or cancelled on gateway.');
+            return redirect()->route('school.students.index')
+                ->with('error', 'Payment verification failed. Please contact support if amount was debited.');
         }
+
+        // Signature verified — mark payment as complete
+        DB::transaction(function () use ($payment, $request) {
+            $payment->status               = 'Paid';
+            $payment->transaction_id       = $request->razorpay_payment_id;
+            $payment->razorpay_payment_id  = $request->razorpay_payment_id;
+            $payment->paid_at              = now();
+            $payment->save();
+
+            // Mark all attached students as paid and submitted
+            foreach ($payment->students as $student) {
+                $student->payment_status = 'Paid';
+                $student->status         = 'Submitted';
+                $student->save();
+
+                activity()
+                    ->performedOn($student)
+                    ->log('Registration payment completed via Razorpay. Status updated to Submitted.');
+            }
+
+            activity()
+                ->performedOn($payment)
+                ->log('Razorpay: Payment ' . $request->razorpay_payment_id . ' verified. ₹' . number_format($payment->amount, 2) . ' collected.');
+        });
+
+        return redirect()->route('school.payments.receipt', $payment->id)
+            ->with('success', 'Payment of ₹' . number_format($payment->amount, 2) . ' collected successfully! Candidates submitted to the board.');
     }
 
     /**
@@ -290,11 +359,12 @@ class PaymentController extends Controller
         // Metrics
         $totalCollected = Payment::where('status', 'Paid')->sum('amount');
 
-        // Outstanding calculations (Draft and unpaid students across active classes)
+        // Outstanding calculations (Draft and unpaid students across active classes/categories)
         $unpaidBreakdown = DB::table('students')
             ->join('classes', 'students.class_id', '=', 'classes.id')
+            ->leftJoin('categories', 'students.category_id', '=', 'categories.id')
             ->where('students.payment_status', 'Unpaid')
-            ->select(DB::raw('SUM(classes.registration_fee) as outstanding'))
+            ->select(DB::raw('SUM(CASE WHEN categories.registration_fee > 0 THEN categories.registration_fee ELSE classes.registration_fee END) as outstanding'))
             ->first();
 
         $totalOutstanding = $unpaidBreakdown->outstanding ?? 0.00;

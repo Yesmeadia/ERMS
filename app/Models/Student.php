@@ -218,4 +218,16 @@ class Student extends Model
 
         return (string)$rand;
     }
+
+    /**
+     * Get the student's registration fee based on CategoryMaster fee.
+     * Fallback to ClassMaster fee if Category fee is 0.00.
+     */
+    public function getRegistrationFeeAttribute()
+    {
+        if ($this->category && $this->category->registration_fee > 0) {
+            return (float) $this->category->registration_fee;
+        }
+        return $this->class ? (float) $this->class->registration_fee : 0.0;
+    }
 }

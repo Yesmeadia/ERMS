@@ -30,8 +30,9 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:50', 'unique:categories,code'],
+            'name'             => ['required', 'string', 'max:255'],
+            'code'             => ['required', 'string', 'max:50', 'unique:categories,code'],
+            'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $category = CategoryMaster::create($validated);
@@ -57,8 +58,9 @@ class CategoryController extends Controller
     public function update(Request $request, CategoryMaster $category)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:50', "unique:categories,code,{$category->id}"],
+            'name'             => ['required', 'string', 'max:255'],
+            'code'             => ['required', 'string', 'max:50', "unique:categories,code,{$category->id}"],
+            'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
         $category->update($validated);
