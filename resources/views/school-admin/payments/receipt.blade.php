@@ -43,8 +43,11 @@
                 <div
                     class="sm:text-right flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-4">
                     <div class="text-left sm:text-right mt-1">
-                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Receipt Number</p>
-                        <p class="text-sm font-mono font-bold text-slate-300 mt-0.5">{{ $payment->transaction_id }}</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Receipt / Payment ID</p>
+                        <p class="text-sm font-mono font-bold text-slate-300 mt-0.5">{{ $payment->transaction_id ?? '—' }}</p>
+                        @if($payment->razorpay_payment_id && $payment->razorpay_payment_id !== $payment->transaction_id)
+                            <p class="text-[10px] text-slate-500 font-mono mt-0.5">Razorpay Ref: {{ $payment->razorpay_payment_id }}</p>
+                        @endif
                     </div>
                 </div>
             </div>

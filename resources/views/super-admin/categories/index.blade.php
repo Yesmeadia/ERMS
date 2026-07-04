@@ -21,6 +21,7 @@
             <tr class="border-b border-slate-800/60">
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Category</th>
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Code</th>
+                <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Registration Fee</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Students</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                 <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
@@ -34,6 +35,9 @@
                 </td>
                 <td class="px-6 py-4 text-slate-400 hidden md:table-cell">
                     <span class="px-2.5 py-1 rounded-lg bg-slate-800/80 text-xs font-mono text-slate-300">{{ $category->code }}</span>
+                </td>
+                <td class="px-6 py-4 text-center font-mono font-semibold text-slate-200">
+                    ₹{{ number_format($category->registration_fee, 2) }}
                 </td>
                 <td class="px-6 py-4 text-center">
                     <span class="text-slate-300 font-medium">{{ $category->students_count }}</span>

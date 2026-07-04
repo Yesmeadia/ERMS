@@ -35,12 +35,12 @@ class SanitizeInputMiddleware
 
         // Configure Content Security Policy (CSP)
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://checkout.razorpay.com; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
                "font-src 'self' https://fonts.gstatic.com; " .
-               "img-src 'self' data: https://ui-avatars.com; " .
-               "connect-src 'self' https://challenges.cloudflare.com; " .
-               "frame-src 'self' https://challenges.cloudflare.com;";
+               "img-src 'self' data: https://ui-avatars.com https://*.razorpay.com; " .
+               "connect-src 'self' https://challenges.cloudflare.com https://api.razorpay.com; " .
+               "frame-src 'self' https://challenges.cloudflare.com https://api.razorpay.com https://checkout.razorpay.com;";
                
         $response->headers->set('Content-Security-Policy', $csp);
 

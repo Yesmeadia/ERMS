@@ -75,7 +75,7 @@
                     <div>
                         <p class="text-xl font-bold
                             {{ $student->payment_status === 'Paid' ? 'text-emerald-300' : 'text-amber-300' }}">
-                            ₹{{ number_format($student->class->registration_fee, 2) }}
+                            ₹{{ number_format($student->registration_fee, 2) }}
                         </p>
                         <p class="text-xs mt-0.5
                             {{ $student->payment_status === 'Paid' ? 'text-emerald-500' : 'text-amber-500' }}">
@@ -164,7 +164,7 @@
                     <p class="text-sm font-bold text-amber-300">Registration fee payment required</p>
                     <p class="text-xs text-amber-500/90 mt-1 leading-relaxed">
                         This candidate cannot be submitted to the board until the registration fee of
-                        <strong class="text-amber-300">₹{{ number_format($student->class->registration_fee, 2) }}</strong>
+                        <strong class="text-amber-300">₹{{ number_format($student->registration_fee, 2) }}</strong>
                         has been paid. Use the <strong class="text-amber-300">Pay Fee &amp; Submit</strong> button on the left to proceed.
                     </p>
                 </div>

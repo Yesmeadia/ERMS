@@ -160,10 +160,10 @@ Route::middleware('auth')->group(function () {
 
         // Payments & Balance Sheet
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/transactions', [PaymentController::class, 'transactions'])->name('payments.transactions');
         Route::post('/payments/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout');
         Route::post('/payments/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
-        Route::get('/payments/{payment}/gateway', [PaymentController::class, 'gateway'])->name('payments.gateway');
-        Route::post('/payments/process', [PaymentController::class, 'process'])->name('payments.process');
+        Route::post('/payments/callback', [PaymentController::class, 'callback'])->name('payments.callback');
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
 
         // Attendance Report
