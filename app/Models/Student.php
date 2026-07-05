@@ -171,7 +171,9 @@ class Student extends Model
 
         // 5. Class 3rd / Category Rainbow 3:
         if (str_contains($className, '3rd') || str_contains($classCode, '3') || str_contains($categoryName, 'rainbow 3') || str_contains($categoryName, 'rainbow3')) {
-            return $this->getRandomUniqueRegistrationNumber(30001, 39999);
+            $start = 30001;
+            $end = 39999;
+            return $this->getNextSequentialRegistrationNumber($start, $end);
         }
 
         // Fallback checks using any digits in class name or class code
