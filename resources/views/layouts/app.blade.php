@@ -495,6 +495,7 @@
         </main>
     </div>
     @stack('scripts')
+    @include('components.password-strength-policy')
 </body>
 
 </html>

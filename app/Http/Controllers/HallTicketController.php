@@ -220,6 +220,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-ticket', compact('student', 'qrDataUri', 'verifyUrl'));
         $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', true);
         
         return $pdf->stream('hall_ticket_' . $student->hall_ticket_number . '.pdf');
     }
@@ -271,6 +272,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-ticket', compact('student', 'qrDataUri', 'verifyUrl'));
         $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', true);
 
         return $pdf->download('hall_ticket_' . $student->hall_ticket_number . '.pdf');
     }
@@ -331,6 +333,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-tickets-bulk', compact('studentsData'));
         $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', true);
 
         return $pdf->stream('bulk_hall_tickets_' . time() . '.pdf');
     }
@@ -394,6 +397,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-tickets-bulk', compact('studentsData'));
         $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', true);
 
         return $pdf->download('bulk_hall_tickets_' . $school->code . '.pdf');
     }

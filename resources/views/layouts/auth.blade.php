@@ -372,6 +372,7 @@
             </div>
         </div>
     </div>
+    @include('components.password-strength-policy')
 </body>
 
 </html>
