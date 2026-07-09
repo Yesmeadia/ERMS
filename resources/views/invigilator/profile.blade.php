@@ -60,7 +60,7 @@
                         <div>
                             @if($user->school)
                                 <p class="text-sm font-semibold text-slate-200">{{ $user->school->name }}</p>
-                                <p class="text-xs text-slate-500 mt-0.5">School Code: {{ $user->school->code }} | Zone: {{ $user->school->zone }} | State: {{ $user->school->state }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">School Code: {{ $user->school->code }} | State: {{ $user->school->state }} | Zone: {{ $user->school->zone }}</p>
                             @else
                                 <p class="text-sm font-semibold text-slate-200">Board Invigilator (Unassigned)</p>
                                 <p class="text-xs text-slate-500 mt-0.5">Authorized to scan and verify hall tickets across all examination centers</p>
@@ -70,6 +70,42 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Profile Edit Panel -->
+    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-8 space-y-6 mt-6">
+        <h3 class="text-lg font-semibold text-white border-b border-slate-800/60 pb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-indigo-400">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+            Update Profile Details
+        </h3>
+        
+        <form method="POST" action="{{ route('invigilator.profile.update') }}" enctype="multipart/form-data" class="space-y-6">
+            @csrf
+            @method('PUT')
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-slate-300 mb-2">Display Name <span class="text-rose-400">*</span></label>
+                    <input type="text" id="name" name="name" required value="{{ old('name', $user->name) }}"
+                           class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('name') border-rose-500 @enderror"
+                           placeholder="Full Name">
+                    @error('name')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="profile_image" class="block text-sm font-medium text-slate-300 mb-2">Profile Picture</label>
+                    <input type="file" id="profile_image" name="profile_image" accept="image/*"
+                           class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('profile_image') border-rose-500 @enderror">
+                    <p class="text-[10px] text-slate-500 mt-1">Accepted: JPG, JPEG, PNG. Max 2MB.</p>
+                    @error('profile_image')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            <div class="flex gap-4 pt-2 border-t border-slate-800/60">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-all text-sm cursor-pointer shadow-md shadow-indigo-600/10">
+                    Save Details
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Security & Password Panel -->

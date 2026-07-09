@@ -39,23 +39,6 @@
                 @error('address')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Zone <span class="text-rose-400">*</span></label>
-                <select name="zone" required
-                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('zone') border-rose-500 @enderror">
-                    @php
-                        $defaultZones = ['South Zone', 'Central Zone', 'North Zone', 'East Zone', 'West Zone', 'Trivandrum', 'Ernakulam'];
-                        $currentZone = old('zone', $school->zone);
-                        if ($currentZone && !in_array($currentZone, $defaultZones)) {
-                            $defaultZones[] = $currentZone;
-                        }
-                    @endphp
-                    @foreach($defaultZones as $zone)
-                        <option value="{{ $zone }}" @selected($currentZone === $zone)>{{ $zone }}</option>
-                    @endforeach
-                </select>
-                @error('zone')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
-            </div>
-            <div>
                 <label class="block text-sm font-medium text-slate-300 mb-2">State <span class="text-rose-400">*</span></label>
                 <select name="state" required
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('state') border-rose-500 @enderror">
@@ -73,6 +56,23 @@
                 @error('state')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
             </div>
             <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Zone <span class="text-rose-400">*</span></label>
+                <select name="zone" required
+                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('zone') border-rose-500 @enderror">
+                    @php
+                        $defaultZones = ['South Zone', 'Central Zone', 'North Zone', 'East Zone', 'West Zone', 'Trivandrum', 'Ernakulam'];
+                        $currentZone = old('zone', $school->zone);
+                        if ($currentZone && !in_array($currentZone, $defaultZones)) {
+                            $defaultZones[] = $currentZone;
+                        }
+                    @endphp
+                    @foreach($defaultZones as $zone)
+                        <option value="{{ $zone }}" @selected($currentZone === $zone)>{{ $zone }}</option>
+                    @endforeach
+                </select>
+                @error('zone')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-300 mb-2">Contact Person <span class="text-rose-400">*</span></label>
                 <input type="text" name="contact_person" value="{{ old('contact_person', $school->contact_person) }}" required
                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('contact_person') border-rose-500 @enderror">
@@ -83,6 +83,13 @@
                 <input type="text" name="mobile_number" value="{{ old('mobile_number', $school->mobile_number) }}" required
                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('mobile_number') border-rose-500 @enderror">
                 @error('mobile_number')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+            </div>
+            <div class="md:col-span-2 flex items-center gap-3 bg-slate-950/40 border border-slate-800 rounded-xl p-4 mt-2">
+                <input type="checkbox" id="is_centre" name="is_centre" value="1" @checked(old('is_centre', $school->is_centre))
+                       class="accent-indigo-500 w-4 h-4 rounded border-slate-700/60 bg-slate-800/50 cursor-pointer">
+                <label for="is_centre" class="text-sm font-medium text-slate-350 select-none cursor-pointer">
+                    Designate as a Centre of Examination
+                </label>
             </div>
         </div>
         <div class="flex gap-4 pt-2">

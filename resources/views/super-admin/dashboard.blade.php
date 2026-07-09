@@ -122,7 +122,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script @nonce>
 document.addEventListener('DOMContentLoaded', function () {
     const baseOptions = {
         chart: { background: 'transparent', toolbar: { show: false } },

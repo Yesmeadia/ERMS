@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class School extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -20,10 +21,12 @@ class School extends Model
         'mobile_number',
         'email',
         'status',
+        'is_centre',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'is_centre' => 'boolean',
     ];
 
     /**

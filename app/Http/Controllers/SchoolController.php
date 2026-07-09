@@ -21,7 +21,7 @@ class SchoolController extends Controller
         $query = School::with('admins')->withCount('admins', 'students');
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('code', 'like', "%{$search}%")
@@ -61,12 +61,15 @@ class SchoolController extends Controller
             'contact_person' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', 'unique:schools,email', 'unique:users,email'],
+            'is_centre' => ['nullable', 'boolean'],
         ]);
+
+        $validated['is_centre'] = $request->boolean('is_centre');
 
         $school = School::create($validated);
 
         // Generate password and create first school-admin User
-        $password = Str::random(10);
+        $password = Str::random(16);
         $user = User::create([
             'name' => $school->contact_person,
             'email' => $school->email,
@@ -78,9 +81,12 @@ class SchoolController extends Controller
         $role = Role::firstOrCreate(['name' => 'school-admin', 'guard_name' => 'web']);
         $user->assignRole($role);
 
+        // Generate password set token
+        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+
         // Send email with credentials
         try {
-            Mail::to($school->email)->send(new SchoolCreatedMail($school, $user, $password));
+            Mail::to($school->email)->send(new SchoolCreatedMail($school, $user, $token));
         } catch (\Exception $e) {
             // Log the error but don't crash the request
             report($e);
@@ -124,7 +130,10 @@ class SchoolController extends Controller
             'contact_person' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', "unique:schools,email,{$school->id}", "unique:users,email,{$school->id},school_id"],
+            'is_centre' => ['nullable', 'boolean'],
         ]);
+
+        $validated['is_centre'] = $request->boolean('is_centre');
 
         $oldEmail = $school->email;
         $school->update($validated);
@@ -184,7 +193,7 @@ class SchoolController extends Controller
         $validated = $request->validate([
             'admin_name' => ['required', 'string', 'max:255'],
             'admin_email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'admin_password' => ['required', 'string', 'min:8', 'confirmed'],
+            'admin_password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
         ]);
 
         // Create user
@@ -214,7 +223,7 @@ class SchoolController extends Controller
     {
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
-            'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+            'new_password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
         ]);
 
         $user = User::where('school_id', $school->id)->findOrFail($validated['user_id']);

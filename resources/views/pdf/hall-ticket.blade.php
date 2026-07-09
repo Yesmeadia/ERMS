@@ -481,8 +481,11 @@
                         </tr>
                         <tr>
                             <td class="label-cell">Centre of Examination</td>
-                            <td class="value-cell" style="font-weight: bold;">{{ strtoupper($student->school->name) }}
-                            </td>
+                            <td class="value-cell" style="font-weight: bold;">{{ strtoupper($student->centre->name ?? 'N/A') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell">Registered School</td>
+                            <td class="value-cell" style="font-weight: bold;">{{ strtoupper($student->school->name) }}</td>
                         </tr>
                         <tr>
                             <td class="label-cell">Name of Candidate</td>

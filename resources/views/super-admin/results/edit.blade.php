@@ -85,7 +85,7 @@
                     </svg>
                     Subject-wise Scores (Optional)
                 </h4>
-                <button type="button" onclick="addSubjectRow()" class="px-3 py-1.5 rounded-lg border border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 text-indigo-400 text-xs font-bold transition-all duration-200 flex items-center gap-1 cursor-pointer">
+                <button type="button" id="add-subject-btn" class="px-3 py-1.5 rounded-lg border border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 text-indigo-400 text-xs font-bold transition-all duration-200 flex items-center gap-1 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
@@ -113,7 +113,7 @@
     </form>
 </div>
 
-<script>
+<script @nonce>
     function addSubjectRow(name = '', marks = '', max = '100') {
         const container = document.getElementById('subject-container');
         const rowId = 'row-' + Date.now() + Math.random().toString(36).substr(2, 5);
@@ -133,7 +133,7 @@
                     <input type="number" name="subject_max[]" value="${max}" placeholder="100" min="1" class="subject-max-input w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
                 </div>
                 <div class="self-end pb-1 w-full sm:w-auto flex justify-end">
-                    <button type="button" onclick="document.getElementById('${rowId}').remove(); calculateTotals();" class="p-2 rounded-lg bg-slate-900 hover:bg-rose-950/40 text-rose-400 hover:text-rose-300 transition-colors border border-rose-950/20 cursor-pointer">
+                    <button type="button" data-remove-row="${rowId}" class="remove-subject-btn p-2 rounded-lg bg-slate-900 hover:bg-rose-950/40 text-rose-400 hover:text-rose-300 transition-colors border border-rose-950/20 cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -148,6 +148,7 @@
         const row = document.getElementById(rowId);
         row.querySelector('.subject-obtained-input').addEventListener('input', calculateTotals);
         row.querySelector('.subject-max-input').addEventListener('input', calculateTotals);
+        calculateTotals();
     }
 
     // Auto calculate sum of marks
@@ -182,8 +183,21 @@
         }
     }
 
-    // Populates previous subjects
+    // Wire up Add Subject button + event delegation for remove buttons
     document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('add-subject-btn').addEventListener('click', () => addSubjectRow());
+
+        // Event delegation: handle remove buttons for dynamically-created rows
+        document.getElementById('subject-container').addEventListener('click', function(e) {
+            const btn = e.target.closest('.remove-subject-btn');
+            if (!btn) return;
+            const rowId = btn.dataset.removeRow;
+            const row = document.getElementById(rowId);
+            if (row) row.remove();
+            calculateTotals();
+        });
+
+        // Populates previous subjects
         @if($result->subject_marks && count($result->subject_marks) > 0)
             @foreach($result->subject_marks as $name => $data)
                 addSubjectRow('{{ $name }}', '{{ $data['marks'] }}', '{{ $data['max'] }}');

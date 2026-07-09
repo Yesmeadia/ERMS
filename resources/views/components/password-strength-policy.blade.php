@@ -110,7 +110,7 @@
     .psp-copy-btn:hover { color: #a5b4fc; }
 </style>
 
-<script>
+<script @nonce>
 (function () {
     'use strict';
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\ResultController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ExamCentreController;
 
 
 // 1. Guest Routes
@@ -36,15 +37,23 @@ Route::middleware('guest')->group(function () {
 
 // MFA Verification Routes (Accessible by authenticated users before completing MFA verification)
 Route::get('/login/mfa', [AuthController::class, 'showMfaVerification'])->name('login.mfa');
-Route::post('/login/mfa', [AuthController::class, 'verifyMfa'])->name('login.mfa.verify')->middleware('throttle:login');
+Route::post('/login/mfa', [AuthController::class, 'verifyMfa'])->name('login.mfa.verify')->middleware('throttle:mfa');
 
 // 2. Public Verification Route (QR Verification Portal)
-Route::get('/verify/hall-ticket/{number}', [VerificationController::class, 'verifyPublic'])->name('verification.hall-ticket');
+// Rate-limited to 10 lookups/min per IP to prevent hall ticket enumeration (CWE-330).
+Route::get('/verify/hall-ticket/{number}', [VerificationController::class, 'verifyPublic'])
+    ->middleware('throttle:verification')
+    ->name('verification.hall-ticket');
 
 // Public Results Portal
+// Rate-limited to 10 req/min per IP to prevent student enumeration via the /results/{student}/marksheet route.
 Route::get('/results/check', [ResultController::class, 'showPublicCheckForm'])->name('results.check-form');
-Route::post('/results/check', [ResultController::class, 'checkPublicResult'])->name('results.check-submit');
-Route::get('/results/{student}/marksheet', [ResultController::class, 'showPublicResult'])->name('results.marksheet');
+Route::post('/results/check', [ResultController::class, 'checkPublicResult'])
+    ->middleware('throttle:verification')
+    ->name('results.check-submit');
+Route::get('/results/{student}/marksheet', [ResultController::class, 'showPublicResult'])
+    ->middleware('throttle:verification')
+    ->name('results.marksheet');
 
 // 3. SECURE AUTHENTICATED ROUTES
 Route::middleware('auth')->group(function () {
@@ -108,6 +117,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/hall-tickets/generate-bulk', [HallTicketController::class, 'generateBulk'])->name('hall-tickets.generate-bulk');
         Route::get('/hall-tickets/{student}/print', [HallTicketController::class, 'printSingle'])->name('hall-tickets.print-single');
         Route::get('/hall-tickets/print-bulk', [HallTicketController::class, 'printBulk'])->name('hall-tickets.print-bulk');
+
+        // Exam Centres Management
+        Route::prefix('exam-centres')->name('exam-centres.')->group(function () {
+            Route::get('/', [ExamCentreController::class, 'index'])->name('index');
+            Route::post('/{school}/toggle', [ExamCentreController::class, 'toggle'])->name('toggle');
+            Route::post('/assign', [ExamCentreController::class, 'assignCentres'])->name('assign');
+            Route::post('/unassign/{student}', [ExamCentreController::class, 'unassignCentre'])->name('unassign');
+            Route::post('/assign-single/{student}', [ExamCentreController::class, 'assignSingle'])->name('assign-single');
+        });
 
         // Reports
         Route::get('/reports', [ReportController::class, 'adminIndex'])->name('reports.index');

@@ -89,7 +89,7 @@
     </form>
 
     @if(config('services.cloudflare.turnstile_site_key'))
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        <script @nonce src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     @endif
 </div>
 @endsection

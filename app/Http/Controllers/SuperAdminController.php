@@ -17,7 +17,7 @@ class SuperAdminController extends Controller
         $query = User::role('super-admin');
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
@@ -57,7 +57,7 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
         ]);
 
@@ -74,9 +74,12 @@ class SuperAdminController extends Controller
         $user = User::create($userData);
         $user->assignRole('super-admin');
 
+        // Generate password set token
+        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+
         // Send email with credentials
         try {
-            Mail::to($user->email)->send(new SuperAdminCreatedMail($user, $validated['password']));
+            Mail::to($user->email)->send(new SuperAdminCreatedMail($user, $token));
         } catch (\Exception $e) {
             report($e);
         }
@@ -127,7 +130,7 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', "unique:users,email,{$admin->id}"],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
         ]);
 

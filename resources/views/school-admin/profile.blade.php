@@ -93,14 +93,14 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-500 mb-2">Zone (Read-Only)</label>
-                    <input type="text" value="{{ $school->zone }}" disabled readonly
+                    <label class="block text-sm font-medium text-slate-500 mb-2">State (Read-Only)</label>
+                    <input type="text" value="{{ $school->state }}" disabled readonly
                            class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-400 text-sm cursor-not-allowed">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-500 mb-2">State (Read-Only)</label>
-                    <input type="text" value="{{ $school->state }}" disabled readonly
+                    <label class="block text-sm font-medium text-slate-500 mb-2">Zone (Read-Only)</label>
+                    <input type="text" value="{{ $school->zone }}" disabled readonly
                            class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-400 text-sm cursor-not-allowed">
                 </div>
 

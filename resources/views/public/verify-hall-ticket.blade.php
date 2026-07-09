@@ -314,9 +314,8 @@
                         <img src="{{ $student->photo_url }}" alt="{{ $student->name }}" class="candidate-photo">
                         <div style="flex:1;min-width:0;">
                             <div class="candidate-name">{{ $student->name }}</div>
-                            @if($student->registration_number)
-                                <div class="candidate-reg">Reg. No. {{ $student->registration_number }}</div>
-                            @endif
+                            {{-- Registration number intentionally omitted — public display (CWE-200) --}}
+                            <div class="candidate-reg">Verified Candidate</div>
                         </div>
                         @php
                             $pillClass = match($student->status) {
@@ -333,22 +332,8 @@
                     </div>
 
                     <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">Father's Name</div>
-                            <div class="info-value">{{ $student->father_name ?? '—' }}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Mother's Name</div>
-                            <div class="info-value">{{ $student->mother_name ?? '—' }}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Date of Birth</div>
-                            <div class="info-value">{{ $student->dob ? $student->dob->format('d M Y') : '—' }}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Gender</div>
-                            <div class="info-value">{{ $student->gender ?? '—' }}</div>
-                        </div>
+                        {{-- Only non-sensitive fields displayed publicly (CWE-200 remediation) --}}
+                        {{-- Father name, mother name, DOB, gender, registration number intentionally hidden --}}
                         <div class="info-item">
                             <div class="info-label">School</div>
                             <div class="info-value">{{ $student->school?->name ?? '—' }}</div>
@@ -365,6 +350,12 @@
                             <div class="info-label">Examination</div>
                             <div class="info-value">{{ $student->examination?->name ?? '—' }}</div>
                         </div>
+                    </div>
+
+                    {{-- Privacy notice --}}
+                    <div style="padding: 12px 28px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 7px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:13px;height:13px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                        Personal details (date of birth, parent names, registration number) are withheld from public display to protect candidate privacy.
                     </div>
                 </div>
 

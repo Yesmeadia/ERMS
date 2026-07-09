@@ -14,15 +14,15 @@ class SuperAdminCreatedMail extends Mailable
     use Queueable, SerializesModels;
 
     public $user;
-    public $password;
+    public $token;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(User $user, string $password)
+    public function __construct(User $user, string $token)
     {
         $this->user = $user;
-        $this->password = $password;
+        $this->token = $token;
     }
 
     /**

@@ -178,11 +178,13 @@ class PaymentController extends Controller
             $totalAmount += $student->registration_fee;
         }
 
+        // Determine Razorpay credentials dynamically based on the school's state
+        $isJK = strcasecmp($school->state, 'Jammu and Kashmir') === 0;
+        $keyId = $isJK ? config('services.razorpay_jk.key_id') : config('services.razorpay.key_id');
+        $keySecret = $isJK ? config('services.razorpay_jk.key_secret') : config('services.razorpay.key_secret');
+
         // Create Razorpay order (amount in paise)
-        $api = new Api(
-            config('services.razorpay.key_id'),
-            config('services.razorpay.key_secret')
-        );
+        $api = new Api($keyId, $keySecret);
 
         $razorpayOrder = $api->order->create([
             'receipt'         => 'ERMS_' . strtoupper(bin2hex(random_bytes(4))),
@@ -232,7 +234,7 @@ class PaymentController extends Controller
             ->with([
                 'razorpayOrderId' => $razorpayOrder->id,
                 'razorpayAmount'  => (int) round($totalAmount * 100),
-                'razorpayKeyId'   => config('services.razorpay.key_id'),
+                'razorpayKeyId'   => $keyId,
                 'paymentDbId'     => $payment->id,
                 'schoolName'      => $school->name,
                 'adminEmail'      => Auth::user()->email,
@@ -260,11 +262,13 @@ class PaymentController extends Controller
             abort(403, 'Invalid payment session.');
         }
 
+        // Determine Razorpay credentials dynamically based on the school's state
+        $isJK = strcasecmp($school->state, 'Jammu and Kashmir') === 0;
+        $keyId = $isJK ? config('services.razorpay_jk.key_id') : config('services.razorpay.key_id');
+        $keySecret = $isJK ? config('services.razorpay_jk.key_secret') : config('services.razorpay.key_secret');
+
         // Verify HMAC-SHA256 signature
-        $api = new Api(
-            config('services.razorpay.key_id'),
-            config('services.razorpay.key_secret')
-        );
+        $api = new Api($keyId, $keySecret);
 
         try {
             $api->utility->verifyPaymentSignature([
@@ -351,7 +355,8 @@ class PaymentController extends Controller
 
         // Search Transaction ID
         if ($request->filled('search')) {
-            $query->where('transaction_id', 'like', "%{$request->search}%");
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
+            $query->where('transaction_id', 'like', "%{$search}%");
         }
 
         $payments = $query->latest()->paginate(15)->withQueryString();
@@ -400,7 +405,8 @@ class PaymentController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('transaction_id', 'like', "%{$request->search}%");
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
+            $query->where('transaction_id', 'like', "%{$search}%");
         }
 
         $payments = $query->latest()->get();
@@ -419,16 +425,27 @@ class PaymentController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
+            $sanitizeCsvField = function ($value) {
+                if (is_null($value)) {
+                    return '';
+                }
+                $value = (string) $value;
+                if (strlen($value) > 0 && in_array(substr($value, 0, 1), ['=', '+', '-', '@'])) {
+                    return "'" . $value;
+                }
+                return $value;
+            };
+
             foreach ($payments as $payment) {
                 fputcsv($file, [
                     $payment->created_at->format('Y-m-d H:i:s'),
-                    $payment->school->name,
-                    $payment->school->code,
-                    $payment->transaction_id,
-                    $payment->payment_method,
+                    $sanitizeCsvField($payment->school->name),
+                    $sanitizeCsvField($payment->school->code),
+                    $sanitizeCsvField($payment->transaction_id),
+                    $sanitizeCsvField($payment->payment_method),
                     $payment->students_count ?? $payment->students()->count(),
                     $payment->amount,
-                    $payment->status,
+                    $sanitizeCsvField($payment->status),
                 ]);
             }
 

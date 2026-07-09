@@ -13,10 +13,14 @@ class SanitizeInputMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Sanitize all string inputs recursively
+        // 1. Sanitize all string inputs recursively, excluding password fields
         $input = $request->all();
-        array_walk_recursive($input, function (&$val) {
+        array_walk_recursive($input, function (&$val, $key) {
             if (is_string($val)) {
+                // Skip any field representing passwords to prevent corruption (CWE-20)
+                if (stripos($key, 'password') !== false) {
+                    return;
+                }
                 // Strip tags completely to prevent any HTML/script injection
                 $val = strip_tags($val);
             }
@@ -33,12 +37,13 @@ class SanitizeInputMiddleware
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 
-        // Configure Content Security Policy (CSP)
+        // Configure Content Security Policy (CSP) with request-scoped nonce
+        $nonce = app('csp-nonce');
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://checkout.razorpay.com; " .
+               "script-src 'self' 'nonce-{$nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://checkout.razorpay.com; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
                "font-src 'self' https://fonts.gstatic.com; " .
-               "img-src 'self' data: https://ui-avatars.com https://*.razorpay.com; " .
+               "img-src 'self' data: https://*.razorpay.com; " .
                "connect-src 'self' https://challenges.cloudflare.com https://api.razorpay.com; " .
                "frame-src 'self' https://challenges.cloudflare.com https://api.razorpay.com https://checkout.razorpay.com;";
                

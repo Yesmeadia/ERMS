@@ -428,9 +428,9 @@
 
     @push('scripts')
         {{-- Load html5-qrcode from CDN --}}
-        <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/html5-qrcode.min.js" type="text/javascript"></script>
+        <script @nonce src="https://cdn.jsdelivr.net/npm/html5-qrcode/html5-qrcode.min.js" type="text/javascript"></script>
 
-        <script>
+        <script @nonce>
             function scannerApp() {
                 return {
                     scanning: false,

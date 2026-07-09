@@ -60,6 +60,14 @@
                     <span id="file-name-indicator" class="block mt-2 text-xs text-indigo-400 font-mono hidden"></span>
                 </div>
 
+                <div class="flex items-center gap-2 py-1">
+                    <input type="checkbox" name="overwrite_existing" id="overwrite_existing" value="1"
+                           class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-indigo-500/50">
+                    <label for="overwrite_existing" class="text-xs font-semibold text-slate-350 cursor-pointer">
+                        Overwrite existing student results if found
+                    </label>
+                </div>
+
                 <div class="pt-2">
                     <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/10 cursor-pointer flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
@@ -116,7 +124,7 @@
     </div>
 </div>
 
-<script>
+<script @nonce>
     document.addEventListener('DOMContentLoaded', () => {
         const fileInput = document.getElementById('csv_file');
         const indicator = document.getElementById('file-name-indicator');

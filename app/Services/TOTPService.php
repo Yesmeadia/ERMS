@@ -29,8 +29,13 @@ class TOTPService
 
     /**
      * Verify a 6-digit TOTP code against the secret key, with clock drift tolerance.
+     *
+     * Returns the matched time-slice integer on success so callers can track
+     * code reuse within the same 30-second window. Returns false on failure.
+     *
+     * @return int|false
      */
-    public function verifyCode(string $secret, string $code, int $discrepancy = 1): bool
+    public function verifyCode(string $secret, string $code, int $discrepancy = 1): int|false
     {
         // Clean input code
         $code = str_replace(' ', '', $code);
@@ -40,9 +45,10 @@ class TOTPService
 
         $currentTimeSlice = floor(time() / 30);
         for ($i = -$discrepancy; $i <= $discrepancy; $i++) {
-            $calculatedCode = $this->calculateCode($secret, $currentTimeSlice + $i);
+            $timeSlice = $currentTimeSlice + $i;
+            $calculatedCode = $this->calculateCode($secret, $timeSlice);
             if (hash_equals($calculatedCode, $code)) {
-                return true;
+                return (int) $timeSlice; // Return slice so callers can cache it
             }
         }
         return false;

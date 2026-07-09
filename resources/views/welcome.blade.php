@@ -15,7 +15,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300&display=swap"
         rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script @nonce defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
         *,
@@ -1325,7 +1325,7 @@
     </style>
 </head>
 
-<body x-data="stateModal()" @keydown.escape.window="close()">
+<body>
     <div class="bg-wrap">
         <div class="bg-grid"></div>
         <div class="orb orb-1"></div>
@@ -1470,15 +1470,15 @@
                             <p class="card-desc">Manage student registrations, import candidate data via Excel, monitor
                                 application statuses, and bulk-download hall tickets for your institution.</p>
                         </div>
-                        <button @click="open('School Partner Portal')" class="gateway-link gateway-link-indigo"
-                            style="cursor:pointer;background:none;font-family:'Outfit',sans-serif;">
+                        <a href="{{ route('login') }}" class="gateway-link gateway-link-indigo"
+                            style="cursor:pointer;background:none;font-family:'Outfit',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                             Enter School Desk
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                                 stroke="currentColor" style="width:14px;height:14px;">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
-                        </button>
+                        </a>
                     </div>
 
                     <!-- Board Admin (featured) -->
@@ -1502,15 +1502,15 @@
                                 registrations, configure invigilators, track real-time activity logs, and process final
                                 results.</p>
                         </div>
-                        <button @click="open('Board Control Panel')" class="gateway-link"
-                            style="color:#fff;border-color:rgba(99,102,241,0.6);background:rgba(99,102,241,0.2);cursor:pointer;font-family:'Outfit',sans-serif;">
+                        <a href="{{ route('login') }}" class="gateway-link"
+                            style="color:#fff;border-color:rgba(99,102,241,0.6);background:rgba(99,102,241,0.2);cursor:pointer;font-family:'Outfit',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;justify-content:center;">
                             Board Sign In
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                                 stroke="currentColor" style="width:14px;height:14px;">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
-                        </button>
+                        </a>
                     </div>
 
                     <!-- Invigilator -->
@@ -1533,15 +1533,15 @@
                                 via barcode, mark on-site presence, and log examination session records in real time.
                             </p>
                         </div>
-                        <button @click="open('Invigilator Desk')" class="gateway-link gateway-link-cyan"
-                            style="cursor:pointer;background:none;font-family:'Outfit',sans-serif;">
+                        <a href="{{ route('login') }}" class="gateway-link gateway-link-cyan"
+                            style="cursor:pointer;background:none;font-family:'Outfit',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
                             Invigilator Access
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                                 stroke="currentColor" style="width:14px;height:14px;">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
-                        </button>
+                        </a>
                     </div>
 
                 </div>
@@ -1551,11 +1551,11 @@
             <div class="section mb-section">
                 <div class="stats-bar">
                     <div class="stat-item">
-                        <div class="stat-number">140<span style="font-size:60%;color:#818cf8;">+</span></div>
+                        <div class="stat-number">60<span style="font-size:60%;color:#818cf8;">+</span></div>
                         <div class="stat-label">Registered Schools</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">15K<span style="font-size:60%;color:#c084fc;">+</span></div>
+                        <div class="stat-number">17K<span style="font-size:60%;color:#c084fc;">+</span></div>
                         <div class="stat-label">Active Candidates</div>
                     </div>
                     <div class="stat-item">
@@ -1586,113 +1586,7 @@
 
     </div><!-- .page -->
 
-    <!-- ╔═══════════════════════════════════╗ -->
-    <!-- ║  STATE SELECTION MODAL            ║ -->
-    <!-- ╚═══════════════════════════════════╝ -->
-    <div x-cloak x-show="visible" class="modal-backdrop" @click.self="close()"
-        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-        <div class="modal-box modal-enter" x-transition:enter="transition ease-out duration-250"
-            x-transition:enter-start="opacity-0 scale-95 translate-y-2"
-            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95">
-
-            <!-- Header -->
-            <div class="modal-head">
-                <div class="modal-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
-                        stroke="currentColor" style="width:22px;height:22px;">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
-                    </svg>
-                </div>
-                <div class="modal-title" x-text="'Accessing: ' + portalName"></div>
-                <div class="modal-sub">Select your state to be directed to the correct regional portal.</div>
-            </div>
-
-            <!-- Body -->
-            <div class="modal-body">
-
-                <!-- J&K hint (shown when J&K selected) -->
-                <div class="modal-jk-hint" x-show="selectedState === 'Jammu and Kashmir'" x-cloak
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0 -translate-y-1"
-                    x-transition:enter-end="opacity-100 translate-y-0">
-                    <svg class="modal-jk-hint-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke-width="2" stroke="currentColor" style="width:16px;height:16px;margin-top:1px;">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                    </svg>
-                    <div class="modal-jk-hint-text">
-                        Jammu &amp; Kashmir uses a dedicated regional portal at <strong>JK Genius Exam Portal</strong>.
-                        You will
-                        be redirected there.
-                    </div>
-                </div>
-
-                <div class="modal-label">Select Your State / UT</div>
-                <select class="state-select" x-model="selectedState">
-                    <option value="">— Choose your state —</option>
-                    <optgroup label="States">
-                        <option>Andhra Pradesh</option>
-                        <option>Bihar</option>
-                        <option>Karnataka</option>
-                        <option>Kerala</option>
-                        <option>Maharashtra</option>
-                        <option>Rajasthan</option>
-                        <option>West Bengal</option>
-                    </optgroup>
-                    <optgroup label="Union Territories">
-                        <option>Delhi</option>
-                        <option>Jammu and Kashmir</option>
-                    </optgroup>
-                </select>
-
-                <div class="modal-actions">
-                    <button class="modal-btn-cancel" @click="close()">Cancel</button>
-                    <button class="modal-btn-proceed" :disabled="!selectedState" @click="proceed()">
-                        <span
-                            x-text="selectedState === 'Jammu and Kashmir' ? 'Go to JK Exam Portal →' : 'Continue to Login →'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alpine.js Component Logic -->
-    <script>
-        function stateModal() {
-            return {
-                visible: false,
-                selectedState: '',
-                portalName: '',
-                loginUrl: '{{ route("login") }}',
-                open(name) {
-                    this.portalName = name;
-                    this.selectedState = '';
-                    this.visible = true;
-                    // Prevent body scroll
-                    document.body.style.overflow = 'hidden';
-                },
-                close() {
-                    this.visible = false;
-                    document.body.style.overflow = '';
-                },
-                proceed() {
-                    if (!this.selectedState) return;
-                    this.close();
-                    if (this.selectedState === 'Jammu and Kashmir') {
-                        window.open('https://jkgeniusexam.cyberduce.in', '_blank', 'noopener,noreferrer');
-                    } else {
-                        window.location.href = this.loginUrl;
-                    }
-                }
-            }
-        }
-    </script>
 
 </body>
 

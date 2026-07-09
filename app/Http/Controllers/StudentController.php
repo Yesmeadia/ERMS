@@ -11,6 +11,7 @@ use App\Imports\StudentsImport;
 use App\Exports\StudentTemplateExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -21,7 +22,7 @@ class StudentController extends Controller
      */
     public function adminIndex(Request $request)
     {
-        $query = Student::with(['class', 'category', 'school', 'examination', 'attendances']);
+        $query = Student::with(['class', 'category', 'school', 'examination', 'attendances', 'centre']);
 
         if ($request->filled('examination_id')) {
             $query->where('examination_id', $request->examination_id);
@@ -57,7 +58,7 @@ class StudentController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('registration_number', 'like', "%{$search}%")
@@ -71,6 +72,7 @@ class StudentController extends Controller
         $categories   = CategoryMaster::where('status', true)->get();
         $genders      = ['Male', 'Female', 'Other'];
         $statuses     = ['Draft', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued', 'Present', 'Absent'];
+        $designatedCentres = School::where('is_centre', true)->where('status', true)->get();
 
         // Stats
         $totalCount    = Student::count();
@@ -81,7 +83,7 @@ class StudentController extends Controller
         return view('super-admin.students.index', compact(
             'students', 'examinations', 'schools', 'categories',
             'genders', 'statuses', 'totalCount', 'draftCount',
-            'submittedCount', 'approvedCount'
+            'submittedCount', 'approvedCount', 'designatedCentres'
         ));
     }
 
@@ -98,12 +100,29 @@ class StudentController extends Controller
             return back()->with('error', 'Registration number can only be issued for submitted or approved students.');
         }
 
-        $student->registration_number = $student->issueRegistrationNumber();
-        $student->save();
+        DB::transaction(function () use ($student) {
+            // Re-fetch student inside the transaction with a row lock to guard
+            // against concurrent issuance requests for the same student.
+            $locked = Student::lockForUpdate()->findOrFail($student->id);
 
-        activity()
-            ->performedOn($student)
-            ->log("Issued registration number ({$student->registration_number}) for student: {$student->name}");
+            // Double-check: another request may have already assigned a number.
+            if ($locked->registration_number) {
+                return;
+            }
+
+            $locked->registration_number = $locked->issueRegistrationNumber();
+            $locked->save();
+
+            activity()
+                ->performedOn($locked)
+                ->log("Issued registration number ({$locked->registration_number}) for student: {$locked->name}");
+
+            // Refresh the original model so the response message is correct.
+            $student->registration_number = $locked->registration_number;
+        });
+
+        // Reload to reflect any changes made inside the transaction.
+        $student->refresh();
 
         return back()->with('success', "Registration number {$student->registration_number} issued for {$student->name}.");
     }
@@ -113,8 +132,9 @@ class StudentController extends Controller
      */
     public function adminShow(Student $student)
     {
-        $student->load(['class', 'category', 'school', 'examination', 'hallTicket', 'result', 'attendances', 'payments']);
-        return view('super-admin.students.show', compact('student'));
+        $student->load(['class', 'category', 'school', 'examination', 'hallTicket', 'result', 'attendances', 'payments', 'centre']);
+        $designatedCentres = School::where('is_centre', true)->where('status', true)->get();
+        return view('super-admin.students.show', compact('student', 'designatedCentres'));
     }
 
     /**
@@ -127,7 +147,7 @@ class StudentController extends Controller
             ->with(['class', 'category', 'examination']);
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('registration_number', 'like', "%{$search}%");

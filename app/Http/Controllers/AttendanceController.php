@@ -116,6 +116,18 @@ class AttendanceController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Invalid Hall Ticket. Student record not found.'], 422);
         }
 
+        // 2.1 Data-level authorization check (CWE-285)
+        $user = Auth::user();
+        if ($user->hasRole('invigilator')) {
+            if (!$user->school_id || $student->school_id !== $user->school_id) {
+                $this->logAction($studentId, 'scan_unauthorized', $request);
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. You are only authorized to mark attendance for students from your assigned school.'
+                ], 403);
+            }
+        }
+
         // 3. Verify Hall Ticket Table Record
         $hallTicket = HallTicket::where('student_id', $studentId)
             ->where('hallticket_no', $hallticketNo)
@@ -129,9 +141,9 @@ class AttendanceController extends Controller
 
         // 4. Verify Exam Session
         $exam = Examination::find($examId);
-        if (!$exam || $exam->status === 'Closed') {
+        if (!$exam || $exam->status !== 'Open') {
             $this->logAction($studentId, 'scan_invalid', $request);
-            return response()->json(['status' => 'error', 'message' => 'Examination Closed.'], 422);
+            return response()->json(['status' => 'error', 'message' => 'This examination session is not currently active.'], 422);
         }
 
         // 5. Verify Duplicate Attendance
@@ -192,6 +204,27 @@ class AttendanceController extends Controller
         $examId = $request->exam_id;
         $user = Auth::user();
         $today = now()->toDateString();
+
+        $student = Student::findOrFail($studentId);
+        $exam = Examination::findOrFail($examId);
+
+        // Verify Exam Session is active
+        if ($exam->status !== 'Open') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This examination session is not currently active.'
+            ], 422);
+        }
+
+        // Data-level authorization check (CWE-285)
+        if ($user->hasRole('invigilator')) {
+            if (!$user->school_id || $student->school_id !== $user->school_id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. You are only authorized to mark attendance for students from your assigned school.'
+                ], 403);
+            }
+        }
 
         try {
             // F5: Wrap in a transaction so the duplicate check + insert are atomic.

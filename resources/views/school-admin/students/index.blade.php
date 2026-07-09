@@ -535,7 +535,7 @@
 </div>
 
 {{-- ─── Select All Unpaid JS helper ────────────────────────────────────────── --}}
-<script>
+<script @nonce>
     document.addEventListener('DOMContentLoaded', function () {
         const btn = document.getElementById('select-all-unpaid-btn');
         if (btn) {

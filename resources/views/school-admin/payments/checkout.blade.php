@@ -226,15 +226,14 @@
                     The Razorpay secure payment window is ready. Click above if it doesn't open automatically.
                 </p>
 
-                {{-- Razorpay Checkout JS --}}
-                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-                <script>
+                <script @nonce src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                <script @nonce>
                     const options = {
                         key: "{{ $razorpayKeyId }}",
                         amount: {{ $razorpayAmount }},
                         currency: "INR",
                         // Business name shown in modal header
-                        name: "YES GENIUS NLT SEARCH",
+                        name: "YES GENIUS NATIONAL LEVEL TALENT SEARCH",
                         // Full name visible below the header line
                         description: "YES GENIUS NATIONAL LEVEL TALENT SEARCH — Registration Fee",
                         // Organisation logo shown at top of modal

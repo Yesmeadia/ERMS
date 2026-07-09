@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Services\TOTPService;
@@ -39,11 +40,19 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        $user = User::where('email', $request->email)->first();
-        if ($user && $user->lockout_until && (strtotime($user->lockout_until) > time())) {
-            $minutes = ceil((strtotime($user->lockout_until) - time()) / 60);
+        // --- IP+email composite lockout (prevents DoS via per-account lockout) ---
+        // Key is scoped to the specific attacker's IP, so one IP cannot lock out
+        // another user for legitimate users connecting from different IPs.
+        $attemptKey = 'login_attempts_' . md5($request->ip() . '|' . strtolower($request->email));
+        $ipAttempts = Cache::get($attemptKey, 0);
+
+        if ($ipAttempts >= 10) {
+            $lockoutSeconds = Cache::getStore()->has($attemptKey . '_locked_at')
+                ? 900 - (time() - Cache::get($attemptKey . '_locked_at', time()))
+                : 900;
+            $minutes = max(1, ceil($lockoutSeconds / 60));
             return back()->withErrors([
-                'email' => "This account is temporarily locked due to multiple failed login attempts. Please try again in {$minutes} minutes.",
+                'email' => "Too many login attempts from your location. Please try again in {$minutes} minute(s) or contact support.",
             ])->onlyInput('email');
         }
 
@@ -70,7 +79,9 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
 
-            // Reset lockout status on success
+            // Reset both cache counter and account-level tracker on success
+            Cache::forget($attemptKey);
+            Cache::forget($attemptKey . '_locked_at');
             $user->failed_login_attempts = 0;
             $user->lockout_until = null;
             $user->save();
@@ -121,17 +132,29 @@ class AuthController extends Controller
             return $this->redirectUser($user);
         }
 
-        // Increment failed attempts on failure
+        // --- Increment IP+email composite attempt counter ---
+        $newCount = $ipAttempts + 1;
+        Cache::put($attemptKey, $newCount, now()->addMinutes(15));
+        if ($newCount === 10) {
+            Cache::put($attemptKey . '_locked_at', time(), now()->addMinutes(15));
+        }
+
+        // --- Also track per-account attempts for audit/admin visibility only ---
+        $user = User::where('email', $request->email)->first();
         if ($user) {
             $user->increment('failed_login_attempts');
-            if ($user->failed_login_attempts >= 5) {
-                $user->lockout_until = now()->addMinutes(15);
-                $user->save();
-                
-                activity()
-                    ->performedOn($user)
-                    ->log("Account locked due to 5 failed login attempts");
+
+            // Apply progressive server-side delay to slow down brute force
+            // without hard-locking the account (avoids DoS).
+            // Delay sequence: 3rd+ attempt → 1s, 4th → 2s, 5th → 4s ... max 8s
+            if ($user->failed_login_attempts >= 3) {
+                $delay = min((int) pow(2, $user->failed_login_attempts - 3), 8);
+                sleep($delay);
             }
+
+            activity()
+                ->performedOn($user)
+                ->log("Failed login attempt #{$user->failed_login_attempts} from IP {$request->ip()}");
         }
 
         return back()->withErrors([
@@ -224,7 +247,7 @@ class AuthController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', 'min:8'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
         ]);
 
         $status = Password::broker()->reset(
@@ -256,7 +279,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', 'min:8'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
         ]);
 
         $user = Auth::user();
@@ -293,6 +316,7 @@ class AuthController extends Controller
 
     /**
      * Verify MFA code and complete login.
+     * Includes: TOTP reuse detection, recovery code fallback, failed-attempt audit logging.
      */
     public function verifyMfa(Request $request)
     {
@@ -301,19 +325,55 @@ class AuthController extends Controller
         }
 
         $request->validate([
-            'code' => ['required', 'string', 'size:6'],
+            'code' => ['required', 'string'],
         ]);
 
         $user = User::findOrFail($request->session()->get('auth.mfa_user_id'));
-        $totp = new TOTPService();
+        $inputCode = trim($request->code);
+        $verified = false;
 
-        if ($totp->verifyCode($user->two_factor_secret, $request->code)) {
-            // Log user in
+        // --- Path A: Standard TOTP verification with reuse detection ---
+        if (strlen($inputCode) === 6 && ctype_digit($inputCode)) {
+            $totp = new TOTPService();
+            $matchedSlice = $totp->verifyCode($user->two_factor_secret, $inputCode);
+
+            if ($matchedSlice !== false) {
+                // Prevent code reuse within the same 30-second window.
+                // Cache key is scoped per user + time slice so parallel sessions don't interfere.
+                $reuseCacheKey = 'mfa_used:' . $user->id . ':' . $matchedSlice;
+                if (Cache::has($reuseCacheKey)) {
+                    // The exact same code for this time window was already consumed.
+                    activity()->causedBy($user)->log('MFA verification failed: TOTP code already used (replay attempt detected)');
+                    return back()->withErrors(['code' => 'This code has already been used. Please wait for a new code.']);
+                }
+                // Mark this time-slice code as consumed for 90s (3 windows to cover drift).
+                Cache::put($reuseCacheKey, true, now()->addSeconds(90));
+                $verified = true;
+            }
+        }
+
+        // --- Path B: Recovery code fallback (8-character alphanumeric codes) ---
+        if (!$verified && strlen($inputCode) === 8) {
+            $recoveryCodes = $user->mfa_recovery_codes ?? [];
+            foreach ($recoveryCodes as $index => $storedHash) {
+                if (Hash::check($inputCode, $storedHash)) {
+                    // Consume (remove) the recovery code so it cannot be reused.
+                    unset($recoveryCodes[$index]);
+                    $user->mfa_recovery_codes = array_values($recoveryCodes);
+                    $user->save();
+                    activity()->causedBy($user)->log('Super Admin used a MFA recovery code to log in (' . count($recoveryCodes) . ' remaining)');
+                    $verified = true;
+                    break;
+                }
+            }
+        }
+
+        if ($verified) {
             Auth::login($user);
-            
+
             // Store password hash in session
             $request->session()->put('user_password_hash', $user->password);
-            
+
             // Clear pending session state
             $request->session()->forget('auth.mfa_pending');
             $request->session()->forget('auth.mfa_user_id');
@@ -333,6 +393,9 @@ class AuthController extends Controller
 
             return $this->redirectUser($user);
         }
+
+        // Audit log every failed MFA attempt for security monitoring.
+        activity()->log('MFA verification failed for user ID ' . $user->id . ' from IP ' . $request->ip());
 
         return back()->withErrors([
             'code' => 'The provided MFA code is invalid. Please try again.',
@@ -359,6 +422,7 @@ class AuthController extends Controller
 
     /**
      * Enable MFA for Super Admin.
+     * Generates and stores hashed backup recovery codes on success.
      */
     public function enableMfa(Request $request)
     {
@@ -369,19 +433,32 @@ class AuthController extends Controller
         $user = Auth::user();
         $totp = new TOTPService();
 
-        if ($totp->verifyCode($user->two_factor_secret, $request->code)) {
+        if ($totp->verifyCode($user->two_factor_secret, $request->code) !== false) {
+            // Generate 8 one-time recovery codes (8 chars each, alphanumeric uppercase).
+            $plainCodes = [];
+            $hashedCodes = [];
+            for ($i = 0; $i < 8; $i++) {
+                $plain = strtoupper(Str::random(8));
+                $plainCodes[] = $plain;
+                $hashedCodes[] = Hash::make($plain);
+            }
+
             $user->two_factor_enabled = true;
+            $user->mfa_recovery_codes = $hashedCodes;
             $user->save();
 
             // Clear any pending MFA flags
             $request->session()->forget('auth.mfa_pending');
             $request->session()->forget('auth.mfa_user_id');
 
+            // Pass plain codes to session once so the setup view can display them.
+            $request->session()->flash('mfa_recovery_codes', $plainCodes);
+
             activity()
                 ->causedBy($user)
-                ->log('Super Admin enabled MFA (2FA)');
+                ->log('Super Admin enabled MFA (2FA) and generated 8 recovery codes');
 
-            return back()->with('success', 'Multi-Factor Authentication (2FA) has been successfully enabled for your account.');
+            return back()->with('success', 'Multi-Factor Authentication (2FA) has been successfully enabled. Save your recovery codes shown below — they will not be shown again.');
         }
 
         return back()->withErrors([

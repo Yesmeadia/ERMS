@@ -45,14 +45,14 @@
                         <span class="nav-cta-label">Dashboard</span>
                     </a>
                 @else
-                    <button @click="open('Sign In')" class="nav-cta" style="border:none;cursor:pointer;">
+                    <a href="{{ route('login') }}" class="nav-cta">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2"
                             stroke="currentColor" style="width:15px;height:15px;">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
                         </svg>
                         <span class="nav-cta-label">Sign In</span>
-                    </button>
+                    </a>
                 @endauth
             </div>
 

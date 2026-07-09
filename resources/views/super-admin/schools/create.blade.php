@@ -52,18 +52,6 @@
                     @error('address')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Zone <span
-                            class="text-rose-400">*</span></label>
-                    <select name="zone" required
-                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('zone') border-rose-500 @enderror">
-                        <option value="" disabled {{ old('zone') ? '' : 'selected' }}>Select Zone</option>
-                        @foreach(['Poonch', 'Mandi', 'Srinagar', 'Rajouri', 'Surankote', 'Jammu', 'Mendar', 'Doda', 'Rajasthan', 'South', 'North East', 'Maharashtra'] as $zone)
-                            <option value="{{ $zone }}" @selected(old('zone') === $zone)>{{ $zone }}</option>
-                        @endforeach
-                    </select>
-                    @error('zone')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">State <span
                             class="text-rose-400">*</span></label>
                     <select name="state" required
@@ -74,6 +62,18 @@
                         @endforeach
                     </select>
                     @error('state')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Zone <span
+                            class="text-rose-400">*</span></label>
+                    <select name="zone" required
+                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('zone') border-rose-500 @enderror">
+                        <option value="" disabled {{ old('zone') ? '' : 'selected' }}>Select Zone</option>
+                        @foreach(['Poonch', 'Mandi', 'Srinagar', 'Rajouri', 'Surankote', 'Jammu', 'Mendar', 'Doda', 'Rajasthan', 'South', 'North East', 'Maharashtra'] as $zone)
+                            <option value="{{ $zone }}" @selected(old('zone') === $zone)>{{ $zone }}</option>
+                        @endforeach
+                    </select>
+                    @error('zone')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Contact Person <span
@@ -90,6 +90,13 @@
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 @error('mobile_number') border-rose-500 @enderror"
                         placeholder="e.g. 9876543210">
                     @error('mobile_number')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
+                </div>
+                <div class="md:col-span-2 flex items-center gap-3 bg-slate-950/40 border border-slate-800 rounded-xl p-4 mt-2">
+                    <input type="checkbox" id="is_centre" name="is_centre" value="1" @checked(old('is_centre'))
+                           class="accent-indigo-500 w-4 h-4 rounded border-slate-700/60 bg-slate-800/50 cursor-pointer">
+                    <label for="is_centre" class="text-sm font-medium text-slate-350 select-none cursor-pointer">
+                        Designate as a Centre of Examination
+                    </label>
                 </div>
             </div>
             <div class="flex gap-4 pt-2">

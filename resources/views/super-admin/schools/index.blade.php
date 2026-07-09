@@ -35,7 +35,7 @@
         <thead>
             <tr class="border-b border-slate-800/60">
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">School</th>
-                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Zone</th>
+                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">State / Zone</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Admins</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Students</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
@@ -59,12 +59,19 @@
                             </div>
                         @endif
                         <div>
-                            <p class="font-semibold text-slate-200">{{ $school->name }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-semibold text-slate-200">{{ $school->name }}</p>
+                                @if($school->is_centre)
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                        Exam Centre
+                                    </span>
+                                @endif
+                            </div>
                             <p class="text-xs text-slate-500 mt-0.5">{{ $school->code }} · {{ $school->email }}</p>
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4 text-slate-400 hidden md:table-cell">{{ $school->zone }}, {{ $school->state }}</td>
+                <td class="px-6 py-4 text-slate-400 hidden md:table-cell">{{ $school->state }}, {{ $school->zone }}</td>
                 <td class="px-6 py-4 text-center hidden lg:table-cell">
                     <span class="text-slate-300 font-medium">{{ $school->admins_count }}</span>
                 </td>
