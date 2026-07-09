@@ -5,16 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Student extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'school_id',
         'class_id',
         'category_id',
         'examination_id',
+        'centre_id',
         'name',
         'gender',
         'dob',
@@ -41,6 +44,14 @@ class Student extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class, 'school_id');
+    }
+
+    /**
+     * Get the centre of examination that the student belongs to.
+     */
+    public function centre(): BelongsTo
+    {
+        return $this->belongsTo(School::class, 'centre_id');
     }
 
     /**
@@ -118,13 +129,25 @@ class Student extends Model
             return asset('storage/' . $this->photograph);
         }
         
-        // Generate a high quality initials placeholder using a free service or render inline SVG
+        return 'data:image/svg+xml;base64,' . base64_encode($this->generateInitialsAvatar());
+    }
+
+    /**
+     * Generate inline initials avatar SVG (CWE-200 / GDPR compliance).
+     */
+    private function generateInitialsAvatar(): string
+    {
         $initials = collect(explode(' ', $this->name))
             ->map(fn($n) => mb_substr($n, 0, 1))
             ->take(2)
             ->join('');
             
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=6366f1&color=fff&size=128&font-size=0.4';
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+            <rect fill="#6366f1" width="128" height="128" rx="16"/>
+            <text x="64" y="64" text-anchor="middle" dominant-baseline="central" fill="white" font-size="48" font-family="sans-serif" font-weight="bold">' 
+            . htmlspecialchars($initials) . 
+            '</text>
+        </svg>';
     }
 
     /**
@@ -187,22 +210,23 @@ class Student extends Model
             }
         }
 
-        // Hard fallback to a random 3xxxx number
-        return $this->getRandomUniqueRegistrationNumber(30001, 39999);
+        // Hard fallback to a sequential 3xxxx number
+        return $this->getNextSequentialRegistrationNumber(30001, 39999);
     }
 
     private function getNextSequentialRegistrationNumber(int $start, int $end): string
     {
-        $maxReg = self::whereBetween('registration_number', [(string)$start, (string)$end])
-            ->orderBy('registration_number', 'desc')
-            ->value('registration_number');
+        return DB::transaction(function () use ($start, $end) {
+            // Lock the matching rows so concurrent requests must wait until
+            // this transaction commits before they can read MAX(registration_number).
+            $maxReg = self::whereBetween('registration_number', [(string)$start, (string)$end])
+                ->orderBy('registration_number', 'desc')
+                ->lockForUpdate()
+                ->value('registration_number');
 
-        if (!$maxReg) {
-            return (string)$start;
-        }
-
-        $next = (int)$maxReg + 1;
-        return (string)$next;
+            $next = $maxReg ? (int)$maxReg + 1 : $start;
+            return (string)$next;
+        });
     }
 
     private function getRandomUniqueRegistrationNumber(int $start, int $end): string

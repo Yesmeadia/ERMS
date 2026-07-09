@@ -170,7 +170,7 @@
 
 @if(!empty($reportCharts))
 @push('scripts')
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', function () {
             const reportCharts = @json($reportCharts);
 

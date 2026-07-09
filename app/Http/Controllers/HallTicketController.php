@@ -97,10 +97,18 @@ class HallTicketController extends Controller
             return back()->with('error', 'Hall ticket can only be generated for Approved students.');
         }
 
-        // Generate number if not already exists
+        if (!$student->centre_id) {
+            return back()->with('error', 'Please assign an Examination Centre for this candidate before generating a hall ticket.');
+        }
+
+        // Generate number if not already exists.
+        // Uses cryptographically random bytes instead of sequential IDs to prevent
+        // enumeration attacks on the public verification portal (CWE-330).
         if (!$student->hall_ticket_number) {
-            $year = date('Y', strtotime($student->examination->registration_start_date));
-            $student->hall_ticket_number = 'HT-' . $year . '-' . str_pad($student->id, 6, '0', STR_PAD_LEFT);
+            do {
+                $candidate = 'HT-' . strtoupper(bin2hex(random_bytes(6)));
+            } while (\App\Models\Student::where('hall_ticket_number', $candidate)->exists());
+            $student->hall_ticket_number = $candidate;
         }
 
         // Generate registration number if not already exists
@@ -149,10 +157,24 @@ class HallTicketController extends Controller
             return back()->with('info', 'No approved students found pending hall ticket generation for this school and examination.');
         }
 
+        // Ensure all students have a designated centre before issuing hall tickets
+        $unassignedCount = Student::where('school_id', $request->bulk_school_id)
+            ->where('examination_id', $request->bulk_examination_id)
+            ->where('status', 'Approved')
+            ->whereNull('centre_id')
+            ->count();
+
+        if ($unassignedCount > 0) {
+            return back()->with('error', "{$unassignedCount} approved candidate(s) do not have an assigned Examination Centre. Please assign a centre to these candidates first.");
+        }
+
         $count = 0;
         foreach ($students as $student) {
-            $year = date('Y', strtotime($student->examination->registration_start_date));
-            $student->hall_ticket_number = 'HT-' . $year . '-' . str_pad($student->id, 6, '0', STR_PAD_LEFT);
+            // Cryptographically random hall ticket — prevents enumeration (CWE-330).
+            do {
+                $candidate = 'HT-' . strtoupper(bin2hex(random_bytes(6)));
+            } while (\App\Models\Student::where('hall_ticket_number', $candidate)->exists());
+            $student->hall_ticket_number = $candidate;
             
             if (!$student->registration_number) {
                 $student->registration_number = $student->issueRegistrationNumber();
@@ -191,7 +213,7 @@ class HallTicketController extends Controller
             return back()->with('error', 'Hall ticket has not been issued yet for this student.');
         }
 
-        $student->load(['school', 'class', 'category', 'examination', 'hallTicket']);
+        $student->load(['school', 'class', 'category', 'examination', 'hallTicket', 'centre']);
         
         $hallTicket = $student->hallTicket;
         if (!$hallTicket) {
@@ -220,7 +242,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-ticket', compact('student', 'qrDataUri', 'verifyUrl'));
         $pdf->setPaper('a4', 'portrait');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
         
         return $pdf->stream('hall_ticket_' . $student->hall_ticket_number . '.pdf');
     }
@@ -238,7 +260,7 @@ class HallTicketController extends Controller
             return back()->with('error', 'Hall ticket has not been issued yet for this student.');
         }
 
-        $student->load(['school', 'class', 'category', 'examination', 'hallTicket']);
+        $student->load(['school', 'class', 'category', 'examination', 'hallTicket', 'centre']);
 
         $hallTicket = $student->hallTicket;
         if (!$hallTicket) {
@@ -272,7 +294,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-ticket', compact('student', 'qrDataUri', 'verifyUrl'));
         $pdf->setPaper('a4', 'portrait');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
 
         return $pdf->download('hall_ticket_' . $student->hall_ticket_number . '.pdf');
     }
@@ -290,7 +312,7 @@ class HallTicketController extends Controller
         $students = Student::where('school_id', $request->school_id)
             ->where('examination_id', $request->examination_id)
             ->where('status', 'Hall Ticket Issued')
-            ->with(['school', 'class', 'category', 'examination', 'hallTicket'])
+            ->with(['school', 'class', 'category', 'examination', 'hallTicket', 'centre'])
             ->get();
 
         if ($students->isEmpty()) {
@@ -333,7 +355,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-tickets-bulk', compact('studentsData'));
         $pdf->setPaper('a4', 'portrait');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
 
         return $pdf->stream('bulk_hall_tickets_' . time() . '.pdf');
     }
@@ -352,7 +374,7 @@ class HallTicketController extends Controller
         $students = Student::where('school_id', $school->id)
             ->where('examination_id', $request->examination_id)
             ->where('status', 'Hall Ticket Issued')
-            ->with(['class', 'category', 'examination', 'hallTicket'])
+            ->with(['class', 'category', 'examination', 'hallTicket', 'centre'])
             ->get();
 
         if ($students->isEmpty()) {
@@ -397,7 +419,7 @@ class HallTicketController extends Controller
 
         $pdf = Pdf::loadView('pdf.hall-tickets-bulk', compact('studentsData'));
         $pdf->setPaper('a4', 'portrait');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
 
         return $pdf->download('bulk_hall_tickets_' . $school->code . '.pdf');
     }

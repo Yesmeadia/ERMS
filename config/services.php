@@ -45,4 +45,9 @@ return [
         'key_secret' => env('RAZORPAY_KEY_SECRET'),
     ],
 
+    'razorpay_jk' => [
+        'key_id'     => env('RAZORPAY_JK_KEY_ID'),
+        'key_secret' => env('RAZORPAY_JK_KEY_SECRET'),
+    ],
+
 ];

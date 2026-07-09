@@ -15,7 +15,7 @@ class StaffController extends Controller
         $query = User::role('invigilator')->with('school');
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
@@ -38,7 +38,7 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'school_id' => ['nullable', 'exists:schools,id'],
             'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
         ]);
@@ -58,9 +58,12 @@ class StaffController extends Controller
 
         $user->assignRole('invigilator');
 
+        // Generate password set token
+        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+
         // Send email with credentials
         try {
-            Mail::to($user->email)->send(new InvigilatorCreatedMail($user, $validated['password']));
+            Mail::to($user->email)->send(new InvigilatorCreatedMail($user, $token));
         } catch (\Exception $e) {
             report($e);
         }
@@ -95,7 +98,7 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', "unique:users,email,{$staff->id}"],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'school_id' => ['nullable', 'exists:schools,id'],
             'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
         ]);

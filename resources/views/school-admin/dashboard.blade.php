@@ -161,7 +161,7 @@
 
     @push('scripts')
         @if(!$registrationTrend->isEmpty() || array_sum($statusDistribution) > 0)
-            <script>
+            <script @nonce>
                 document.addEventListener('DOMContentLoaded', function () {
                     const baseOptions = {
                         chart: { background: 'transparent', toolbar: { show: false } },

@@ -279,7 +279,7 @@
 </div>
 
 @if(auth()->user()->hasRole('super-admin'))
-<script>
+<script @nonce>
     function markAttendance(studentId, status) {
         const url = '{{ route("admin.attendance.mark") }}';
         const payload = {

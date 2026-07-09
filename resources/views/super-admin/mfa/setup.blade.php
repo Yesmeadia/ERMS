@@ -77,7 +77,140 @@
                 </form>
             </div>
         @else
-            <!-- MFA Active Panel -->
+            {{-- One-time recovery codes display (shown immediately after enabling MFA) --}}
+            @if(session('mfa_recovery_codes'))
+                <div class="bg-amber-950/40 border border-amber-700/50 rounded-2xl p-6 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-amber-400 shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        <h3 class="text-base font-bold text-amber-300">Save Your Recovery Codes — These Will Not Be Shown Again</h3>
+                    </div>
+                    <p class="text-sm text-amber-200/80">
+                        If you ever lose access to your authenticator app, use one of these 8-character codes to sign in. Each code can only be used once. Store them in a safe place (e.g. a password manager).
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="recovery-codes-grid">
+                        @foreach(session('mfa_recovery_codes') as $code)
+                            <div class="bg-slate-950/60 border border-amber-700/30 rounded-xl px-3 py-2 text-center font-mono text-sm text-amber-300 tracking-widest recovery-code-cell">{{ $code }}</div>
+                        @endforeach
+                    </div>
+
+                    {{-- Action Buttons --}}
+                    <div class="flex flex-wrap gap-3 pt-1">
+                        {{-- Copy All --}}
+                        <button id="copy-codes-btn" type="button"
+                            class="inline-flex items-center gap-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/40 text-amber-300 hover:text-amber-200 font-semibold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer">
+                            <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                            </svg>
+                            <span id="copy-label">Copy All Codes</span>
+                        </button>
+
+                        {{-- Download .txt --}}
+                        <button id="download-codes-btn" type="button"
+                            class="inline-flex items-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-600/40 text-indigo-300 hover:text-indigo-200 font-semibold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            Download Backup Codes (.txt)
+                        </button>
+                    </div>
+
+                    {{-- Acknowledgement --}}
+                    <div class="flex items-start gap-3 pt-2 border-t border-amber-700/30 mt-2">
+                        <input type="checkbox" id="codes-saved-confirm" class="mt-0.5 accent-amber-400 w-4 h-4 shrink-0 cursor-pointer">
+                        <label for="codes-saved-confirm" class="text-xs text-amber-400/80 cursor-pointer select-none">
+                            I have saved my recovery codes in a secure location. I understand these codes will not be shown again.
+                        </label>
+                    </div>
+                    <p id="dismiss-hint" class="text-xs text-amber-400/50">✓ Check the box above to confirm you've saved your codes.</p>
+
+                    <script @nonce>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const copyBtn = document.getElementById('copy-codes-btn');
+                            const downloadBtn = document.getElementById('download-codes-btn');
+                            const confirmCheckbox = document.getElementById('codes-saved-confirm');
+
+                            if (copyBtn) {
+                                copyBtn.addEventListener('click', copyRecoveryCodes);
+                            }
+                            if (downloadBtn) {
+                                downloadBtn.addEventListener('click', downloadRecoveryCodes);
+                            }
+                            if (confirmCheckbox) {
+                                confirmCheckbox.addEventListener('change', function() {
+                                    toggleDismiss(this);
+                                });
+                            }
+                        });
+
+                        // Collect all recovery codes from the grid cells
+                        function getRecoveryCodes() {
+                            return Array.from(document.querySelectorAll('.recovery-code-cell'))
+                                        .map(el => el.textContent.trim());
+                        }
+
+                        // Copy all codes to clipboard
+                        function copyRecoveryCodes() {
+                            const codes = getRecoveryCodes();
+                            const text = codes.join('\n');
+                            navigator.clipboard.writeText(text).then(() => {
+                                const label = document.getElementById('copy-label');
+                                const icon  = document.getElementById('copy-icon');
+                                label.textContent = 'Copied!';
+                                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />';
+                                setTimeout(() => {
+                                    label.textContent = 'Copy All Codes';
+                                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />';
+                                }, 2000);
+                            }).catch(() => {
+                                alert('Unable to copy automatically. Please manually select and copy the codes.');
+                            });
+                        }
+
+                        // Download codes as a formatted .txt file
+                        function downloadRecoveryCodes() {
+                            const codes = getRecoveryCodes();
+                            const now   = new Date().toISOString().slice(0, 10);
+                            const lines = [
+                                '========================================',
+                                '  ERMS — 2FA Recovery Codes',
+                                '  Generated: ' + now,
+                                '========================================',
+                                '',
+                                'Keep these codes in a safe, offline location.',
+                                'Each code can only be used ONCE.',
+                                '',
+                            ].concat(codes.map((c, i) => `  ${i + 1}. ${c}`))
+                             .concat(['', '========================================']);
+
+                            const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+                            const url  = URL.createObjectURL(blob);
+                            const a    = document.createElement('a');
+                            a.href     = url;
+                            a.download = 'erms-recovery-codes-' + now + '.txt';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }
+
+                        // Lock/unlock the dismiss confirmation hint
+                        function toggleDismiss(checkbox) {
+                            const hint = document.getElementById('dismiss-hint');
+                            if (checkbox.checked) {
+                                hint.textContent = '✓ Recovery codes saved. You may now navigate away safely.';
+                                hint.classList.replace('text-amber-400/50', 'text-emerald-400');
+                            } else {
+                                hint.textContent = '✓ Check the box above to confirm you\'ve saved your codes.';
+                                hint.classList.replace('text-emerald-400', 'text-amber-400/50');
+                            }
+                        }
+                    </script>
+                </div>
+            @endif
+
+            {{-- MFA Active Panel --}}
             <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-8 space-y-6">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
@@ -88,6 +221,7 @@
                     <div>
                         <h3 class="text-lg font-semibold text-white">Multi-Factor Authentication (2FA) is Active</h3>
                         <p class="text-sm text-slate-400 mt-1">Your account is secured with 2FA. Every time you log in, you will be prompted for an authenticator verification code.</p>
+                        <p class="text-xs text-slate-500 mt-2">Lost your authenticator? Use an 8-character recovery code when prompted for the 2FA code on the login screen.</p>
                     </div>
                 </div>
 

@@ -38,7 +38,7 @@ class VerificationController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('registration_number', 'like', "%{$search}%");
@@ -99,22 +99,41 @@ class VerificationController extends Controller
     /**
      * Public QR Code Verification Portal.
      * Anyone can scan the QR code to load this public page.
+     *
+     * Security (CWE-200): Only the minimum fields needed to confirm ticket validity
+     * are passed to the view. Sensitive PII (father/mother names, DOB, gender,
+     * registration number, mobile) is intentionally excluded.
+     * All lookups are audit-logged for GDPR accountability.
      */
-    public function verifyPublic($number)
+    public function verifyPublic(Request $request, $number)
     {
-        // Find by hall ticket number
-        $student = Student::where('hall_ticket_number', $number)
-            ->with(['school', 'class', 'category', 'examination'])
+        // Sanitise the input — only allow characters valid in a hall ticket / reg number
+        $number = strtoupper(preg_replace('/[^A-Za-z0-9\-]/', '', $number));
+
+        // Lookup by hall ticket number (primary), then registration number (fallback)
+        // Only select columns required for validity display — exclude PII columns.
+        $safeColumns = ['id', 'name', 'photograph', 'school_id', 'class_id', 'category_id',
+                        'examination_id', 'hall_ticket_number', 'hall_ticket_issued_at', 'status'];
+
+        $student = Student::select($safeColumns)
+            ->where('hall_ticket_number', $number)
+            ->with(['school:id,name', 'class:id,name', 'category:id,name', 'examination:id,name'])
             ->first();
 
-        // Fallback check by registration number just in case
         if (!$student) {
-            $student = Student::where('registration_number', $number)
-                ->with(['school', 'class', 'category', 'examination'])
+            $student = Student::select($safeColumns)
+                ->where('registration_number', $number)
+                ->with(['school:id,name', 'class:id,name', 'category:id,name', 'examination:id,name'])
                 ->first();
         }
 
         $verified = $student && in_array($student->status, ['Approved', 'Hall Ticket Issued']);
+
+        // Audit-log every public lookup for GDPR accountability and intrusion detection.
+        // Logged regardless of outcome so failed probing attempts are also captured.
+        activity()
+            ->withProperties(['ip' => $request->ip(), 'lookup' => $number, 'found' => (bool) $student, 'verified' => $verified])
+            ->log('Public hall-ticket verification lookup');
 
         return view('public.verify-hall-ticket', compact('student', 'verified', 'number'));
     }

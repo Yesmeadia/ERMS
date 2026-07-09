@@ -150,6 +150,7 @@
                     <th class="px-5 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Category</th>
                     <th class="px-5 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Gender</th>
                     <th class="px-5 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Examination</th>
+                    <th class="px-5 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Exam Centre</th>
                     <th class="px-5 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Status</th>
                     <th class="px-5 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
@@ -225,6 +226,23 @@
                             {{ $student->examination->name ?? '—' }}
                         </td>
 
+                        {{-- Exam Centre --}}
+                        <td class="px-5 py-3.5">
+                            @if($student->centre_id)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/20" title="{{ $student->centre->name ?? '' }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                                    </svg>
+                                    {{ Str::limit($student->centre->name ?? 'Assigned', 18) }}
+                                </span>
+                            @elseif($designatedCentres->count())
+                                <span class="text-amber-500 text-[10px] italic">Unassigned</span>
+                            @else
+                                <span class="text-slate-600 text-[10px] italic">No centres</span>
+                            @endif
+                        </td>
+
                         {{-- Status Badge --}}
                         <td class="px-5 py-3.5 text-center">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border {{ $badgeClass }}">
@@ -246,6 +264,27 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
                                 </a>
+
+                                {{-- Inline Centre Assign --}}
+                                @if($designatedCentres->count())
+                                    <form method="POST" action="{{ route('exam-centres.assign-single', $student->id) }}" class="inline-flex items-center gap-1">
+                                        @csrf
+                                        <select name="centre_id" id="centre-sel-{{ $student->id }}"
+                                            class="text-xs px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700/60 text-slate-300 focus:outline-none focus:border-teal-500/50 max-w-[110px]">
+                                            <option value="">— Centre —</option>
+                                            @foreach($designatedCentres as $centre)
+                                                <option value="{{ $centre->id }}" @selected($student->centre_id == $centre->id)>{{ $centre->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" id="assign-centre-{{ $student->id }}"
+                                            class="p-1.5 rounded-lg bg-teal-600/80 hover:bg-teal-500 text-white transition-colors"
+                                            title="Assign Centre">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endif
 
                                 {{-- Issue Registration Number Button --}}
                                 @if(!$student->registration_number && in_array($student->status, ['Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued']))
@@ -273,7 +312,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-16 text-center">
+                        <td colspan="9" class="px-6 py-16 text-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mx-auto text-slate-700 mb-3">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
                             </svg>

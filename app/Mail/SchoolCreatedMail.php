@@ -16,16 +16,16 @@ class SchoolCreatedMail extends Mailable
 
     public $school;
     public $user;
-    public $password;
+    public $token;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(School $school, User $user, string $password)
+    public function __construct(School $school, User $user, string $token)
     {
         $this->school = $school;
         $this->user = $user;
-        $this->password = $password;
+        $this->token = $token;
     }
 
     /**

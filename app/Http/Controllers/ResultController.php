@@ -45,7 +45,7 @@ class ResultController extends Controller
 
         // Search name/reg/hall ticket
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('registration_number', 'like', "%{$search}%")
@@ -299,7 +299,8 @@ class ResultController extends Controller
         }
 
         $rowNumber = 1;
-        $successCount = 0;
+        $createdCount = 0;
+        $updatedCount = 0;
         $errors = [];
 
         while (($row = fgetcsv($handle)) !== false) {
@@ -342,6 +343,13 @@ class ResultController extends Controller
                 continue;
             }
 
+            // Check if result already exists and handle overwrite option
+            $existingResult = StudentResult::where('student_id', $student->id)->first();
+            if ($existingResult && !$request->boolean('overwrite_existing')) {
+                $errors[] = "Row {$rowNumber}: Student (Reg: '{$student->registration_number}') already has a result record. Select 'Overwrite existing student results' option to overwrite.";
+                continue;
+            }
+
             // Grade
             $grade = $gradeIdx !== false ? trim($row[$gradeIdx]) : '';
             $percentage = round(($obtained / $max) * 100, 2);
@@ -377,21 +385,28 @@ class ResultController extends Controller
                 ]
             );
 
-            $successCount++;
+            if ($existingResult) {
+                $updatedCount++;
+            } else {
+                $createdCount++;
+            }
         }
 
         fclose($handle);
 
-        activity()->log("Bulk imported {$successCount} exam results for examination: {$exam->name} via CSV");
+        $successCount = $createdCount + $updatedCount;
+        $msgDetails = "Processed {$successCount} results successfully ({$createdCount} created" . ($updatedCount > 0 ? ", {$updatedCount} updated" : "") . ").";
+
+        activity()->log("Bulk imported {$successCount} exam results for examination: {$exam->name} via CSV (Created: {$createdCount}, Updated: {$updatedCount})");
 
         if (!empty($errors)) {
-            $msg = "Imported {$successCount} results successfully. However, encountered issues on some rows:";
+            $msg = "{$msgDetails} However, encountered issues on some rows:";
             return redirect()->route('admin.results.index')
                 ->with('success', $msg)
                 ->withErrors($errors);
         }
 
-        return redirect()->route('admin.results.index')->with('success', "Imported {$successCount} results successfully.");
+        return redirect()->route('admin.results.index')->with('success', "{$msgDetails}");
     }
 
     /**
@@ -430,8 +445,16 @@ class ResultController extends Controller
             return back()->with('error', 'Exam results for this candidate have not been declared yet or are withheld.')->withInput();
         }
 
-        // 3. Set temporary authorization session key to secure direct access URLs
-        session(['result_authorized_student_id' => $student->id]);
+        // 3. Bind authorization to the exact credentials supplied, not just the student ID.
+        // Using HMAC-SHA256 keyed with APP_KEY means the token cannot be forged by anyone
+        // who only knows the student ID — they must also supply the correct DOB, and cannot
+        // construct the MAC without the application secret (CWE-807 remediation).
+        $authToken = hash_hmac(
+            'sha256',
+            $student->registration_number . '|' . $student->dob->format('Y-m-d') . '|' . $student->id,
+            config('app.key')
+        );
+        session(['result_auth_token' => $authToken]);
 
         return redirect()->route('results.marksheet', $student->id);
     }
@@ -441,12 +464,23 @@ class ResultController extends Controller
      */
     public function showPublicResult(Student $student)
     {
-        // Prevent random result scraping by forcing forms check
-        if (session('result_authorized_student_id') !== $student->id) {
-            return redirect()->route('results.check-form')->with('error', 'Unauthorized access. Please query candidate details from this search portal.');
+        // Recompute the expected HMAC for this student using the same inputs used during
+        // the search submission. If the session token does not match, the visitor either
+        // never searched for this student or tampered with the URL / session.
+        // This prevents unauthorized access even if a session ID is leaked (CWE-807).
+        $student->load(['result', 'school', 'class', 'category', 'examination']);
+
+        $expectedToken = hash_hmac(
+            'sha256',
+            $student->registration_number . '|' . $student->dob->format('Y-m-d') . '|' . $student->id,
+            config('app.key')
+        );
+
+        if (!hash_equals($expectedToken, (string) session('result_auth_token', ''))) {
+            return redirect()->route('results.check-form')
+                ->with('error', 'Unauthorized access. Please query candidate details from this search portal.');
         }
 
-        $student->load(['result', 'school', 'class', 'category', 'examination']);
         $result = $student->result;
 
         return view('public.results.show', compact('student', 'result'));

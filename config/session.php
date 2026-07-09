@@ -197,6 +197,18 @@ return [
     |
     | Supported: "lax", "strict", "none", null
     |
+    | SECURITY NOTE (CWE advisory — SameSite/payment redirect):
+    | "strict" is intentionally kept here. The Razorpay payment integration
+    | uses the Razorpay JS SDK with an in-page modal overlay — it does NOT
+    | perform a server-side redirect to an external domain. After the user
+    | completes payment, the JS handler() callback populates hidden form fields
+    | and submits them via a same-origin POST to /school/payments/callback.
+    | SameSite=Strict only blocks cookies on cross-site requests; same-origin
+    | form submissions always include the session cookie regardless of this
+    | setting. If the payment flow is ever changed to a redirect-based model
+    | (e.g. UPI intent app switching or bank NetBanking redirects that return
+    | via a separate top-level navigation), change this to "lax".
+    |
     */
 
     'same_site' => env('SESSION_SAME_SITE', 'strict'),

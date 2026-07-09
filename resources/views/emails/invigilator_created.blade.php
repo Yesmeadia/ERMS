@@ -223,19 +223,20 @@
                     <p>&bull; <strong>Assigned Center / School:</strong> Board Invigilator (Unassigned - All Centers)</p>
                 @endif
 
-                <p style="margin-top: 10px;"><strong>Login Credentials:</strong></p>
+                <p style="margin-top: 10px;"><strong>Account Login Details:</strong></p>
                 <p>&bull; <strong>Username / Email:</strong> <code>{{ $user->email }}</code></p>
-                <p>&bull; <strong>Temporary Password:</strong> <code>{{ $password }}</code></p>
             </div>
 
             <div class="button-wrapper">
-                <a href="{{ route('login') }}" class="btn-primary" target="_blank">Access Login Portal</a>
+                <a href="{{ route('password.reset', ['token' => $token, 'email' => $user->email]) }}" class="btn-primary" target="_blank">Set Your Password</a>
             </div>
 
-            <p class="link-fallback">If the button above does not work, copy and paste this link into your browser:<br><a href="{{ route('login') }}">{{ route('login') }}</a></p>
+            <p class="link-fallback">If the button above does not work, copy and paste this link into your browser:<br>
+                <a href="{{ route('password.reset', ['token' => $token, 'email' => $user->email]) }}">{{ route('password.reset', ['token' => $token, 'email' => $user->email]) }}</a>
+            </p>
 
             <div class="info-box" style="border-left: 3px solid #f59e0b;">
-                <p style="color: #d97706;"><strong>Security Notice:</strong> This is a temporary password. You are required to log in and change your password immediately upon your first login under <strong>My Profile > Update Password</strong>.</p>
+                <p style="color: #d97706;"><strong>Security Notice:</strong> You are required to click the button above to set your password before logging in for the first time.</p>
             </div>
 
             <p class="signature">Warm regards,<br><strong>Yes Genius Exam Board</strong></p>

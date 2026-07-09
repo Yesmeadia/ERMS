@@ -174,7 +174,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script @nonce>
 document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.querySelector('select[name="category_id"]');
     const classSelect = document.querySelector('select[name="class_id"]');

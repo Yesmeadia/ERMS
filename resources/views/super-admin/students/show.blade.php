@@ -149,6 +149,30 @@
                         Edit Exam Result
                     </a>
                 @endif
+
+                {{-- Assign Examination Centre (Single Candidate) --}}
+                @if(in_array($student->status, ['Submitted', 'Under Review', 'Approved']))
+                    <div class="border-t border-slate-800/80 pt-3.5 mt-3.5">
+                        <form method="POST" action="{{ route('admin.exam-centres.assign-single', $student->id) }}">
+                            @csrf
+                            <label for="profile_centre_id" class="block text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1.5">Assign Examination Centre</label>
+                            <div class="flex gap-2">
+                                <select name="centre_id" id="profile_centre_id" required
+                                        class="flex-1 bg-slate-800 border border-slate-700/60 rounded-xl px-3 py-2 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                                    <option value="" disabled {{ $student->centre_id ? '' : 'selected' }}>Select Centre...</option>
+                                    @foreach($designatedCentres as $centre)
+                                        <option value="{{ $centre->id }}" @selected($student->centre_id === $centre->id)>
+                                            {{ $centre->name }} ({{ $centre->code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all cursor-pointer">
+                                    Assign
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -223,6 +247,16 @@
                     <div>
                         <span class="block text-slate-500 text-xs">School Code</span>
                         <span class="text-slate-200 font-mono font-semibold mt-1 block">{{ $student->school->code ?? '—' }}</span>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <span class="block text-slate-500 text-xs">Centre of Examination</span>
+                        @if($student->centre)
+                            <span class="text-indigo-400 font-bold mt-1 block">{{ $student->centre->name }} ({{ $student->centre->code }})</span>
+                        @else
+                            <span class="text-amber-500 font-semibold mt-1 block italic flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending Centre Assignment
+                            </span>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -292,7 +292,7 @@
         }
     </style>
     <!-- Alpine.js (via CDN for stability) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script @nonce defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 <body class="h-full antialiased text-slate-100 flex overflow-x-hidden">
