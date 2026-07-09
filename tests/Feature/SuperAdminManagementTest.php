@@ -98,8 +98,8 @@ class SuperAdminManagementTest extends TestCase
         $responseStore = $this->actingAs($this->superAdmin)->post(route('admin.admins.store'), [
             'name' => 'Second Super Admin',
             'email' => 'second@erms.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password@123',
+            'password_confirmation' => 'Password@123',
         ]);
 
         $responseStore->assertRedirect(route('admin.admins.index'));
@@ -124,8 +124,8 @@ class SuperAdminManagementTest extends TestCase
         $responseStoreBlocked = $this->actingAs($this->superAdmin)->post(route('admin.admins.store'), [
             'name' => 'Third Super Admin',
             'email' => 'third@erms.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password@123',
+            'password_confirmation' => 'Password@123',
         ]);
 
         $responseStoreBlocked->assertRedirect(route('admin.admins.index'));
