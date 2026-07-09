@@ -125,7 +125,7 @@ class HallTicketController extends Controller
             ['student_id' => $student->id],
             [
                 'hallticket_no' => $student->hall_ticket_number,
-                'qr_token' => $student->hallTicket->qr_token ?? bin2hex(random_bytes(32)),
+                'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
                 'issue_date' => now(),
                 'status' => 'Issued',
             ]
@@ -189,7 +189,7 @@ class HallTicketController extends Controller
                 ['student_id' => $student->id],
                 [
                     'hallticket_no' => $student->hall_ticket_number,
-                    'qr_token' => $student->hallTicket->qr_token ?? bin2hex(random_bytes(32)),
+                    'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
                     'issue_date' => now(),
                     'status' => 'Issued',
                 ]

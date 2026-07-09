@@ -184,8 +184,8 @@ class ProfileTest extends TestCase
         $response = $this->actingAs($this->invigilator)
             ->post(route('password.update'), [
                 'current_password' => 'password',
-                'password' => 'newpassword123',
-                'password_confirmation' => 'newpassword123',
+                'password' => 'NewPassword@123',
+                'password_confirmation' => 'NewPassword@123',
             ]);
 
         $response->assertRedirect(route('login'));
@@ -194,7 +194,7 @@ class ProfileTest extends TestCase
         // Try to login with new password
         $this->assertTrue(auth()->attempt([
             'email' => 'invigilator@test.com',
-            'password' => 'newpassword123',
+            'password' => 'NewPassword@123',
         ]));
     }
 }
