@@ -162,10 +162,19 @@ class StudentController extends Controller
             $query->where('examination_id', $request->examination_id);
         }
 
-        $students = $query->latest()->paginate(15);
+        $students = $query->latest()->paginate(15)->withQueryString();
         $examinations = Examination::all();
 
-        return view('school-admin.students.index', compact('students', 'examinations'));
+        // All unpaid students across ALL pages (ignores current filters/pagination)
+        // used for the "Pay All Unpaid" banner button total count + hidden inputs
+        $allUnpaidIds = Student::where('school_id', $school->id)
+            ->where('payment_status', 'Unpaid')
+            ->whereIn('status', ['Draft', 'Rejected'])
+            ->pluck('id')
+            ->all();
+        $unpaidTotal = count($allUnpaidIds);
+
+        return view('school-admin.students.index', compact('students', 'examinations', 'allUnpaidIds', 'unpaidTotal'));
     }
 
     /**
