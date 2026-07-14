@@ -19,8 +19,8 @@
                     </svg>
                 </div>
                 <div class="space-y-2">
-                    <h4 class="text-base font-bold text-white">Processing Payment</h4>
-                    <p class="text-xs text-slate-400">Verifying transaction with Razorpay. Please wait...</p>
+                    <h4 class="text-base font-bold text-white">Redirecting to Cashfree</h4>
+                    <p class="text-xs text-slate-400">Opening secure Cashfree payment portal. Please wait...</p>
                 </div>
             </div>
         </div>
@@ -38,12 +38,12 @@
             </a>
             <div>
                 <h2 class="text-lg font-extrabold text-white tracking-tight">Confirm checkout &amp; pay</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Verify candidate details before proceeding to Razorpay portal.
+                <p class="text-xs text-slate-400 mt-0.5">Verify candidate details before proceeding to Cashfree portal.
                 </p>
             </div>
         </div>
-        {{-- Razorpay Trust Badge --}}
-        @isset($razorpayOrderId)
+        {{-- Cashfree Trust Badge --}}
+        @isset($cashfreeOrderId)
             <div
                 class="flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-800/30 text-emerald-400 text-[10px] font-bold px-4 py-2 rounded-full self-start sm:self-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
@@ -51,7 +51,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286z" />
                 </svg>
-                Secured by Razorpay
+                Secured by Cashfree
             </div>
         @endisset
     </div>
@@ -104,7 +104,7 @@
                                         class="text-[9px] font-mono text-slate-500 block mt-0.5">{{ $student->registration_number ?? 'No Reg ID' }}</span>
                                 </td>
                                 <td class="py-3 text-center text-slate-350 font-mono">
-                                    {{ $student->class->code }}
+                                    {{ $student->class->name }}
                                 </td>
                                 <td class="py-3 text-center text-slate-350">
                                     {{ $student->category->name ?? '—' }}
@@ -165,10 +165,10 @@
                     <p class="text-3xl font-black text-white font-mono mt-1">₹{{ number_format($totalAmount, 2) }}</p>
                 </div>
                 <div class="text-xs text-slate-500 leading-normal max-w-xs">
-                    @isset($razorpayOrderId)
+                    @isset($cashfreeOrderId)
                         <span class="block text-[10px] text-emerald-500 font-mono font-semibold mb-1">Order ID:
-                            {{ $razorpayOrderId }}</span>
-                        PCI-DSS compliant payment processing handled securely by Razorpay.
+                            {{ $cashfreeOrderId }}</span>
+                        PCI-DSS compliant payment processing handled securely by Cashfree.
                     @else
                         Create order to generate payment gateway details.
                     @endisset
@@ -176,9 +176,16 @@
             </div>
 
             {{-- ── STEP 1: First visit — show "Pay Now" which posts to initiate() ──────── --}}
-            @empty($razorpayOrderId)
-            <form method="POST" action="{{ route('school.payments.initiate') }}" @submit="processing = true"
-                id="initiate-form">
+            @empty($cashfreeOrderId)
+            {{-- CWE-602 (Finding 6): Server-side duplicate prevention handles idempotency.
+                 The button is disabled after click only as a UX improvement, not a security boundary. --}}
+            <form method="POST" action="{{ route('school.payments.initiate') }}"
+                id="initiate-form"
+                x-on:submit="
+                    $el.querySelector('button[type=submit]').disabled = true;
+                    $el.querySelector('button[type=submit]').textContent = 'Redirecting…';
+                    processing = true;
+                ">
                 @csrf
                 @foreach($students as $student)
                     <input type="hidden" name="student_ids[]" value="{{ $student->id }}">
@@ -186,13 +193,13 @@
 
                 <div class="space-y-4">
                     <button type="submit"
-                        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/30 text-sm cursor-pointer flex items-center justify-center gap-2 duration-200 active:scale-[0.98]">
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-sm cursor-pointer flex items-center justify-center gap-2 duration-200 active:scale-[0.98]">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                             stroke="currentColor" class="w-4 h-4">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                         </svg>
-                        Pay Now with Razorpay
+                        Pay Now with Cashfree
                     </button>
                     <p class="text-[10px] text-slate-500 text-center">
                         This action redirects requests securely and generates a checkout session.
@@ -201,20 +208,13 @@
             </form>
             @endisset
 
-            {{-- ── STEP 2: Returned from initiate() — open Razorpay modal automatically ─ --}}
-            @isset($razorpayOrderId)
-                {{-- Hidden callback form — submitted by Razorpay JS on success --}}
-                <form method="POST" action="{{ route('school.payments.callback') }}" id="razorpay-callback-form"
-                    @submit="processing = true">
-                    @csrf
-                    <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
-                    <input type="hidden" name="razorpay_order_id" id="razorpay_order_id" value="{{ $razorpayOrderId }}">
-                    <input type="hidden" name="razorpay_signature" id="razorpay_signature">
-                    <input type="hidden" name="payment_db_id" value="{{ $paymentDbId }}">
-                </form>
+            {{-- ── STEP 2: Returned from initiate() — open Cashfree checkout automatically ─ --}}
+            @isset($cashfreeOrderId)
+                {{-- CWE-391 / CWE-703: Inline error banner for SDK and session errors --}}
+                <div id="cf-error-banner" class="hidden mb-4 p-4 bg-rose-950/30 border border-rose-800/40 text-rose-300 rounded-2xl text-xs leading-relaxed"></div>
 
-                <button type="button" id="razorpay-trigger-btn"
-                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/30 text-sm cursor-pointer flex items-center justify-center gap-2 duration-200 active:scale-[0.98]">
+                <button type="button" id="cashfree-trigger-btn"
+                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-sm cursor-pointer flex items-center justify-center gap-2 duration-200 active:scale-[0.98]">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                         stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -223,79 +223,76 @@
                     Complete Payment — ₹{{ number_format($totalAmount, 2) }}
                 </button>
                 <p class="text-[10px] text-slate-500 text-center mt-3">
-                    The Razorpay secure payment window is ready. Click above if it doesn't open automatically.
+                    The Cashfree secure payment portal is ready. Click above if it doesn't open automatically.
                 </p>
 
-                <script @nonce src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                {{-- Cashfree JS SDK v3 --}}
+                <script @nonce src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
                 <script @nonce>
-                    const options = {
-                        key: "{{ $razorpayKeyId }}",
-                        amount: {{ $razorpayAmount }},
-                        currency: "INR",
-                        // Business name shown in modal header
-                        name: "YES GENIUS NATIONAL LEVEL TALENT SEARCH",
-                        // Full name visible below the header line
-                        description: "YES GENIUS NATIONAL LEVEL TALENT SEARCH — Registration Fee",
-                        // Organisation logo shown at top of modal
-                        image: "{{ asset('icon.png') }}",
-                        order_id: "{{ $razorpayOrderId }}",
-                        prefill: {
-                            name: "{{ $adminName }}",
-                            email: "{{ $adminEmail }}",
-                        },
-                        // Make UPI the default / first shown method
-                        config: {
-                            display: {
-                                blocks: {
-                                    upi: {
-                                        name: "Pay via UPI",
-                                        instruments: [
-                                            { method: "upi" }
-                                        ]
-                                    },
-                                    other: {
-                                        name: "Other Payment Methods",
-                                        instruments: [
-                                            { method: "card" },
-                                            { method: "netbanking" },
-                                            { method: "wallet" }
-                                        ]
-                                    }
-                                },
-                                sequence: ["block.upi", "block.other"],
-                                preferences: {
-                                    show_default_blocks: false
+                    (function () {
+                        const errorBanner = document.getElementById('cf-error-banner');
+                        const triggerBtn  = document.getElementById('cashfree-trigger-btn');
+
+                        function showError(msg) {
+                            errorBanner.textContent = msg;
+                            errorBanner.classList.remove('hidden');
+                            triggerBtn.disabled = false;
+                            triggerBtn.innerHTML = triggerBtn.innerHTML.replace('Opening…', 'Complete Payment — ₹{{ number_format($totalAmount, 2) }}');
+                        }
+
+                        // CWE-391 / CWE-703: Wrap SDK initialisation in try-catch
+                        let cashfree;
+                        try {
+                            cashfree = Cashfree({
+                                mode: "{{ $cashfreeEnv === 'production' ? 'production' : 'sandbox' }}"
+                            });
+                        } catch (e) {
+                            showError('Failed to load the Cashfree payment SDK. Please disable any ad-blockers, check your internet connection and try again.');
+                            return;
+                        }
+
+                        function openCashfreeCheckout() {
+                            triggerBtn.disabled = true;
+                            errorBanner.classList.add('hidden');
+
+                            const checkoutOptions = {
+                                paymentSessionId: "{{ $paymentSessionId }}",
+                                redirectTarget: "_self",
+                            };
+
+                            // CWE-703: Handle expired or invalid sessions gracefully
+                            try {
+                                const result = cashfree.checkout(checkoutOptions);
+                                if (result && typeof result.then === 'function') {
+                                    result.catch(function (err) {
+                                        const msg = (err && err.message) ? err.message : String(err);
+                                        if (msg.toLowerCase().includes('session') || msg.toLowerCase().includes('expired')) {
+                                            showError('Your payment session has expired. Please go back and start again.');
+                                        } else {
+                                            showError('Payment could not be opened: ' + msg + '. Please try again or contact support.');
+                                        }
+                                    });
+                                }
+                            } catch (e) {
+                                // CWE-391 / CWE-703: Catch synchronous errors (e.g. network down, SDK not loaded)
+                                if (e.message && (e.message.toLowerCase().includes('session') || e.message.toLowerCase().includes('expired'))) {
+                                    showError('Your payment session has expired. Please go back and start again.');
+                                } else {
+                                    showError('Could not open the payment portal: ' + (e.message || 'Unknown error') + '. Check your internet connection and try again.');
                                 }
                             }
-                        },
-                        theme: {
-                            color: "#23ed26ff"
-                        },
-                        handler: function (response) {
-                            // Populate hidden form fields and submit for server-side verification
-                            document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
-                            document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
-                            document.getElementById('razorpay_signature').value = response.razorpay_signature;
-                            document.getElementById('razorpay-callback-form').submit();
-                        },
-                        modal: {
-                            ondismiss: function () {
-                                console.log('Razorpay modal dismissed.');
-                            }
                         }
-                    };
 
-                    const rzp = new Razorpay(options);
+                        // Auto-open on page load
+                        window.addEventListener('load', function () {
+                            openCashfreeCheckout();
+                        });
 
-                    // Auto-open on page load
-                    window.addEventListener('load', function () {
-                        rzp.open();
-                    });
-
-                    // Also allow manual trigger via button
-                    document.getElementById('razorpay-trigger-btn').addEventListener('click', function () {
-                        rzp.open();
-                    });
+                        // Also allow manual trigger via button
+                        triggerBtn.addEventListener('click', function () {
+                            openCashfreeCheckout();
+                        });
+                    })();
                 </script>
             @endisset
 

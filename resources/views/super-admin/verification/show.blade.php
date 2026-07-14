@@ -103,8 +103,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Class</p>
-                            <p class="text-sm text-slate-200">{{ $student->class->name ?? '—' }}
-                                ({{ $student->class->code ?? '' }})</p>
+                            <p class="text-sm text-slate-200">{{ $student->class->name ?? '—' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Category</p>

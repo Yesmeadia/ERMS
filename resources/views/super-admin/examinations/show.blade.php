@@ -10,11 +10,13 @@
         @php
             $statusColors = [
                 'Draft' => 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-                'Open' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                'Closed' => 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+                'Registration Started' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                'Registartion closed' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                'Examination Ongoing' => 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                'result published' => 'bg-purple-500/10 text-purple-400 border-purple-500/20',
             ];
         @endphp
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border {{ $statusColors[$examination->status] ?? '' }}">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border {{ $statusColors[$examination->status] ?? 'bg-slate-500/10 text-slate-400 border-slate-500/20' }}">
             {{ $examination->status }}
         </span>
     </div>
@@ -52,7 +54,7 @@
     {{-- Actions --}}
     <div class="flex items-center gap-3">
         <a href="{{ route('admin.examinations.edit', $examination) }}" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-xl transition-all text-sm">Edit</a>
-        @foreach(['Draft', 'Open', 'Closed'] as $s)
+        @foreach(['Draft', 'Registration Started', 'Registartion closed', 'Examination Ongoing', 'result published'] as $s)
             @if($s !== $examination->status)
             <form method="POST" action="{{ route('admin.examinations.update-status', $examination) }}">
                 @csrf

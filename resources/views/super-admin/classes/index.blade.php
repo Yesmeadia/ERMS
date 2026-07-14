@@ -16,8 +16,6 @@
         <thead>
             <tr class="border-b border-slate-800/60">
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Class Name</th>
-                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Code</th>
-                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Description</th>
                 <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Registration Fee</th>
                 <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                 <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
@@ -27,8 +25,6 @@
             @forelse($classes as $class)
             <tr class="hover:bg-slate-800/20 transition-colors">
                 <td class="px-6 py-4 font-semibold text-slate-200">{{ $class->name }}</td>
-                <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-lg bg-indigo-600/10 text-indigo-400 text-xs font-mono font-semibold border border-indigo-500/20">{{ $class->code }}</span></td>
-                <td class="px-6 py-4 text-slate-400 hidden md:table-cell">{{ $class->description ?? '—' }}</td>
                 <td class="px-6 py-4 text-slate-200 font-semibold">₹{{ number_format($class->registration_fee, 2) }}</td>
                 <td class="px-6 py-4 text-center">
                     @if($class->status)
@@ -58,7 +54,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="5" class="px-6 py-16 text-center text-slate-500">No classes found. <a href="{{ route('admin.classes.create') }}" class="text-indigo-400">Add one →</a></td></tr>
+            <tr><td colspan="4" class="px-6 py-16 text-center text-slate-500">No classes found. <a href="{{ route('admin.classes.create') }}" class="text-indigo-400">Add one →</a></td></tr>
             @endforelse
         </tbody>
     </table>

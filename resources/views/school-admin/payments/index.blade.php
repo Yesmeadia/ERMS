@@ -273,7 +273,7 @@
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="text-xs font-mono font-bold text-indigo-300 truncate"
-                                            title="{{ $payment->transaction_id ?? $payment->razorpay_order_id }}">
+                                            title="{{ $payment->transaction_id ?? $payment->cashfree_order_id }}">
                                             {{ $payment->transaction_id ? substr($payment->transaction_id, 0, 14) . '...' : 'Pending' }}
                                         </p>
                                         <p class="text-[9px] text-slate-500 mt-1 font-medium">
@@ -337,7 +337,7 @@
                                             class="flex justify-between items-center bg-slate-950/20 p-1.5 rounded border border-slate-850/60">
                                             <span
                                                 class="text-slate-350 truncate font-semibold max-w-[110px]">{{ $student->name }}</span>
-                                            <span class="text-slate-500 font-mono text-[9px]">{{ $student->class->code }} •
+                                            <span class="text-slate-500 font-mono text-[9px]">{{ $student->class->name ?? '—' }} •
                                                 ₹{{ number_format($student->pivot->amount, 0) }}</span>
                                         </div>
                                     @endforeach

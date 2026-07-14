@@ -46,5 +46,14 @@ class AppServiceProvider extends ServiceProvider
                     return response()->view('errors.429', [], 429);
                 });
         });
+
+        // Override the default password broker's token repository hasher to bcrypt.
+        // This ensures password reset tokens are stored as strong bcrypt hashes rather than SHA-1 (CWE-256 / CWE-307).
+        $repository = \Illuminate\Support\Facades\Password::broker()->getRepository();
+        if ($repository instanceof \Illuminate\Auth\Passwords\DatabaseTokenRepository) {
+            $reflection = new \ReflectionClass($repository);
+            $property = $reflection->getProperty('hasher');
+            $property->setValue($repository, new \Illuminate\Hashing\BcryptHasher());
+        }
     }
 }

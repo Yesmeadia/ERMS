@@ -145,7 +145,7 @@
                                         <img src="{{ $student->photo_url }}" alt="{{ $student->name }}" class="w-6 h-6 rounded-lg object-cover shrink-0">
                                         <div class="min-w-0 flex-1">
                                             <p class="font-semibold text-slate-200 truncate">{{ $student->name }}</p>
-                                            <p class="text-[9px] text-slate-500 font-mono truncate">Class: {{ $student->class->code }} · Fee: ₹{{ number_format($student->pivot->amount, 0) }}</p>
+                                            <p class="text-[9px] text-slate-500 font-mono truncate">Class: {{ $student->class->name ?? '—' }} · Fee: ₹{{ number_format($student->pivot->amount, 0) }}</p>
                                         </div>
                                     </div>
                                 @endforeach

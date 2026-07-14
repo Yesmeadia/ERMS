@@ -15,8 +15,6 @@ class ClassMaster extends Model
 
     protected $fillable = [
         'name',
-        'code',
-        'description',
         'registration_fee',
         'status',
     ];

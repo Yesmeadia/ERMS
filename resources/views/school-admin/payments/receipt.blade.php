@@ -56,8 +56,10 @@
                     <div class="text-left sm:text-right mt-1">
                         <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Receipt / Payment ID</p>
                         <p class="text-sm font-mono font-bold text-slate-300 mt-0.5">{{ $payment->transaction_id ?? '—' }}</p>
-                        @if($payment->razorpay_payment_id && $payment->razorpay_payment_id !== $payment->transaction_id)
-                            <p class="text-[10px] text-slate-500 font-mono mt-0.5">Razorpay Ref: {{ $payment->razorpay_payment_id }}</p>
+                        @if($payment->cashfree_payment_id && $payment->cashfree_payment_id !== $payment->transaction_id)
+                            <p class="text-[10px] text-slate-500 font-mono mt-0.5">Cashfree Ref: {{ $payment->cashfree_payment_id }}</p>
+                        @elseif($payment->razorpay_payment_id && $payment->razorpay_payment_id !== $payment->transaction_id)
+                            <p class="text-[10px] text-slate-500 font-mono mt-0.5">Gateway Ref: {{ $payment->razorpay_payment_id }}</p>
                         @endif
                     </div>
                 </div>
@@ -114,7 +116,7 @@
                                         @endif
                                     </td>
                                     <td class="py-3 px-3 text-center text-slate-300 font-semibold font-mono">
-                                        {{ $student->class->code }}</td>
+                                        {{ $student->class->name ?? '—' }}</td>
                                     <td class="py-3 px-3 text-center text-slate-400 uppercase">{{ $student->gender }}</td>
                                     <td class="py-3 px-3 text-right text-slate-200 font-mono font-bold">
                                         ₹{{ number_format($student->pivot->amount, 2) }}</td>

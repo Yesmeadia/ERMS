@@ -23,9 +23,21 @@ use App\Http\Controllers\ExamCentreController;
 // 1. Guest Routes
 Route::middleware('guest')->group(function () {
     Route::get('/', function () {
-        return view('welcome');
+        $activeExam = \App\Models\Examination::whereIn('status', ['Registration Started', 'Registartion closed', 'Examination Ongoing', 'result published'])->latest()->first()
+            ?? \App\Models\Examination::latest()->first();
+
+        // Top 3 Pass students per category, from published result exams
+        $winners = \App\Models\StudentResult::with(['student.school', 'student.category', 'examination'])
+            ->where('status', 'Pass')
+            ->whereHas('examination', fn($q) => $q->where('status', 'result published'))
+            ->orderByDesc('marks_obtained')
+            ->get()
+            ->groupBy(fn($r) => optional($r->student->category)->name ?? 'General')
+            ->map(fn($group) => $group->take(3)->values());
+
+        return view('welcome', compact('activeExam', 'winners'));
     });
-    
+
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
@@ -34,6 +46,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.store');
 });
+
+// Public Gallery (accessible to all — guests and authenticated users)
+// Note: URL is /photo-gallery (not /gallery) because public/gallery/ is a real
+// asset directory and PHP's built-in server would intercept /gallery as a static path.
+Route::get('/photo-gallery', function () {
+    return view('gallery');
+})->name('gallery');
 
 // MFA Verification Routes (Accessible by authenticated users before completing MFA verification)
 Route::get('/login/mfa', [AuthController::class, 'showMfaVerification'])->name('login.mfa');
@@ -54,6 +73,9 @@ Route::post('/results/check', [ResultController::class, 'checkPublicResult'])
 Route::get('/results/{student}/marksheet', [ResultController::class, 'showPublicResult'])
     ->middleware('throttle:verification')
     ->name('results.marksheet');
+
+// Cashfree Webhook (Public, signature verified inside controller)
+Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 
 // 3. SECURE AUTHENTICATED ROUTES
 Route::middleware('auth')->group(function () {
@@ -179,9 +201,9 @@ Route::middleware('auth')->group(function () {
         // Payments & Balance Sheet
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::get('/payments/transactions', [PaymentController::class, 'transactions'])->name('payments.transactions');
-        Route::post('/payments/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout');
-        Route::post('/payments/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
-        Route::post('/payments/callback', [PaymentController::class, 'callback'])->name('payments.callback');
+        Route::post('/payments/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout')->middleware('throttle:5,1');
+        Route::post('/payments/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate')->middleware('throttle:5,1');
+        Route::get('/payments/callback', [PaymentController::class, 'callback'])->name('payments.callback');
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
 
         // Attendance Report
@@ -207,3 +229,4 @@ Route::middleware('auth')->group(function () {
         Route::get('/attendance/count', [AttendanceController::class, 'scanCount'])->name('attendance.count'); // F1: Lightweight counter API
     });
 });
+

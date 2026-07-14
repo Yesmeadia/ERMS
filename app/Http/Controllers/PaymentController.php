@@ -9,8 +9,8 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Razorpay\Api\Api;
-use Razorpay\Api\Errors\SignatureVerificationError;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
 
 class PaymentController extends Controller
 {
@@ -106,11 +106,21 @@ class PaymentController extends Controller
     {
         $studentIds = $request->input('student_ids');
 
-        if (empty($studentIds)) {
+        if (empty($studentIds) || !is_array($studentIds)) {
             return redirect()->route('school.students.index')->with('error', 'Please select at least one student to pay registration fee.');
         }
 
         $school = Auth::user()->school;
+
+        // CWE-639: Validate ownership and payment status of every student ID to prevent parameter manipulation
+        $validUnpaidStudentCount = Student::where('school_id', $school->id)
+            ->whereIn('id', $studentIds)
+            ->where('payment_status', 'Unpaid')
+            ->count();
+
+        if ($validUnpaidStudentCount !== count(array_unique($studentIds))) {
+            return redirect()->route('school.students.index')->with('error', 'One or more selected students are invalid, already paid, or do not belong to your school.');
+        }
 
         // Fetch unpaid draft/rejected students
         $students = Student::where('school_id', $school->id)
@@ -150,73 +160,195 @@ class PaymentController extends Controller
     }
 
     /**
-     * School Admin: Create a Razorpay order and redirect back to checkout with order details.
+     * School Admin: Create a Cashfree order and redirect to checkout with session details.
      */
     public function initiate(Request $request)
     {
         $studentIds = $request->input('student_ids');
 
-        if (empty($studentIds)) {
+        if (empty($studentIds) || !is_array($studentIds)) {
             return redirect()->route('school.students.index')->with('error', 'Please select at least one student to pay registration fee.');
         }
 
         $school = Auth::user()->school;
 
-        // Fetch unpaid students belonging to this school
-        $students = Student::where('school_id', $school->id)
+        // CWE-639: Validate ownership and payment status of every student ID to prevent parameter manipulation
+        $validUnpaidStudentCount = Student::where('school_id', $school->id)
             ->whereIn('id', $studentIds)
             ->where('payment_status', 'Unpaid')
-            ->with('class')
-            ->get();
+            ->count();
 
-        if ($students->isEmpty()) {
-            return redirect()->route('school.students.index')->with('error', 'No valid unpaid registrations found.');
+        if ($validUnpaidStudentCount !== count(array_unique($studentIds))) {
+            return redirect()->route('school.students.index')->with('error', 'One or more selected students are invalid, already paid, or do not belong to your school.');
         }
 
+        // Cashfree API configuration
+        $isProduction = config('services.cashfree.env') === 'production';
+        $baseUrl      = $isProduction
+            ? 'https://api.cashfree.com/pg'
+            : 'https://sandbox.cashfree.com/pg';
+        $clientId     = config('services.cashfree.client_id');
+        $clientSecret = config('services.cashfree.client_secret');
+
+        $headers = [
+            'x-client-id'     => $clientId,
+            'x-client-secret' => $clientSecret,
+            'x-api-version'   => '2023-08-01',
+            'Content-Type'    => 'application/json',
+            'Accept'          => 'application/json',
+        ];
+
+        // CWE-362: Check for an exact matching pending payment to reuse and prevent duplicate charges/orders
+        $matchingPayment = Payment::where('school_id', $school->id)
+            ->where('status', 'Pending')
+            ->whereHas('students', function ($query) use ($studentIds) {
+                $query->whereIn('students.id', $studentIds);
+            }, '=', count($studentIds))
+            ->withCount('students')
+            ->get()
+            ->first(function ($p) use ($studentIds) {
+                return $p->students_count === count($studentIds);
+            });
+
+        $paymentSessionId = null;
+        $cfOrderId = null;
+        $paymentDbId = null;
         $totalAmount = 0.00;
-        foreach ($students as $student) {
-            $totalAmount += $student->registration_fee;
+        $students = collect();
+
+        if ($matchingPayment) {
+            $cfOrderId = $matchingPayment->cashfree_order_id;
+            $paymentDbId = $matchingPayment->id;
+            
+            // Verify existing session against Cashfree
+            try {
+                $http = new GuzzleClient(['timeout' => 15]);
+                $cfResponse = $http->get($baseUrl . '/orders/' . $cfOrderId, [
+                    'headers' => $headers,
+                ]);
+                $cfOrder = json_decode((string) $cfResponse->getBody(), true);
+                if (isset($cfOrder['payment_session_id']) && ($cfOrder['order_status'] ?? '') === 'ACTIVE') {
+                    $paymentSessionId = $cfOrder['payment_session_id'];
+                    $totalAmount = $matchingPayment->amount;
+                    $students = $matchingPayment->students;
+                } else {
+                    // Mark as failed if order is not active or payment_session_id is missing, let it fall through to create a new one
+                    $matchingPayment->status = 'Failed';
+                    $matchingPayment->save();
+                    $matchingPayment = null;
+                }
+            } catch (\Exception $e) {
+                $matchingPayment->status = 'Failed';
+                $matchingPayment->save();
+                $matchingPayment = null;
+            }
         }
 
-        // Determine Razorpay credentials dynamically based on the school's state
-        $isJK = strcasecmp($school->state, 'Jammu and Kashmir') === 0;
-        $keyId = $isJK ? config('services.razorpay_jk.key_id') : config('services.razorpay.key_id');
-        $keySecret = $isJK ? config('services.razorpay_jk.key_secret') : config('services.razorpay.key_secret');
+        // If no matching payment session was found or verified, initiate a new one
+        if (!$matchingPayment) {
+            try {
+                // CWE-362 & CWE-602: Perform database locks and calculations inside a transaction
+                $checkoutData = DB::transaction(function () use ($school, $studentIds, $baseUrl, $headers) {
+                    // Lock student rows for update to ensure serial execution under high concurrency
+                    $students = Student::where('school_id', $school->id)
+                        ->whereIn('id', $studentIds)
+                        ->where('payment_status', 'Unpaid')
+                        ->lockForUpdate()
+                        ->get();
 
-        // Create Razorpay order (amount in paise)
-        $api = new Api($keyId, $keySecret);
+                    if ($students->isEmpty() || $students->count() !== count(array_unique($studentIds))) {
+                        throw new \Exception('One or more selected students are invalid, already paid, or do not belong to your school.');
+                    }
 
-        $razorpayOrder = $api->order->create([
-            'receipt'         => 'ERMS_' . strtoupper(bin2hex(random_bytes(4))),
-            'amount'          => (int) round($totalAmount * 100), // paise
-            'currency'        => 'INR',
-            'payment_capture' => 1, // auto-capture
-        ]);
+                    // Cancel/Fail any older Pending payments that contain overlapping student IDs
+                    $overlappingPaymentIds = DB::table('payment_student')
+                        ->join('payments', 'payment_student.payment_id', '=', 'payments.id')
+                        ->where('payments.school_id', $school->id)
+                        ->where('payments.status', 'Pending')
+                        ->whereIn('payment_student.student_id', $studentIds)
+                        ->pluck('payments.id')
+                        ->unique();
 
-        // Create a Pending payment record
-        $payment = Payment::create([
-            'school_id'         => $school->id,
-            'razorpay_order_id' => $razorpayOrder->id,
-            'amount'            => $totalAmount,
-            'payment_method'    => 'Razorpay',
-            'status'            => 'Pending',
-            'paid_at'           => null,
-        ]);
+                    if ($overlappingPaymentIds->isNotEmpty()) {
+                        Payment::whereIn('id', $overlappingPaymentIds)
+                            ->update(['status' => 'Failed']);
+                    }
 
-        // Attach students to this payment record
-        foreach ($students as $student) {
-            $payment->students()->attach($student->id, ['amount' => $student->registration_fee]);
+                    // CWE-602: Always calculate total payable amount server-side based on secure DB records
+                    $totalAmount = 0.00;
+                    foreach ($students as $student) {
+                        $totalAmount += $student->registration_fee;
+                    }
+
+                    // Build a unique order ID
+                    $cfOrderId = 'ERMS_' . strtoupper(bin2hex(random_bytes(8)));
+                    $returnUrl = route('school.payments.callback') . '?order_id=' . $cfOrderId;
+
+                    $payload = [
+                        'order_id'       => $cfOrderId,
+                        'order_amount'   => round($totalAmount, 2),
+                        'order_currency' => 'INR',
+                        'order_note'     => 'YES GENIUS — Registration Fee for ' . $school->name,
+                        'customer_details' => [
+                            'customer_id'    => 'school_' . $school->id,
+                            'customer_phone' => '9999999999',
+                            'customer_email' => Auth::user()->email,
+                            'customer_name'  => Auth::user()->name,
+                        ],
+                        'order_meta' => [
+                            'return_url' => $returnUrl,
+                        ],
+                    ];
+
+                    $http = new GuzzleClient(['timeout' => 15]);
+                    $cfResponse = $http->post($baseUrl . '/orders', [
+                        'headers' => $headers,
+                        'json' => $payload,
+                    ]);
+                    $cfOrder = json_decode((string) $cfResponse->getBody(), true);
+                    $paymentSessionId = $cfOrder['payment_session_id'] ?? null;
+
+                    if (!$paymentSessionId) {
+                        throw new \Exception('Failed to get payment session ID from Cashfree.');
+                    }
+
+                    // Create the payment record in DB
+                    $payment = Payment::create([
+                        'school_id'          => $school->id,
+                        'cashfree_order_id'  => $cfOrderId,
+                        'amount'             => $totalAmount,
+                        'payment_method'     => 'Cashfree',
+                        'status'             => 'Pending',
+                        'paid_at'            => null,
+                    ]);
+
+                    // Attach students to this payment record
+                    foreach ($students as $student) {
+                        $payment->students()->attach($student->id, ['amount' => $student->registration_fee]);
+                    }
+
+                    return [
+                        'paymentDbId' => $payment->id,
+                        'cfOrderId' => $cfOrderId,
+                        'paymentSessionId' => $paymentSessionId,
+                        'totalAmount' => $totalAmount,
+                        'students' => $students,
+                    ];
+                });
+
+                $paymentDbId = $checkoutData['paymentDbId'];
+                $cfOrderId = $checkoutData['cfOrderId'];
+                $paymentSessionId = $checkoutData['paymentSessionId'];
+                $totalAmount = $checkoutData['totalAmount'];
+                $students = $checkoutData['students'];
+
+            } catch (\Exception $e) {
+                return redirect()->route('school.students.index')
+                    ->with('error', 'Could not initiate payment: ' . $e->getMessage());
+            }
         }
 
-        // Pass checkout details to the checkout view via session
-        session([
-            'razorpay_order_id'    => $razorpayOrder->id,
-            'razorpay_payment_id'  => $payment->id,  // internal DB id
-            'razorpay_amount'      => (int) round($totalAmount * 100),
-            'razorpay_student_ids' => $students->pluck('id')->toArray(),
-        ]);
-
-        // Reload the checkout view with the order now ready
+        // Reload the checkout view with Cashfree session details
         $classBreakdown = [];
         foreach ($students as $student) {
             $classId   = $student->class_id;
@@ -232,70 +364,113 @@ class PaymentController extends Controller
 
         return view('school-admin.payments.checkout', compact('students', 'totalAmount', 'classBreakdown'))
             ->with([
-                'razorpayOrderId' => $razorpayOrder->id,
-                'razorpayAmount'  => (int) round($totalAmount * 100),
-                'razorpayKeyId'   => $keyId,
-                'paymentDbId'     => $payment->id,
-                'schoolName'      => $school->name,
-                'adminEmail'      => Auth::user()->email,
-                'adminName'       => Auth::user()->name,
+                'cashfreeOrderId'    => $cfOrderId,
+                'paymentSessionId'   => $paymentSessionId,
+                'cashfreeEnv'        => config('services.cashfree.env', 'sandbox'),
+                'paymentDbId'        => $paymentDbId,
+                'schoolName'         => $school->name,
+                'adminEmail'         => Auth::user()->email,
+                'adminName'          => Auth::user()->name,
             ]);
     }
 
     /**
-     * School Admin: Handle Razorpay payment callback.
-     * Verifies HMAC-SHA256 signature before marking payment as complete.
+     * School Admin: Handle Cashfree payment return (GET redirect from Cashfree hosted page).
+     * Verifies payment by fetching order status from Cashfree API.
      */
     public function callback(Request $request)
     {
-        $request->validate([
-            'razorpay_payment_id' => ['required', 'string'],
-            'razorpay_order_id'   => ['required', 'string'],
-            'razorpay_signature'  => ['required', 'string'],
-            'payment_db_id'       => ['required', 'exists:payments,id'],
-        ]);
+        $cfOrderId = $request->query('order_id');
 
-        $payment = Payment::findOrFail($request->payment_db_id);
-        $school  = Auth::user()->school;
-
-        if ($payment->school_id !== $school->id || $payment->status !== 'Pending') {
-            abort(403, 'Invalid payment session.');
+        if (!$cfOrderId) {
+            return redirect()->route('school.students.index')
+                ->with('error', 'Invalid payment return. Please contact support.');
         }
 
-        // Determine Razorpay credentials dynamically based on the school's state
-        $isJK = strcasecmp($school->state, 'Jammu and Kashmir') === 0;
-        $keyId = $isJK ? config('services.razorpay_jk.key_id') : config('services.razorpay.key_id');
-        $keySecret = $isJK ? config('services.razorpay_jk.key_secret') : config('services.razorpay.key_secret');
-
-        // Verify HMAC-SHA256 signature
-        $api = new Api($keyId, $keySecret);
+        $school  = Auth::user()->school;
 
         try {
-            $api->utility->verifyPaymentSignature([
-                'razorpay_order_id'   => $request->razorpay_order_id,
-                'razorpay_payment_id' => $request->razorpay_payment_id,
-                'razorpay_signature'  => $request->razorpay_signature,
-            ]);
-        } catch (SignatureVerificationError $e) {
-            // Signature mismatch — mark as Failed
-            DB::transaction(function () use ($payment) {
+            // CWE-362: Lock payment row during verification to prevent race conditions with webhooks
+            $payment = DB::transaction(function () use ($cfOrderId, $school) {
+                return Payment::where('cashfree_order_id', $cfOrderId)
+                    ->where('school_id', $school->id)
+                    ->lockForUpdate()
+                    ->first();
+            });
+
+            if (!$payment) {
+                return redirect()->route('school.students.index')
+                    ->with('error', 'Invalid payment session.');
+            }
+
+            // If already processed via Webhook/refresh, redirect to receipt
+            if ($payment->status === 'Paid') {
+                return redirect()->route('school.payments.receipt', $payment->id);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('school.students.index')
+                ->with('error', 'Database lock timeout or error during callback processing. Please try again.');
+        }
+
+        // Cashfree API base URL
+        $isProduction = config('services.cashfree.env') === 'production';
+        $baseUrl      = $isProduction
+            ? 'https://api.cashfree.com/pg'
+            : 'https://sandbox.cashfree.com/pg';
+        $clientId     = config('services.cashfree.client_id');
+        $clientSecret = config('services.cashfree.client_secret');
+
+        $headers = [
+            'x-client-id'     => $clientId,
+            'x-client-secret' => $clientSecret,
+            'x-api-version'   => '2023-08-01',
+            'Accept'          => 'application/json',
+        ];
+
+        $http = new GuzzleClient(['timeout' => 15]);
+
+        try {
+            $cfResponse  = $http->get($baseUrl . '/orders/' . $cfOrderId, ['headers' => $headers]);
+            $cfOrder     = json_decode((string) $cfResponse->getBody(), true);
+            $orderStatus = $cfOrder['order_status'] ?? 'UNKNOWN';
+        } catch (RequestException $e) {
+            // API error — fail gracefully without crashing
+            return redirect()->route('school.students.index')
+                ->with('error', 'Could not verify payment status. Please contact support if amount was debited.');
+        }
+
+        if (strtoupper($orderStatus) !== 'PAID') {
+            // Payment was not completed
+            DB::transaction(function () use ($payment, $orderStatus) {
                 $payment->status = 'Failed';
                 $payment->save();
 
                 activity()
                     ->performedOn($payment)
-                    ->log('Razorpay: Signature verification failed. Payment marked as Failed.');
+                    ->log('Cashfree: Payment not completed. Order status: ' . $orderStatus . '. Payment marked as Failed.');
             });
 
             return redirect()->route('school.students.index')
-                ->with('error', 'Payment verification failed. Please contact support if amount was debited.');
+                ->with('error', 'Payment was not completed (status: ' . $orderStatus . '). No amount was charged.');
         }
 
-        // Signature verified — mark payment as complete
-        DB::transaction(function () use ($payment, $request) {
+        // Payment successful — fetch the CF payment ID
+        $cfPaymentId = null;
+        try {
+            $paymentsResponse = $http->get($baseUrl . '/orders/' . $cfOrderId . '/payments', ['headers' => $headers]);
+            $cfPayments = json_decode((string) $paymentsResponse->getBody(), true);
+            if (!empty($cfPayments) && isset($cfPayments[0]['cf_payment_id'])) {
+                $cfPaymentId = (string) $cfPayments[0]['cf_payment_id'];
+            }
+        } catch (RequestException $e) {
+            // Non-critical — fall back to order ID if payment ID call fails
+        }
+
+        // Mark payment as complete
+        DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId) {
             $payment->status               = 'Paid';
-            $payment->transaction_id       = $request->razorpay_payment_id;
-            $payment->razorpay_payment_id  = $request->razorpay_payment_id;
+            $payment->transaction_id       = $cfPaymentId ?? $cfOrderId;
+            $payment->cashfree_payment_id  = $cfPaymentId;
             $payment->paid_at              = now();
             $payment->save();
 
@@ -307,16 +482,99 @@ class PaymentController extends Controller
 
                 activity()
                     ->performedOn($student)
-                    ->log('Registration payment completed via Razorpay. Status updated to Submitted.');
+                    ->log('Registration payment completed via Cashfree. Status updated to Submitted.');
             }
 
             activity()
                 ->performedOn($payment)
-                ->log('Razorpay: Payment ' . $request->razorpay_payment_id . ' verified. ₹' . number_format($payment->amount, 2) . ' collected.');
+                ->log('Cashfree: Order ' . $cfOrderId . ' verified PAID. ₹' . number_format($payment->amount, 2) . ' collected.');
         });
 
         return redirect()->route('school.payments.receipt', $payment->id)
             ->with('success', 'Payment of ₹' . number_format($payment->amount, 2) . ' collected successfully! Candidates submitted to the board.');
+    }
+
+    /**
+     * Cashfree Webhook: Handle async payment notifications.
+     * CWE-345: Verifies HMAC-SHA256 signature before processing.
+     * This route is exempt from CSRF (see bootstrap/app.php).
+     */
+    public function webhook(Request $request)
+    {
+        $webhookSecret = config('services.cashfree.webhook_secret');
+
+        if ($webhookSecret) {
+            // Verify signature: Cashfree sends x-webhook-signature and x-webhook-timestamp
+            $timestamp = $request->header('x-webhook-timestamp');
+            $signature = $request->header('x-webhook-signature');
+            $rawBody   = $request->getContent();
+
+            if (!$timestamp || !$signature) {
+                return response()->json(['status' => 'error', 'message' => 'Missing webhook signature headers'], 401);
+            }
+
+            $signedPayload = $timestamp . $rawBody;
+            $expectedSig   = base64_encode(hash_hmac('sha256', $signedPayload, $webhookSecret, true));
+
+            if (!hash_equals($expectedSig, $signature)) {
+                return response()->json(['status' => 'error', 'message' => 'Invalid webhook signature'], 401);
+            }
+        }
+
+        $payload = $request->json()->all();
+        $eventType = $payload['type'] ?? null;
+        $data      = $payload['data'] ?? [];
+        $orderData = $data['order'] ?? [];
+        $cfOrderId = $orderData['order_id'] ?? null;
+
+        // Only process PAYMENT_SUCCESS events
+        if ($eventType !== 'PAYMENT_SUCCESS' || !$cfOrderId) {
+            return response()->json(['status' => 'ok', 'message' => 'Event ignored']);
+        }
+
+        $payment = Payment::where('cashfree_order_id', $cfOrderId)
+            ->where('status', 'Pending')
+            ->first();
+
+        if (!$payment) {
+            // Already processed or unknown order — respond 200 to stop retries
+            return response()->json(['status' => 'ok', 'message' => 'Payment already processed or not found']);
+        }
+
+        $cfPaymentId = (string) ($data['payment']['cf_payment_id'] ?? $cfOrderId);
+
+        DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId) {
+            // Re-check inside transaction with row lock to prevent race with callback
+            $payment = Payment::where('cashfree_order_id', $cfOrderId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$payment || $payment->status === 'Paid') {
+                return; // Already handled by callback
+            }
+
+            $payment->status              = 'Paid';
+            $payment->transaction_id      = $cfPaymentId;
+            $payment->cashfree_payment_id = $cfPaymentId;
+            $payment->paid_at             = now();
+            $payment->save();
+
+            foreach ($payment->students as $student) {
+                $student->payment_status = 'Paid';
+                $student->status         = 'Submitted';
+                $student->save();
+
+                activity()
+                    ->performedOn($student)
+                    ->log('Registration payment confirmed via Cashfree webhook. Status updated to Submitted.');
+            }
+
+            activity()
+                ->performedOn($payment)
+                ->log('Cashfree webhook: Order ' . $cfOrderId . ' confirmed PAID. ₹' . number_format($payment->amount, 2) . ' collected.');
+        });
+
+        return response()->json(['status' => 'ok']);
     }
 
     /**

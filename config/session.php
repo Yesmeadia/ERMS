@@ -197,21 +197,20 @@ return [
     |
     | Supported: "lax", "strict", "none", null
     |
-    | SECURITY NOTE (CWE advisory — SameSite/payment redirect):
-    | "strict" is intentionally kept here. The Razorpay payment integration
-    | uses the Razorpay JS SDK with an in-page modal overlay — it does NOT
-    | perform a server-side redirect to an external domain. After the user
-    | completes payment, the JS handler() callback populates hidden form fields
-    | and submits them via a same-origin POST to /school/payments/callback.
-    | SameSite=Strict only blocks cookies on cross-site requests; same-origin
-    | form submissions always include the session cookie regardless of this
-    | setting. If the payment flow is ever changed to a redirect-based model
-    | (e.g. UPI intent app switching or bank NetBanking redirects that return
-    | via a separate top-level navigation), change this to "lax".
+    | SECURITY NOTE (SameSite/payment redirect):
+    | "lax" is required here for the Cashfree payment integration.
+    | Cashfree uses a redirect-based hosted checkout — the user is sent to an
+    | external Cashfree domain to complete payment, and then returned via a
+    | top-level browser navigation (GET redirect) to our return_url.
+    | SameSite=Strict would block the session cookie on that return request,
+    | causing authentication to fail when the user lands back on our app.
+    | SameSite=Lax allows the session cookie to be sent on top-level cross-site
+    | GET navigations (the redirect return), while still blocking it on
+    | subresource/iframe cross-site requests.
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'strict'),
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
     /*
     |--------------------------------------------------------------------------

@@ -160,7 +160,6 @@ class Student extends Model
         }
 
         $className = strtolower($this->class->name);
-        $classCode = strtolower($this->class->code);
         $categoryName = strtolower($this->category->name);
         $categoryCode = strtolower($this->category->code);
 
@@ -179,28 +178,28 @@ class Student extends Model
         }
 
         // 3. Class 5th / Category Rainbow 5:
-        if (str_contains($className, '5th') || str_contains($classCode, '5') || str_contains($categoryName, 'rainbow 5') || str_contains($categoryName, 'rainbow5')) {
+        if (str_contains($className, '5th') || str_contains($className, '5') || str_contains($categoryName, 'rainbow 5') || str_contains($categoryName, 'rainbow5')) {
             $start = 50001;
             $end = 59999;
             return $this->getNextSequentialRegistrationNumber($start, $end);
         }
 
         // 4. Class 4th / Category Rainbow 4:
-        if (str_contains($className, '4th') || str_contains($classCode, '4') || str_contains($categoryName, 'rainbow 4') || str_contains($categoryName, 'rainbow4')) {
+        if (str_contains($className, '4th') || str_contains($className, '4') || str_contains($categoryName, 'rainbow 4') || str_contains($categoryName, 'rainbow4')) {
             $start = 40001;
             $end = 49999;
             return $this->getNextSequentialRegistrationNumber($start, $end);
         }
 
         // 5. Class 3rd / Category Rainbow 3:
-        if (str_contains($className, '3rd') || str_contains($classCode, '3') || str_contains($categoryName, 'rainbow 3') || str_contains($categoryName, 'rainbow3')) {
+        if (str_contains($className, '3rd') || str_contains($className, '3') || str_contains($categoryName, 'rainbow 3') || str_contains($categoryName, 'rainbow3')) {
             $start = 30001;
             $end = 39999;
             return $this->getNextSequentialRegistrationNumber($start, $end);
         }
 
-        // Fallback checks using any digits in class name or class code
-        preg_match('/\d+/', $className . $classCode, $matches);
+        // Fallback checks using any digits in class name
+        preg_match('/\d+/', $className, $matches);
         if (!empty($matches)) {
             $digit = (int)$matches[0];
             if ($digit >= 1 && $digit <= 9) {
@@ -255,5 +254,29 @@ class Student extends Model
             return (float) $this->category->registration_fee;
         }
         return $this->class ? (float) $this->class->registration_fee : 0.0;
+    }
+
+    /**
+     * Mutator for student name (forces uppercase).
+     */
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = mb_strtoupper(trim($value));
+    }
+
+    /**
+     * Mutator for father's name (forces uppercase).
+     */
+    public function setFatherNameAttribute($value)
+    {
+        $this->attributes['father_name'] = mb_strtoupper(trim($value));
+    }
+
+    /**
+     * Mutator for mother's name (forces uppercase).
+     */
+    public function setMotherNameAttribute($value)
+    {
+        $this->attributes['mother_name'] = mb_strtoupper(trim($value));
     }
 }

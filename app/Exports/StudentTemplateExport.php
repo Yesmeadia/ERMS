@@ -20,23 +20,23 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullCo
         // "Father Name"               -> father_name
         // "Mother Name"               -> mother_name
         // "Mobile Number"             -> mobile_number
-        // "Class Code"                -> class_code
+        // "Class Name"                -> class_name
         // "Category Code"             -> category_code
         return [
             'Student Name',
             'Gender',
-            'Date Of Birth Yyyy Mm Dd',
+            'Date Of Birth yyyy mm dd',
             'Father Name',
             'Mother Name',
             'Mobile Number',
-            'Class Code',
+            'Class Name',
             'Category Code',
         ];
     }
 
     public function array(): array
     {
-        // Sample row — date must be in YYYY-MM-DD format; Class Code and Category Code
+        // Sample row — date must be in YYYY-MM-DD format; Class Name and Category Code
         // must match an active record in the classes / categories tables.
         return [
             [
@@ -46,7 +46,7 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullCo
                 'MOHD IMRAN',
                 'SULTANA',
                 '9876543210',
-                'C3',
+                '3RD',
                 'RB3',
             ]
         ];
@@ -59,7 +59,7 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullCo
             1 => [
                 'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
                 'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4F46E5'],
                 ],
             ],

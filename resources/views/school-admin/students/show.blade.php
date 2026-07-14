@@ -79,7 +79,7 @@
                         </p>
                         <p class="text-xs mt-0.5
                             {{ $student->payment_status === 'Paid' ? 'text-emerald-500' : 'text-amber-500' }}">
-                            {{ $student->class->name }} · {{ $student->class->code }}
+                            {{ $student->class->name }}
                         </p>
                     </div>
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center
@@ -230,8 +230,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                     <div>
                         <span class="block text-slate-500 text-xs">Class</span>
-                        <span class="text-slate-200 font-semibold mt-1 block">{{ $student->class->name }}
-                            ({{ $student->class->code }})</span>
+                        <span class="text-slate-200 font-semibold mt-1 block">{{ $student->class->name }}</span>
                     </div>
                     <div>
                         <span class="block text-slate-500 text-xs">Category</span>
