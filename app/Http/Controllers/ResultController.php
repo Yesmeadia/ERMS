@@ -48,15 +48,15 @@ class ResultController extends Controller
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%");
             });
         }
 
         // Only show students whose registrations are approved/hall tickets issued
         $query->whereIn('status', ['Approved', 'Hall Ticket Issued']);
 
-        $students = $query->latest()->paginate(15);
+        $students = $query->latest()->paginate(20);
         $examinations = Examination::all();
         $schools = School::all();
         $classes = ClassMaster::all();
@@ -99,11 +99,12 @@ class ResultController extends Controller
         $subjectDetails = [];
         if ($request->filled('subject_names')) {
             foreach ($request->subject_names as $index => $name) {
-                if (empty($name)) continue;
-                
-                $marks = isset($request->subject_marks[$index]) ? (int)$request->subject_marks[$index] : 0;
-                $max = isset($request->subject_max[$index]) ? (int)$request->subject_max[$index] : 100;
-                
+                if (empty($name))
+                    continue;
+
+                $marks = isset($request->subject_marks[$index]) ? (int) $request->subject_marks[$index] : 0;
+                $max = isset($request->subject_max[$index]) ? (int) $request->subject_max[$index] : 100;
+
                 $subjectDetails[$name] = [
                     'marks' => $marks,
                     'max' => $max
@@ -116,13 +117,20 @@ class ResultController extends Controller
         // Determine grade if not provided
         $grade = $request->grade;
         if (empty($grade)) {
-            if ($percentage >= 90) $grade = 'A+';
-            elseif ($percentage >= 80) $grade = 'A';
-            elseif ($percentage >= 70) $grade = 'B';
-            elseif ($percentage >= 60) $grade = 'C';
-            elseif ($percentage >= 50) $grade = 'D';
-            elseif ($percentage >= 40) $grade = 'E';
-            else $grade = 'F';
+            if ($percentage >= 90)
+                $grade = 'A+';
+            elseif ($percentage >= 80)
+                $grade = 'A';
+            elseif ($percentage >= 70)
+                $grade = 'B';
+            elseif ($percentage >= 60)
+                $grade = 'C';
+            elseif ($percentage >= 50)
+                $grade = 'D';
+            elseif ($percentage >= 40)
+                $grade = 'E';
+            else
+                $grade = 'F';
         }
 
         $result = StudentResult::create([
@@ -173,11 +181,12 @@ class ResultController extends Controller
         $subjectDetails = [];
         if ($request->filled('subject_names')) {
             foreach ($request->subject_names as $index => $name) {
-                if (empty($name)) continue;
-                
-                $marks = isset($request->subject_marks[$index]) ? (int)$request->subject_marks[$index] : 0;
-                $max = isset($request->subject_max[$index]) ? (int)$request->subject_max[$index] : 100;
-                
+                if (empty($name))
+                    continue;
+
+                $marks = isset($request->subject_marks[$index]) ? (int) $request->subject_marks[$index] : 0;
+                $max = isset($request->subject_max[$index]) ? (int) $request->subject_max[$index] : 100;
+
                 $subjectDetails[$name] = [
                     'marks' => $marks,
                     'max' => $max
@@ -190,13 +199,20 @@ class ResultController extends Controller
         // Determine grade if not provided
         $grade = $request->grade;
         if (empty($grade)) {
-            if ($percentage >= 90) $grade = 'A+';
-            elseif ($percentage >= 80) $grade = 'A';
-            elseif ($percentage >= 70) $grade = 'B';
-            elseif ($percentage >= 60) $grade = 'C';
-            elseif ($percentage >= 50) $grade = 'D';
-            elseif ($percentage >= 40) $grade = 'E';
-            else $grade = 'F';
+            if ($percentage >= 90)
+                $grade = 'A+';
+            elseif ($percentage >= 80)
+                $grade = 'A';
+            elseif ($percentage >= 70)
+                $grade = 'B';
+            elseif ($percentage >= 60)
+                $grade = 'C';
+            elseif ($percentage >= 50)
+                $grade = 'D';
+            elseif ($percentage >= 40)
+                $grade = 'E';
+            else
+                $grade = 'F';
         }
 
         $result->update([
@@ -222,7 +238,7 @@ class ResultController extends Controller
     public function destroy(StudentResult $result)
     {
         $studentName = $result->student->name;
-        
+
         activity()
             ->performedOn($result)
             ->log("Deleted exam result for student: {$studentName}");
@@ -253,7 +269,7 @@ class ResultController extends Controller
 
         $exam = Examination::findOrFail($request->examination_id);
         $file = $request->file('csv_file');
-        
+
         $handle = fopen($file->getRealPath(), 'r');
         if (!$handle) {
             return back()->with('error', 'Unable to open uploaded file.');
@@ -267,26 +283,34 @@ class ResultController extends Controller
         }
 
         // Clean headers
-        $header = array_map(function($h) {
+        $header = array_map(function ($h) {
             return trim(strtolower(str_replace([' ', '_'], '', $h)));
         }, $header);
 
         // Find positions
         $regIdx = array_search('registrationnumber', $header);
-        if ($regIdx === false) $regIdx = array_search('registrationno', $header);
-        if ($regIdx === false) $regIdx = array_search('regno', $header);
-        
+        if ($regIdx === false)
+            $regIdx = array_search('registrationno', $header);
+        if ($regIdx === false)
+            $regIdx = array_search('regno', $header);
+
         $htIdx = array_search('hallticketnumber', $header);
-        if ($htIdx === false) $htIdx = array_search('hallticketno', $header);
-        if ($htIdx === false) $htIdx = array_search('htnumber', $header);
+        if ($htIdx === false)
+            $htIdx = array_search('hallticketno', $header);
+        if ($htIdx === false)
+            $htIdx = array_search('htnumber', $header);
 
         $obtainedIdx = array_search('marksobtained', $header);
-        if ($obtainedIdx === false) $obtainedIdx = array_search('marks', $header);
-        if ($obtainedIdx === false) $obtainedIdx = array_search('score', $header);
+        if ($obtainedIdx === false)
+            $obtainedIdx = array_search('marks', $header);
+        if ($obtainedIdx === false)
+            $obtainedIdx = array_search('score', $header);
 
         $maxIdx = array_search('maxmarks', $header);
-        if ($maxIdx === false) $maxIdx = array_search('max', $header);
-        if ($maxIdx === false) $maxIdx = array_search('totalmarks', $header);
+        if ($maxIdx === false)
+            $maxIdx = array_search('max', $header);
+        if ($maxIdx === false)
+            $maxIdx = array_search('totalmarks', $header);
 
         $gradeIdx = array_search('grade', $header);
         $statusIdx = array_search('status', $header);
@@ -305,15 +329,16 @@ class ResultController extends Controller
 
         while (($row = fgetcsv($handle)) !== false) {
             $rowNumber++;
-            
+
             // Skip empty rows
-            if (empty($row) || count($row) < 3) continue;
+            if (empty($row) || count($row) < 3)
+                continue;
 
             $regVal = $regIdx !== false ? trim($row[$regIdx]) : '';
             $htVal = $htIdx !== false ? trim($row[$htIdx]) : '';
             $obtainedVal = trim($row[$obtainedIdx]);
             $maxVal = trim($row[$maxIdx]);
-            
+
             if (empty($regVal) && empty($htVal)) {
                 $errors[] = "Row {$rowNumber}: Missing student identification (both Registration and Hall Ticket Number are empty).";
                 continue;
@@ -324,8 +349,8 @@ class ResultController extends Controller
                 continue;
             }
 
-            $obtained = (int)$obtainedVal;
-            $max = (int)$maxVal;
+            $obtained = (int) $obtainedVal;
+            $max = (int) $maxVal;
             if ($max <= 0 || $obtained < 0 || $obtained > $max) {
                 $errors[] = "Row {$rowNumber}: Invalid marks score range ({$obtained} out of {$max}).";
                 continue;
@@ -333,9 +358,11 @@ class ResultController extends Controller
 
             // Find Student
             $student = Student::where('examination_id', $exam->id)
-                ->where(function($q) use ($regVal, $htVal) {
-                    if (!empty($regVal)) $q->where('registration_number', $regVal);
-                    if (!empty($htVal)) $q->orWhere('hall_ticket_number', $htVal);
+                ->where(function ($q) use ($regVal, $htVal) {
+                    if (!empty($regVal))
+                        $q->where('registration_number', $regVal);
+                    if (!empty($htVal))
+                        $q->orWhere('hall_ticket_number', $htVal);
                 })->first();
 
             if (!$student) {
@@ -354,13 +381,20 @@ class ResultController extends Controller
             $grade = $gradeIdx !== false ? trim($row[$gradeIdx]) : '';
             $percentage = round(($obtained / $max) * 100, 2);
             if (empty($grade)) {
-                if ($percentage >= 90) $grade = 'A+';
-                elseif ($percentage >= 80) $grade = 'A';
-                elseif ($percentage >= 70) $grade = 'B';
-                elseif ($percentage >= 60) $grade = 'C';
-                elseif ($percentage >= 50) $grade = 'D';
-                elseif ($percentage >= 40) $grade = 'E';
-                else $grade = 'F';
+                if ($percentage >= 90)
+                    $grade = 'A+';
+                elseif ($percentage >= 80)
+                    $grade = 'A';
+                elseif ($percentage >= 70)
+                    $grade = 'B';
+                elseif ($percentage >= 60)
+                    $grade = 'C';
+                elseif ($percentage >= 50)
+                    $grade = 'D';
+                elseif ($percentage >= 40)
+                    $grade = 'E';
+                else
+                    $grade = 'F';
             }
 
             // Status
@@ -435,9 +469,9 @@ class ResultController extends Controller
         }
 
         $student = Student::where('examination_id', $request->examination_id)
-            ->where(function($q) use ($request) {
+            ->where(function ($q) use ($request) {
                 $q->where('registration_number', $request->search_number)
-                  ->orWhere('hall_ticket_number', $request->search_number);
+                    ->orWhere('hall_ticket_number', $request->search_number);
             })->first();
 
         // 1. Basic matching validation

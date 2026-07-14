@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERMS - Examination Registration Management System</title>
+    <title>@yield('page_title', 'Auth') | ERMS</title>
+    <meta name="description" content="@yield('page_description', 'ERMS - Examination Registration Management System')">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

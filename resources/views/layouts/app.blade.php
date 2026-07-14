@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERMS - Examination Registration Management System</title>
+    <title>@yield('page_title', 'Dashboard') | ERMS</title>
+    <meta name="description" content="@yield('page_description', 'ERMS - Examination Registration Management System')">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -446,7 +447,7 @@
 
             <!-- ALERTS / NOTIFICATIONS -->
             @if(session('success'))
-                <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-300"
+                <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" x-transition:leave="transition ease-in duration-300"
                     x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4"
                     class="mb-6 p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 text-emerald-200 flex items-center justify-between shadow-[0_0_15px_rgba(16,185,129,0.05)]">
                     <div class="flex items-center gap-3">
@@ -468,7 +469,7 @@
             @endif
 
             @if(session('error'))
-                <div x-data="{ show: true }" x-show="show" x-transition:leave="transition ease-in duration-300"
+                <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 6000)" x-show="show" x-transition:leave="transition ease-in duration-300"
                     x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4"
                     class="mb-6 p-4 rounded-2xl bg-rose-950/40 border border-rose-800/40 text-rose-200 flex items-center justify-between shadow-[0_0_15px_rgba(244,63,94,0.05)]">
                     <div class="flex items-center gap-3">

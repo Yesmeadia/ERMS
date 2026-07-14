@@ -138,6 +138,62 @@ class StudentController extends Controller
     }
 
     /**
+     * Super Admin: Show form for editing student details.
+     */
+    public function adminEdit(Student $student)
+    {
+        $student->load(['class', 'category', 'school', 'examination']);
+        $classes = ClassMaster::where('status', true)->get();
+        $categories = CategoryMaster::where('status', true)->get();
+        $examinations = Examination::all();
+        $statuses = ['Draft', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'];
+        $paymentStatuses = ['Unpaid', 'Paid'];
+
+        return view('super-admin.students.edit', compact('student', 'classes', 'categories', 'examinations', 'statuses', 'paymentStatuses'));
+    }
+
+    /**
+     * Super Admin: Update student details.
+     */
+    public function adminUpdate(Request $request, Student $student)
+    {
+        $validated = $request->validate([
+            'examination_id' => ['required', 'exists:examinations,id'],
+            'class_id' => ['required', 'exists:classes,id'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'gender' => ['required', 'in:Male,Female,Other'],
+            'dob' => ['required', 'date', 'before:today'],
+            'father_name' => ['required', 'string', 'max:255'],
+            'mother_name' => ['required', 'string', 'max:255'],
+            'mobile_number' => ['required', 'string', 'max:15'],
+            'registration_number' => ['nullable', 'string', 'max:50'],
+            'status' => ['required', 'in:Draft,Submitted,Under Review,Approved,Rejected,Hall Ticket Issued'],
+            'payment_status' => ['required', 'in:Unpaid,Paid'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
+        ]);
+
+        $studentData = $validated;
+
+        if ($request->hasFile('photograph')) {
+            // Delete old photo if it exists
+            if ($student->photograph) {
+                Storage::disk('public')->delete($student->photograph);
+            }
+            $studentData['photograph'] = $request->file('photograph')->store('students/photos', 'public');
+        }
+
+        $student->update($studentData);
+
+        activity()
+            ->performedOn($student)
+            ->log("Super Admin updated student registration details for {$student->name}");
+
+        return redirect()->route('admin.students.index')->with('success', 'Student registration details updated successfully.');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)

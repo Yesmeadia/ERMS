@@ -112,6 +112,18 @@ class PaymentController extends Controller
 
         $school = Auth::user()->school;
 
+        // Check if any selected student is missing a photo
+        $unphotographedCount = Student::where('school_id', $school->id)
+            ->whereIn('id', $studentIds)
+            ->where(function ($q) {
+                $q->whereNull('photograph')->orWhere('photograph', '');
+            })
+            ->count();
+
+        if ($unphotographedCount > 0) {
+            return redirect()->route('school.students.index')->with('error', 'Student photo is not uploaded.');
+        }
+
         // CWE-639: Validate ownership and payment status of every student ID to prevent parameter manipulation
         $validUnpaidStudentCount = Student::where('school_id', $school->id)
             ->whereIn('id', $studentIds)
@@ -172,6 +184,18 @@ class PaymentController extends Controller
 
         $school = Auth::user()->school;
 
+        // Check if any selected student is missing a photo
+        $unphotographedCount = Student::where('school_id', $school->id)
+            ->whereIn('id', $studentIds)
+            ->where(function ($q) {
+                $q->whereNull('photograph')->orWhere('photograph', '');
+            })
+            ->count();
+
+        if ($unphotographedCount > 0) {
+            return redirect()->route('school.students.index')->with('error', 'Student photo is not uploaded.');
+        }
+
         // CWE-639: Validate ownership and payment status of every student ID to prevent parameter manipulation
         $validUnpaidStudentCount = Student::where('school_id', $school->id)
             ->whereIn('id', $studentIds)
@@ -184,18 +208,18 @@ class PaymentController extends Controller
 
         // Cashfree API configuration
         $isProduction = config('services.cashfree.env') === 'production';
-        $baseUrl      = $isProduction
+        $baseUrl = $isProduction
             ? 'https://api.cashfree.com/pg'
             : 'https://sandbox.cashfree.com/pg';
-        $clientId     = config('services.cashfree.client_id');
+        $clientId = config('services.cashfree.client_id');
         $clientSecret = config('services.cashfree.client_secret');
 
         $headers = [
-            'x-client-id'     => $clientId,
+            'x-client-id' => $clientId,
             'x-client-secret' => $clientSecret,
-            'x-api-version'   => '2023-08-01',
-            'Content-Type'    => 'application/json',
-            'Accept'          => 'application/json',
+            'x-api-version' => '2023-08-01',
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
         ];
 
         // CWE-362: Check for an exact matching pending payment to reuse and prevent duplicate charges/orders
@@ -219,7 +243,7 @@ class PaymentController extends Controller
         if ($matchingPayment) {
             $cfOrderId = $matchingPayment->cashfree_order_id;
             $paymentDbId = $matchingPayment->id;
-            
+
             // Verify existing session against Cashfree
             try {
                 $http = new GuzzleClient(['timeout' => 15]);
@@ -285,15 +309,15 @@ class PaymentController extends Controller
                     $returnUrl = route('school.payments.callback') . '?order_id=' . $cfOrderId;
 
                     $payload = [
-                        'order_id'       => $cfOrderId,
-                        'order_amount'   => round($totalAmount, 2),
+                        'order_id' => $cfOrderId,
+                        'order_amount' => round($totalAmount, 2),
                         'order_currency' => 'INR',
-                        'order_note'     => 'YES GENIUS — Registration Fee for ' . $school->name,
+                        'order_note' => 'YES GENIUS — Registration Fee for ' . $school->name,
                         'customer_details' => [
-                            'customer_id'    => 'school_' . $school->id,
+                            'customer_id' => 'school_' . $school->id,
                             'customer_phone' => '9999999999',
                             'customer_email' => Auth::user()->email,
-                            'customer_name'  => Auth::user()->name,
+                            'customer_name' => Auth::user()->name,
                         ],
                         'order_meta' => [
                             'return_url' => $returnUrl,
@@ -314,12 +338,12 @@ class PaymentController extends Controller
 
                     // Create the payment record in DB
                     $payment = Payment::create([
-                        'school_id'          => $school->id,
-                        'cashfree_order_id'  => $cfOrderId,
-                        'amount'             => $totalAmount,
-                        'payment_method'     => 'Cashfree',
-                        'status'             => 'Pending',
-                        'paid_at'            => null,
+                        'school_id' => $school->id,
+                        'cashfree_order_id' => $cfOrderId,
+                        'amount' => $totalAmount,
+                        'payment_method' => 'Cashfree',
+                        'status' => 'Pending',
+                        'paid_at' => null,
                     ]);
 
                     // Attach students to this payment record
@@ -351,9 +375,9 @@ class PaymentController extends Controller
         // Reload the checkout view with Cashfree session details
         $classBreakdown = [];
         foreach ($students as $student) {
-            $classId   = $student->class_id;
+            $classId = $student->class_id;
             $className = $student->class->name;
-            $fee       = $student->registration_fee;
+            $fee = $student->registration_fee;
 
             if (!isset($classBreakdown[$classId])) {
                 $classBreakdown[$classId] = ['name' => $className, 'count' => 0, 'fee' => $fee, 'total' => 0.00];
@@ -364,13 +388,13 @@ class PaymentController extends Controller
 
         return view('school-admin.payments.checkout', compact('students', 'totalAmount', 'classBreakdown'))
             ->with([
-                'cashfreeOrderId'    => $cfOrderId,
-                'paymentSessionId'   => $paymentSessionId,
-                'cashfreeEnv'        => config('services.cashfree.env', 'sandbox'),
-                'paymentDbId'        => $paymentDbId,
-                'schoolName'         => $school->name,
-                'adminEmail'         => Auth::user()->email,
-                'adminName'          => Auth::user()->name,
+                'cashfreeOrderId' => $cfOrderId,
+                'paymentSessionId' => $paymentSessionId,
+                'cashfreeEnv' => config('services.cashfree.env', 'sandbox'),
+                'paymentDbId' => $paymentDbId,
+                'schoolName' => $school->name,
+                'adminEmail' => Auth::user()->email,
+                'adminName' => Auth::user()->name,
             ]);
     }
 
@@ -387,7 +411,7 @@ class PaymentController extends Controller
                 ->with('error', 'Invalid payment return. Please contact support.');
         }
 
-        $school  = Auth::user()->school;
+        $school = Auth::user()->school;
 
         try {
             // CWE-362: Lock payment row during verification to prevent race conditions with webhooks
@@ -414,24 +438,24 @@ class PaymentController extends Controller
 
         // Cashfree API base URL
         $isProduction = config('services.cashfree.env') === 'production';
-        $baseUrl      = $isProduction
+        $baseUrl = $isProduction
             ? 'https://api.cashfree.com/pg'
             : 'https://sandbox.cashfree.com/pg';
-        $clientId     = config('services.cashfree.client_id');
+        $clientId = config('services.cashfree.client_id');
         $clientSecret = config('services.cashfree.client_secret');
 
         $headers = [
-            'x-client-id'     => $clientId,
+            'x-client-id' => $clientId,
             'x-client-secret' => $clientSecret,
-            'x-api-version'   => '2023-08-01',
-            'Accept'          => 'application/json',
+            'x-api-version' => '2023-08-01',
+            'Accept' => 'application/json',
         ];
 
         $http = new GuzzleClient(['timeout' => 15]);
 
         try {
-            $cfResponse  = $http->get($baseUrl . '/orders/' . $cfOrderId, ['headers' => $headers]);
-            $cfOrder     = json_decode((string) $cfResponse->getBody(), true);
+            $cfResponse = $http->get($baseUrl . '/orders/' . $cfOrderId, ['headers' => $headers]);
+            $cfOrder = json_decode((string) $cfResponse->getBody(), true);
             $orderStatus = $cfOrder['order_status'] ?? 'UNKNOWN';
         } catch (RequestException $e) {
             // API error — fail gracefully without crashing
@@ -455,13 +479,13 @@ class PaymentController extends Controller
         }
 
         // Payment successful — fetch the CF payment ID and actual payment method
-        $cfPaymentId     = null;
-        $resolvedMethod  = 'Cashfree'; // fallback
+        $cfPaymentId = null;
+        $resolvedMethod = 'Cashfree'; // fallback
         try {
             $paymentsResponse = $http->get($baseUrl . '/orders/' . $cfOrderId . '/payments', ['headers' => $headers]);
             $cfPayments = json_decode((string) $paymentsResponse->getBody(), true);
             if (!empty($cfPayments) && isset($cfPayments[0]['cf_payment_id'])) {
-                $cfPaymentId    = (string) $cfPayments[0]['cf_payment_id'];
+                $cfPaymentId = (string) $cfPayments[0]['cf_payment_id'];
                 $resolvedMethod = self::resolveCashfreePaymentMethod($cfPayments[0]);
             }
         } catch (RequestException $e) {
@@ -470,17 +494,17 @@ class PaymentController extends Controller
 
         // Mark payment as complete
         DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId, $resolvedMethod) {
-            $payment->status               = 'Paid';
-            $payment->transaction_id       = $cfPaymentId ?? $cfOrderId;
-            $payment->cashfree_payment_id  = $cfPaymentId;
-            $payment->payment_method       = $resolvedMethod;
-            $payment->paid_at              = now();
+            $payment->status = 'Paid';
+            $payment->transaction_id = $cfPaymentId ?? $cfOrderId;
+            $payment->cashfree_payment_id = $cfPaymentId;
+            $payment->payment_method = $resolvedMethod;
+            $payment->paid_at = now();
             $payment->save();
 
             // Mark all attached students as paid and submitted
             foreach ($payment->students as $student) {
                 $student->payment_status = 'Paid';
-                $student->status         = 'Submitted';
+                $student->status = 'Submitted';
                 $student->save();
 
                 activity()
@@ -510,14 +534,14 @@ class PaymentController extends Controller
             // Verify signature: Cashfree sends x-webhook-signature and x-webhook-timestamp
             $timestamp = $request->header('x-webhook-timestamp');
             $signature = $request->header('x-webhook-signature');
-            $rawBody   = $request->getContent();
+            $rawBody = $request->getContent();
 
             if (!$timestamp || !$signature) {
                 return response()->json(['status' => 'error', 'message' => 'Missing webhook signature headers'], 401);
             }
 
             $signedPayload = $timestamp . $rawBody;
-            $expectedSig   = base64_encode(hash_hmac('sha256', $signedPayload, $webhookSecret, true));
+            $expectedSig = base64_encode(hash_hmac('sha256', $signedPayload, $webhookSecret, true));
 
             if (!hash_equals($expectedSig, $signature)) {
                 return response()->json(['status' => 'error', 'message' => 'Invalid webhook signature'], 401);
@@ -526,7 +550,7 @@ class PaymentController extends Controller
 
         $payload = $request->json()->all();
         $eventType = $payload['type'] ?? null;
-        $data      = $payload['data'] ?? [];
+        $data = $payload['data'] ?? [];
         $orderData = $data['order'] ?? [];
         $cfOrderId = $orderData['order_id'] ?? null;
 
@@ -544,7 +568,7 @@ class PaymentController extends Controller
             return response()->json(['status' => 'ok', 'message' => 'Payment already processed or not found']);
         }
 
-        $cfPaymentId    = (string) ($data['payment']['cf_payment_id'] ?? $cfOrderId);
+        $cfPaymentId = (string) ($data['payment']['cf_payment_id'] ?? $cfOrderId);
         $resolvedMethod = self::resolveCashfreePaymentMethod($data['payment'] ?? []);
 
         DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId, $resolvedMethod) {
@@ -557,16 +581,16 @@ class PaymentController extends Controller
                 return; // Already handled by callback
             }
 
-            $payment->status              = 'Paid';
-            $payment->transaction_id      = $cfPaymentId;
+            $payment->status = 'Paid';
+            $payment->transaction_id = $cfPaymentId;
             $payment->cashfree_payment_id = $cfPaymentId;
-            $payment->payment_method      = $resolvedMethod;
-            $payment->paid_at             = now();
+            $payment->payment_method = $resolvedMethod;
+            $payment->paid_at = now();
             $payment->save();
 
             foreach ($payment->students as $student) {
                 $student->payment_status = 'Paid';
-                $student->status         = 'Submitted';
+                $student->status = 'Submitted';
                 $student->save();
 
                 activity()
@@ -589,7 +613,7 @@ class PaymentController extends Controller
      */
     private static function resolveCashfreePaymentMethod(array $cfPayment): string
     {
-        $group  = strtolower($cfPayment['payment_group'] ?? '');
+        $group = strtolower($cfPayment['payment_group'] ?? '');
         $method = $cfPayment['payment_method'] ?? [];
 
         switch ($group) {
@@ -598,11 +622,11 @@ class PaymentController extends Controller
                 return $upiId ? 'UPI (' . $upiId . ')' : 'UPI';
 
             case 'card':
-                $card     = $method['card'] ?? [];
+                $card = $method['card'] ?? [];
                 $cardType = ucfirst(strtolower($card['card_type'] ?? '')); // DEBIT / CREDIT
-                $network  = ucfirst(strtolower($card['card_network'] ?? '')); // VISA / MASTERCARD
-                $last4    = $card['card_number'] ?? null; // last 4 digits if available
-                $label    = trim($network . ' ' . $cardType . ' Card');
+                $network = ucfirst(strtolower($card['card_network'] ?? '')); // VISA / MASTERCARD
+                $last4 = $card['card_number'] ?? null; // last 4 digits if available
+                $label = trim($network . ' ' . $cardType . ' Card');
                 if ($last4) {
                     $label .= ' (···' . substr($last4, -4) . ')';
                 }
