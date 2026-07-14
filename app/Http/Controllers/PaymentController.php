@@ -454,23 +454,26 @@ class PaymentController extends Controller
                 ->with('error', 'Payment was not completed (status: ' . $orderStatus . '). No amount was charged.');
         }
 
-        // Payment successful — fetch the CF payment ID
-        $cfPaymentId = null;
+        // Payment successful — fetch the CF payment ID and actual payment method
+        $cfPaymentId     = null;
+        $resolvedMethod  = 'Cashfree'; // fallback
         try {
             $paymentsResponse = $http->get($baseUrl . '/orders/' . $cfOrderId . '/payments', ['headers' => $headers]);
             $cfPayments = json_decode((string) $paymentsResponse->getBody(), true);
             if (!empty($cfPayments) && isset($cfPayments[0]['cf_payment_id'])) {
-                $cfPaymentId = (string) $cfPayments[0]['cf_payment_id'];
+                $cfPaymentId    = (string) $cfPayments[0]['cf_payment_id'];
+                $resolvedMethod = self::resolveCashfreePaymentMethod($cfPayments[0]);
             }
         } catch (RequestException $e) {
             // Non-critical — fall back to order ID if payment ID call fails
         }
 
         // Mark payment as complete
-        DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId) {
+        DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId, $resolvedMethod) {
             $payment->status               = 'Paid';
             $payment->transaction_id       = $cfPaymentId ?? $cfOrderId;
             $payment->cashfree_payment_id  = $cfPaymentId;
+            $payment->payment_method       = $resolvedMethod;
             $payment->paid_at              = now();
             $payment->save();
 
@@ -541,9 +544,10 @@ class PaymentController extends Controller
             return response()->json(['status' => 'ok', 'message' => 'Payment already processed or not found']);
         }
 
-        $cfPaymentId = (string) ($data['payment']['cf_payment_id'] ?? $cfOrderId);
+        $cfPaymentId    = (string) ($data['payment']['cf_payment_id'] ?? $cfOrderId);
+        $resolvedMethod = self::resolveCashfreePaymentMethod($data['payment'] ?? []);
 
-        DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId) {
+        DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId, $resolvedMethod) {
             // Re-check inside transaction with row lock to prevent race with callback
             $payment = Payment::where('cashfree_order_id', $cfOrderId)
                 ->lockForUpdate()
@@ -556,6 +560,7 @@ class PaymentController extends Controller
             $payment->status              = 'Paid';
             $payment->transaction_id      = $cfPaymentId;
             $payment->cashfree_payment_id = $cfPaymentId;
+            $payment->payment_method      = $resolvedMethod;
             $payment->paid_at             = now();
             $payment->save();
 
@@ -575,6 +580,53 @@ class PaymentController extends Controller
         });
 
         return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Resolve a human-readable payment method label from a Cashfree payment object.
+     * Cashfree returns payment_group (e.g. "upi", "card", "net_banking") and
+     * a nested payment_method object with instrument-specific details.
+     */
+    private static function resolveCashfreePaymentMethod(array $cfPayment): string
+    {
+        $group  = strtolower($cfPayment['payment_group'] ?? '');
+        $method = $cfPayment['payment_method'] ?? [];
+
+        switch ($group) {
+            case 'upi':
+                $upiId = $method['upi']['upi_id'] ?? null;
+                return $upiId ? 'UPI (' . $upiId . ')' : 'UPI';
+
+            case 'card':
+                $card     = $method['card'] ?? [];
+                $cardType = ucfirst(strtolower($card['card_type'] ?? '')); // DEBIT / CREDIT
+                $network  = ucfirst(strtolower($card['card_network'] ?? '')); // VISA / MASTERCARD
+                $last4    = $card['card_number'] ?? null; // last 4 digits if available
+                $label    = trim($network . ' ' . $cardType . ' Card');
+                if ($last4) {
+                    $label .= ' (···' . substr($last4, -4) . ')';
+                }
+                return $label ?: 'Card';
+
+            case 'net_banking':
+            case 'netbanking':
+                $bankName = $method['netbanking']['channel'] ?? $method['netbanking']['netbanking_bank_code'] ?? null;
+                return $bankName ? 'Net Banking (' . $bankName . ')' : 'Net Banking';
+
+            case 'wallet':
+                $walletName = $method['app']['channel'] ?? null;
+                return $walletName ? ucfirst($walletName) . ' Wallet' : 'Wallet';
+
+            case 'emi':
+                $emiCard = $method['emi']['card_network'] ?? null;
+                return $emiCard ? 'EMI (' . ucfirst(strtolower($emiCard)) . ')' : 'EMI';
+
+            case 'pay_later':
+                return 'Pay Later';
+
+            default:
+                return $group ? ucwords(str_replace('_', ' ', $group)) : 'Cashfree';
+        }
     }
 
     /**

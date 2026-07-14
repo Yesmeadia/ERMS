@@ -130,7 +130,7 @@ class ReportController extends Controller
                 $query = School::leftJoin('students', 'schools.id', '=', 'students.school_id');
 
                 if ($examinationId) {
-                    $query->where(function($q) use ($examinationId) {
+                    $query->where(function ($q) use ($examinationId) {
                         $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
                     });
                 }
@@ -146,8 +146,8 @@ class ReportController extends Controller
                     DB::raw('sum(case when students.status = "Rejected" then 1 else 0 end) as rejected'),
                     DB::raw('sum(case when students.status = "Hall Ticket Issued" then 1 else 0 end) as ht_issued')
                 )
-                ->groupBy('schools.code', 'schools.name')
-                ->get();
+                    ->groupBy('schools.code', 'schools.name')
+                    ->get();
 
                 foreach ($data as $item) {
                     $row = [
@@ -173,19 +173,19 @@ class ReportController extends Controller
                     'stacked' => true,
                     'categories' => $ordered->pluck('name')->all(),
                     'series' => [
-                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn ($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn ($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn ($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn ($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn ($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn ($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn($value) => (int) ($value ?? 0))->all()],
                     ],
                 ];
                 break;
 
             case 'attendance':
                 $headings = ['Reg. Number', 'HT Number', 'Student Name', 'School', 'Category', 'Exam Session', 'Date', 'Time', 'Marked By', 'Status'];
-                
+
                 $query = Student::join('schools', 'students.school_id', '=', 'schools.id')
                     ->join('categories', 'students.category_id', '=', 'categories.id')
                     ->join('examinations', 'students.examination_id', '=', 'examinations.id')
@@ -239,33 +239,33 @@ class ReportController extends Controller
                     $exportRows[] = $row;
                 }
 
-                $grouped = $data->groupBy('status')->map(fn ($items) => $items->count());
+                $grouped = $data->groupBy('status')->map(fn($items) => $items->count());
                 $chart = [
                     'title' => 'Attendance Summary',
                     'chartType' => 'donut',
                     'categories' => $grouped->keys()->all(),
                     'labels' => $grouped->keys()->all(),
-                    'series' => $grouped->values()->map(fn ($value) => (int) $value)->all(),
+                    'series' => $grouped->values()->map(fn($value) => (int) $value)->all(),
                 ];
                 break;
 
             case 'attendance_category':
                 $headings = ['Category Name', 'Total Tickets Issued', 'Present Today', 'Absent Today', 'Attendance Rate'];
-                
-                $query = CategoryMaster::leftJoin('students', function($join) use ($examinationId) {
+
+                $query = CategoryMaster::leftJoin('students', function ($join) use ($examinationId) {
                     $join->on('categories.id', '=', 'students.category_id')
-                         ->where('students.status', '=', 'Hall Ticket Issued');
+                        ->where('students.status', '=', 'Hall Ticket Issued');
                     if ($examinationId) {
                         $join->where('students.examination_id', '=', $examinationId);
                     }
                 })
-                ->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
-                ->select(
-                    'categories.name as category_name',
-                    DB::raw('count(distinct students.id) as total_issued'),
-                    DB::raw('count(distinct case when attendance.status = "Present" then attendance.id end) as present_count')
-                )
-                ->groupBy('categories.name');
+                    ->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
+                    ->select(
+                        'categories.name as category_name',
+                        DB::raw('count(distinct students.id) as total_issued'),
+                        DB::raw('count(distinct case when attendance.status = "Present" then attendance.id end) as present_count')
+                    )
+                    ->groupBy('categories.name');
 
                 $data = $query->get();
 
@@ -274,7 +274,7 @@ class ReportController extends Controller
                     $present = $item->present_count ?? 0;
                     $absent = $total - $present;
                     $rate = $total > 0 ? round(($present / $total) * 100, 1) . '%' : '0%';
-                    
+
                     $row = [
                         $item->category_name,
                         $total,
@@ -293,15 +293,15 @@ class ReportController extends Controller
                     'chartType' => 'bar',
                     'categories' => $ordered->pluck('category_name')->all(),
                     'series' => [
-                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn ($value) => (int) $value)->all()],
-                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn ($value) => (int) $value)->all()],
+                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn($value) => (int) $value)->all()],
+                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn($value) => (int) $value)->all()],
                     ],
                 ];
                 break;
 
             case 'attendance_gender':
                 $headings = ['Gender', 'Total Tickets Issued', 'Present Today', 'Absent Today', 'Attendance Rate'];
-                
+
                 $query = Student::where('students.status', 'Hall Ticket Issued')
                     ->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
                     ->select(
@@ -323,7 +323,7 @@ class ReportController extends Controller
                     $present = $item->present_count ?? 0;
                     $absent = $total - $present;
                     $rate = $total > 0 ? round(($present / $total) * 100, 1) . '%' : '0%';
-                    
+
                     $row = [
                         $genderLabel,
                         $total,
@@ -342,8 +342,8 @@ class ReportController extends Controller
                     'chartType' => 'bar',
                     'categories' => $ordered->pluck('gender')->map(fn($g) => ucfirst($g ?? 'Unknown'))->all(),
                     'series' => [
-                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn ($value) => (int) $value)->all()],
-                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn ($value) => (int) $value)->all()],
+                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn($value) => (int) $value)->all()],
+                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn($value) => (int) $value)->all()],
                     ],
                 ];
                 break;
@@ -353,13 +353,13 @@ class ReportController extends Controller
                 $query = ClassMaster::leftJoin('students', 'classes.id', '=', 'students.class_id');
 
                 if ($examinationId) {
-                    $query->where(function($q) use ($examinationId) {
+                    $query->where(function ($q) use ($examinationId) {
                         $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
                     });
                 }
 
-                $data = $query->select('classes.code', 'classes.name', DB::raw('count(students.id) as total'))
-                    ->groupBy('classes.code', 'classes.name')
+                $data = $query->select('classes.name', DB::raw('count(students.id) as total'))
+                    ->groupBy('classes.name')
                     ->get();
 
                 foreach ($data as $item) {
@@ -375,7 +375,7 @@ class ReportController extends Controller
                     'chartType' => 'donut',
                     'categories' => $ordered->pluck('name')->all(),
                     'labels' => $ordered->pluck('name')->all(),
-                    'series' => $ordered->pluck('total')->map(fn ($value) => (int) $value)->all(),
+                    'series' => $ordered->pluck('total')->map(fn($value) => (int) $value)->all(),
                 ];
                 break;
 
@@ -384,7 +384,7 @@ class ReportController extends Controller
                 $query = CategoryMaster::leftJoin('students', 'categories.id', '=', 'students.category_id');
 
                 if ($examinationId) {
-                    $query->where(function($q) use ($examinationId) {
+                    $query->where(function ($q) use ($examinationId) {
                         $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
                     });
                 }
@@ -406,7 +406,7 @@ class ReportController extends Controller
                     'chartType' => 'pie',
                     'categories' => $ordered->pluck('name')->all(),
                     'labels' => $ordered->pluck('name')->all(),
-                    'series' => $ordered->pluck('total')->map(fn ($value) => (int) $value)->all(),
+                    'series' => $ordered->pluck('total')->map(fn($value) => (int) $value)->all(),
                 ];
                 break;
 
@@ -431,7 +431,7 @@ class ReportController extends Controller
                     'stacked' => false,
                     'categories' => $ordered->pluck('name')->all(),
                     'series' => [
-                        ['name' => 'Registrations', 'data' => $ordered->pluck('total')->map(fn ($value) => (int) $value)->all()],
+                        ['name' => 'Registrations', 'data' => $ordered->pluck('total')->map(fn($value) => (int) $value)->all()],
                     ],
                 ];
                 break;
@@ -485,7 +485,7 @@ class ReportController extends Controller
                     $exportRows[] = $row;
                 }
 
-                $groupedBySchool = $data->groupBy('school_name')->map(fn ($items) => $items->count())->sortDesc();
+                $groupedBySchool = $data->groupBy('school_name')->map(fn($items) => $items->count())->sortDesc();
                 $chartType = match ($type) {
                     'approved' => 'bar',
                     'rejected' => 'line',
@@ -498,7 +498,7 @@ class ReportController extends Controller
                         'chartType' => $chartType,
                         'categories' => $groupedBySchool->keys()->values()->all(),
                         'labels' => $groupedBySchool->keys()->values()->all(),
-                        'series' => $groupedBySchool->values()->map(fn ($value) => (int) $value)->all(),
+                        'series' => $groupedBySchool->values()->map(fn($value) => (int) $value)->all(),
                     ];
                 } else {
                     $chart = [
@@ -507,7 +507,7 @@ class ReportController extends Controller
                         'stacked' => false,
                         'categories' => $groupedBySchool->keys()->values()->all(),
                         'series' => [
-                            ['name' => 'Records', 'data' => $groupedBySchool->values()->map(fn ($value) => (int) $value)->all()],
+                            ['name' => 'Records', 'data' => $groupedBySchool->values()->map(fn($value) => (int) $value)->all()],
                         ],
                     ];
                 }

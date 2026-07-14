@@ -34,7 +34,8 @@
             <div>
                 <label class="block text-sm font-medium text-slate-300 mb-2">Registration Fee (INR) <span
                         class="text-rose-400">*</span></label>
-                <input type="number" name="registration_fee" value="{{ old('registration_fee', '0.00') }}" required step="0.01" min="0"
+                <input type="number" name="registration_fee" value="{{ old('registration_fee', '150.00') }}" required
+                    step="0.01" min="0"
                     class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 @error('registration_fee') border-rose-500 @enderror"
                     placeholder="120.00">
                 @error('registration_fee')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror

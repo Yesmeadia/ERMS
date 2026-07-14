@@ -4,14 +4,8 @@
 
 @section('content')
 @php
-    $unpaidCount = $students->filter(fn($s) => $s->payment_status === 'Unpaid' && in_array($s->status, ['Draft','Rejected']))->count();
-    
     // Calculate page metrics for the school admin dashboard view
     $totalCount = $students->total();
-    $unpaidTotal = \App\Models\Student::where('school_id', auth()->user()->school_id)
-        ->where('payment_status', 'Unpaid')
-        ->whereIn('status', ['Draft', 'Rejected'])
-        ->count();
     $submittedCount = \App\Models\Student::where('school_id', auth()->user()->school_id)
         ->where('status', 'Submitted')
         ->count();
@@ -63,20 +57,6 @@
         <p class="text-xs text-slate-400 mt-1">Manage, verify, and settle fees for exam candidates in draft state.</p>
     </div>
     <div class="flex flex-wrap gap-3 items-center">
-        @if($unpaidCount > 0)
-            <form method="POST" action="{{ route('school.payments.checkout') }}" class="inline animate-fade-in">
-                @csrf
-                @foreach($students->filter(fn($s) => $s->payment_status === 'Unpaid' && in_array($s->status, ['Draft','Rejected'])) as $student)
-                    <input type="hidden" name="student_ids[]" value="{{ $student->id }}">
-                @endforeach
-                <button type="submit"
-                        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-950/20 cursor-pointer active:scale-95 duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
-                    Pay All Unpaid ({{ $unpaidCount }})
-                </button>
-            </form>
-        @endif
-
         <a href="{{ route('school.students.create') }}"
            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-950/20 cursor-pointer active:scale-95 duration-200">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -279,7 +259,7 @@
 @endif
 
 {{-- ─── Bulk Payment Banner (only when unpaid Draft/Rejected exist) ─────────── --}}
-@if($unpaidCount > 0)
+@if($unpaidTotal > 0)
 <div class="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-indigo-950/60 to-slate-900/60 border border-indigo-950 rounded-2xl px-5 py-4 shadow-xl">
     <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
@@ -287,17 +267,23 @@
         </div>
         <div>
             <p class="text-xs font-semibold text-slate-200">
-                <span class="text-indigo-400 font-bold">{{ $unpaidCount }}</span> candidate(s) on this page are awaiting fee payment.
+                <span class="text-indigo-400 font-bold">{{ $unpaidTotal }}</span> candidate(s) in total are awaiting fee payment.
             </p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Select candidates using checkboxes below, then click <strong class="text-slate-350">Pay Selected</strong> to process registrations.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Use checkboxes to select individually, or pay all unpaid candidates at once.</p>
         </div>
     </div>
-    {{-- Quick "Select All Unpaid" convenience button --}}
-    <button type="button" id="select-all-unpaid-btn"
-            class="shrink-0 inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-600/20 active:scale-95 duration-200">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        Select All Unpaid
-    </button>
+    {{-- Pay All Unpaid (all pages) --}}
+    <form method="POST" action="{{ route('school.payments.checkout') }}" class="shrink-0">
+        @csrf
+        @foreach($allUnpaidIds as $uid)
+            <input type="hidden" name="student_ids[]" value="{{ $uid }}">
+        @endforeach
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-600/20 active:scale-95 duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+            Pay All Unpaid ({{ $unpaidTotal }})
+        </button>
+    </form>
 </div>
 @endif
 
@@ -499,19 +485,6 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
                                     </a>
 
-                                    @if($isPayable)
-                                        {{-- Pay Individual --}}
-                                        <form method="POST" action="{{ route('school.payments.checkout') }}" class="inline">
-                                            @csrf
-                                            <input type="hidden" name="student_ids[]" value="{{ $student->id }}">
-                                            <button type="submit"
-                                                    class="p-2 rounded-xl text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all duration-150 cursor-pointer"
-                                                    title="Pay Fee & Submit (Individual)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
-                                            </button>
-                                        </form>
-                                    @endif
-
                                     {{-- Delete --}}
                                     <form method="POST" action="{{ route('school.students.destroy', $student) }}"
                                           onsubmit="return confirm('Are you sure you want to delete this draft registration?')" class="inline">
@@ -615,20 +588,6 @@
     </div>
 </div>
 
-{{-- ─── Select All Unpaid JS helper ────────────────────────────────────────── --}}
-<script @nonce>
-    document.addEventListener('DOMContentLoaded', function () {
-        const btn = document.getElementById('select-all-unpaid-btn');
-        if (btn) {
-            btn.addEventListener('click', function () {
-                const masterCb = document.getElementById('select-all-checkbox');
-                if (masterCb) {
-                    masterCb.checked = true;
-                    masterCb.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        }
-    });
-</script>
+
 
 @endsection

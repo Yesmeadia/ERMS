@@ -1,10 +1,10 @@
 @extends('layouts.app')
 @section('page_title', 'Verification & Approval')
+@section('page_description', 'Review, approve, or reject student registrations')
 @section('content')
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-            <h2 class="text-xl font-bold text-white">Verification & Approval</h2>
             <p class="text-sm text-slate-400 mt-0.5">Review, approve, or reject student registrations</p>
         </div>
     </div>
