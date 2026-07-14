@@ -21,11 +21,11 @@
                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Exam Session</label>
-                <select name="examination_id" class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                    <option value="">All Sessions</option>
-                    @foreach($examinations as $exam)
-                        <option value="{{ $exam->id }}" @selected(request('examination_id') == $exam->id)>{{ $exam->name }}</option>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Exam Centre</label>
+                <select name="centre_id" class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    <option value="">All Exam Centres</option>
+                    @foreach($centres as $centre)
+                        <option value="{{ $centre->id }}" @selected(request('centre_id') == $centre->id)>{{ $centre->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -40,7 +40,7 @@
             </div>
             <div class="sm:col-span-3 flex gap-2 justify-end mt-2">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-                @if(request()->hasAny(['search', 'examination_id', 'category_id']))
+                @if(request()->hasAny(['search', 'centre_id', 'category_id']))
                     <a href="{{ route('school.hall-tickets.index') }}" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-all">Clear</a>
                 @endif
             </div>
@@ -80,7 +80,7 @@
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Candidate</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden md:table-cell">Reg. / HT Number</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Class & Category</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Exam Session</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Exam Centre</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Status</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
@@ -115,8 +115,7 @@
                     </td>
                     <td class="px-6 py-4 hidden lg:table-cell">
                         <div class="max-w-[180px] truncate">
-                            <p class="text-slate-300 font-medium text-xs" title="{{ $student->examination->name }}">{{ $student->examination->name }}</p>
-                            <p class="text-[10px] text-slate-500 mt-0.5">{{ $student->examination->academic_year }}</p>
+                            <p class="text-slate-300 font-medium text-xs" title="{{ $student->centre->name ?? '—' }}">{{ $student->centre->name ?? '—' }}</p>
                         </div>
                     </td>
                     <td class="px-6 py-4 text-center whitespace-nowrap">

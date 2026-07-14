@@ -31,8 +31,6 @@ class ClassController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:50', 'unique:classes,code'],
-            'description' => ['nullable', 'string'],
             'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -40,7 +38,7 @@ class ClassController extends Controller
 
         activity()
             ->performedOn($class)
-            ->log("Created class: {$class->name} ({$class->code})");
+            ->log("Created class: {$class->name}");
 
         return redirect()->route('admin.classes.index')->with('success', 'Class created successfully.');
     }
@@ -60,8 +58,6 @@ class ClassController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:50', "unique:classes,code,{$class->id}"],
-            'description' => ['nullable', 'string'],
             'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 

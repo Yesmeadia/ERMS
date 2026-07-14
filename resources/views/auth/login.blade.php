@@ -46,7 +46,7 @@
         <div>
             <label for="password" class="block text-sm font-semibold text-slate-300 mb-1.5">Password</label>
             <div class="relative">
-                <input id="password" :type="showPassword ? 'text' : 'password'" name="password" required placeholder="••••••••"
+                <input id="password" :type="showPassword ? 'text' : 'password'" name="password" required placeholder="••••••••" data-no-strength="true"
                     class="block w-full pl-4 pr-12 py-3 bg-slate-950/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none transition-all duration-200 text-sm">
                 
                 <!-- Eye Toggle Button -->

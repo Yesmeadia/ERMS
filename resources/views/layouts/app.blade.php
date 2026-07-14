@@ -330,6 +330,7 @@
                     Scan History
                 </a>
 
+                @if(\App\Models\Examination::where('status', 'Examination Ongoing')->exists())
                 <a href="{{ route('attendance.scanner') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('attendance.scanner') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -341,6 +342,7 @@
                     </svg>
                     Attendance Scanner
                 </a>
+                @endif
             @endif
 
             <div class="pt-6 border-t border-slate-800/60 mt-6">

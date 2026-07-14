@@ -150,7 +150,7 @@
             {{-- Simulator Actions --}}
             <div class="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
                 <button type="button" @click="initiateSuccess()"
-                        class="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-450 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-emerald-600/10 text-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-98">
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-98">
                     Simulate Success Callback
                 </button>
                 <button type="button" @click="initiateFailure()"

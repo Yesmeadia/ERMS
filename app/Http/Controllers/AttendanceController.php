@@ -22,6 +22,12 @@ class AttendanceController extends Controller
      */
     public function scanner(Request $request)
     {
+        // Restrict invigilators if no examination session is ongoing
+        $ongoingExamExists = Examination::where('status', 'Examination Ongoing')->exists();
+        if (!$ongoingExamExists && Auth::user()->hasRole('invigilator')) {
+            return redirect()->route('attendance.history')->with('error', 'Attendance marking is only active when an examination is ongoing.');
+        }
+
         $userAgent = strtolower($request->userAgent() ?? '');
         $cameraHelpMessage = null;
 
@@ -141,9 +147,9 @@ class AttendanceController extends Controller
 
         // 4. Verify Exam Session
         $exam = Examination::find($examId);
-        if (!$exam || $exam->status !== 'Open') {
+        if (!$exam || $exam->status !== 'Examination Ongoing') {
             $this->logAction($studentId, 'scan_invalid', $request);
-            return response()->json(['status' => 'error', 'message' => 'This examination session is not currently active.'], 422);
+            return response()->json(['status' => 'error', 'message' => 'Attendance marking is only allowed when the examination is ongoing.'], 422);
         }
 
         // 5. Verify Duplicate Attendance
@@ -209,10 +215,10 @@ class AttendanceController extends Controller
         $exam = Examination::findOrFail($examId);
 
         // Verify Exam Session is active
-        if ($exam->status !== 'Open') {
+        if ($exam->status !== 'Examination Ongoing') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'This examination session is not currently active.'
+                'message' => 'Attendance marking is only allowed when the examination is ongoing.'
             ], 422);
         }
 
@@ -491,6 +497,14 @@ class AttendanceController extends Controller
         $date = $request->date;
         $status = $request->status;
         $adminId = Auth::id();
+
+        $exam = Examination::findOrFail($examId);
+        if ($exam->status === 'result published') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Attendance cannot be marked or changed after results are published.'
+            ], 422);
+        }
 
         // Update or insert attendance record
         $attendance = Attendance::updateOrCreate(

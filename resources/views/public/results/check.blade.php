@@ -44,7 +44,7 @@
         <!-- Registration or Hall Ticket Number Input -->
         <div>
             <label for="search_number" class="block text-sm font-semibold text-slate-300 mb-1.5">Registration Number / Hall Ticket Number</label>
-            <input id="search_number" type="text" name="search_number" value="{{ old('search_number') }}" required placeholder="e.g. 30051 or HT30051"
+            <input id="search_number" type="text" name="search_number" value="{{ old('search_number') }}" required placeholder="e.g. 30051 or F89C23D4829E"
                 class="block w-full px-4 py-3 bg-slate-950/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none transition-all duration-200 text-sm">
         </div>
 

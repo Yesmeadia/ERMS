@@ -27,8 +27,8 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
 
     public function model(array $row)
     {
-        // Find class by code (case-insensitive via trim)
-        $class = ClassMaster::where('code', trim($row['class_code']))->where('status', true)->first();
+        // Find class by name (case-insensitive via trim)
+        $class = ClassMaster::where('name', trim($row['class_name']))->where('status', true)->first();
 
         // Find category by code
         $category = CategoryMaster::where('code', trim($row['category_code']))->where('status', true)->first();
@@ -93,7 +93,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
             '*.father_name'              => ['required', 'string', 'max:255'],
             '*.mother_name'              => ['required', 'string', 'max:255'],
             '*.mobile_number'            => ['required'],
-            '*.class_code'               => ['required', 'exists:classes,code'],
+            '*.class_name'               => ['required', 'exists:classes,name'],
             '*.category_code'            => ['required', 'exists:categories,code'],
         ];
     }
@@ -110,8 +110,8 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
             '*.father_name.required'              => 'Father Name is required.',
             '*.mother_name.required'              => 'Mother Name is required.',
             '*.mobile_number.required'            => 'Mobile Number is required.',
-            '*.class_code.required'               => 'Class Code is required.',
-            '*.class_code.exists'                 => 'Class Code does not match any active class. Please check the code.',
+            '*.class_name.required'               => 'Class Name is required.',
+            '*.class_name.exists'                 => 'Class Name does not match any active class. Please check the name.',
             '*.category_code.required'            => 'Category Code is required.',
             '*.category_code.exists'              => 'Category Code does not match any active category. Please check the code.',
         ];

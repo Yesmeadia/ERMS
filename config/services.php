@@ -40,14 +40,11 @@ return [
         'turnstile_secret_key' => env('CLOUDFLARE_TURNSTILE_SECRET_KEY'),
     ],
 
-    'razorpay' => [
-        'key_id'     => env('RAZORPAY_KEY_ID'),
-        'key_secret' => env('RAZORPAY_KEY_SECRET'),
-    ],
-
-    'razorpay_jk' => [
-        'key_id'     => env('RAZORPAY_JK_KEY_ID'),
-        'key_secret' => env('RAZORPAY_JK_KEY_SECRET'),
+    'cashfree' => [
+        'client_id'      => env('CASHFREE_CLIENT_ID'),
+        'client_secret'  => env('CASHFREE_CLIENT_SECRET'),
+        'env'            => env('CASHFREE_ENV', 'sandbox'), // 'sandbox' or 'production'
+        'webhook_secret' => env('CASHFREE_WEBHOOK_SECRET'), // Used to verify Cashfree webhook signatures
     ],
 
 ];

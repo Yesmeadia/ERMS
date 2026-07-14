@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
                 'registration_start_date' => '2026-09-01',
                 'registration_end_date' => '2026-11-30',
                 'hall_ticket_release_date' => '2027-02-15',
-                'status' => 'Open',
+                'status' => 'Registration Started',
             ],
         ];
 

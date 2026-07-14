@@ -325,6 +325,8 @@
                 if (input.dataset.pspAttached) return;
                 // Skip CVV and MFA-style fields that use Alpine x-model
                 if (input.hasAttribute('x-model')) return;
+                // Skip inputs marked as no-strength
+                if (input.hasAttribute('data-no-strength')) return;
 
                 input.dataset.pspAttached = 'true';
 

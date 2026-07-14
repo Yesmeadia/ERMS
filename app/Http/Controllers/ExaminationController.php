@@ -35,7 +35,7 @@ class ExaminationController extends Controller
             'registration_start_date' => ['required', 'date'],
             'registration_end_date' => ['required', 'date', 'after_or_equal:registration_start_date'],
             'hall_ticket_release_date' => ['required', 'date', 'after_or_equal:registration_end_date'],
-            'status' => ['required', 'in:Draft,Open,Closed'],
+            'status' => ['required', 'in:Draft,Registration Started,Registartion closed,Examination Ongoing,result published'],
         ]);
 
         $examination = Examination::create($validated);
@@ -75,7 +75,7 @@ class ExaminationController extends Controller
             'registration_start_date' => ['required', 'date'],
             'registration_end_date' => ['required', 'date', 'after_or_equal:registration_start_date'],
             'hall_ticket_release_date' => ['required', 'date', 'after_or_equal:registration_end_date'],
-            'status' => ['required', 'in:Draft,Open,Closed'],
+            'status' => ['required', 'in:Draft,Registration Started,Registartion closed,Examination Ongoing,result published'],
         ]);
 
         $examination->update($validated);
@@ -111,17 +111,21 @@ class ExaminationController extends Controller
     public function updateStatus(Request $request, Examination $examination)
     {
         $request->validate([
-            'status' => ['required', 'in:Draft,Open,Closed'],
+            'status' => ['required', 'in:Draft,Registration Started,Registartion closed,Examination Ongoing,result published'],
         ]);
 
         $oldStatus = $examination->status;
         $examination->status = $request->status;
         $examination->save();
 
-        if ($request->status === 'Closed' && $oldStatus !== 'Closed') {
+        if ($request->status === 'result published' && $oldStatus !== 'result published') {
             activity()
                 ->performedOn($examination)
-                ->log("Result Publication: Results published and registration closed for examination: {$examination->name}");
+                ->log("Result Publication: Results published for examination: {$examination->name}");
+        } elseif ($request->status === 'Registartion closed' && $oldStatus !== 'Registartion closed') {
+            activity()
+                ->performedOn($examination)
+                ->log("Registration Closed: Registration closed for examination: {$examination->name}");
         } else {
             activity()
                 ->performedOn($examination)

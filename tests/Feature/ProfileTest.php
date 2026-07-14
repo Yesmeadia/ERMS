@@ -181,11 +181,14 @@ class ProfileTest extends TestCase
      */
     public function test_invigilator_can_change_password(): void
     {
+        // Use a highly unique password that won't be flagged by the uncompromised() rule
+        $newPassword = 'T3st!nv!g#' . substr(md5(uniqid('', true)), 0, 8);
+
         $response = $this->actingAs($this->invigilator)
             ->post(route('password.update'), [
                 'current_password' => 'password',
-                'password' => 'NewPassword@123',
-                'password_confirmation' => 'NewPassword@123',
+                'password' => $newPassword,
+                'password_confirmation' => $newPassword,
             ]);
 
         $response->assertRedirect(route('login'));
@@ -194,7 +197,7 @@ class ProfileTest extends TestCase
         // Try to login with new password
         $this->assertTrue(auth()->attempt([
             'email' => 'invigilator@test.com',
-            'password' => 'NewPassword@123',
+            'password' => $newPassword,
         ]));
     }
 }

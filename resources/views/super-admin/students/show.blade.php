@@ -101,7 +101,8 @@
                 {{-- Issue Reg No --}}
                 @if(!$student->registration_number && in_array($student->status, ['Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued']))
                     <form method="POST" action="{{ route('admin.students.issue-registration', $student->id) }}"
-                          onsubmit="return confirm('Issue a registration number for {{ addslashes($student->name) }}?')">
+                          data-student-name="{{ $student->name }}"
+                          class="issue-registration-form">
                         @csrf
                         <button type="submit" id="issue-reg-profile-{{ $student->id }}"
                             class="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-violet-600/15 cursor-pointer">
@@ -150,29 +151,7 @@
                     </a>
                 @endif
 
-                {{-- Assign Examination Centre (Single Candidate) --}}
-                @if(in_array($student->status, ['Submitted', 'Under Review', 'Approved']))
-                    <div class="border-t border-slate-800/80 pt-3.5 mt-3.5">
-                        <form method="POST" action="{{ route('admin.exam-centres.assign-single', $student->id) }}">
-                            @csrf
-                            <label for="profile_centre_id" class="block text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1.5">Assign Examination Centre</label>
-                            <div class="flex gap-2">
-                                <select name="centre_id" id="profile_centre_id" required
-                                        class="flex-1 bg-slate-800 border border-slate-700/60 rounded-xl px-3 py-2 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
-                                    <option value="" disabled {{ $student->centre_id ? '' : 'selected' }}>Select Centre...</option>
-                                    @foreach($designatedCentres as $centre)
-                                        <option value="{{ $centre->id }}" @selected($student->centre_id === $centre->id)>
-                                            {{ $centre->name }} ({{ $centre->code }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl text-xs transition-all cursor-pointer">
-                                    Assign
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                @endif
+
             </div>
         </div>
 
@@ -234,7 +213,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                     <div>
                         <span class="block text-slate-500 text-xs">Class</span>
-                        <span class="text-slate-200 font-semibold mt-1 block">{{ $student->class->name ?? '—' }} ({{ $student->class->code ?? '' }})</span>
+                        <span class="text-slate-200 font-semibold mt-1 block">{{ $student->class->name ?? '—' }}</span>
                     </div>
                     <div>
                         <span class="block text-slate-500 text-xs">Category</span>
@@ -396,4 +375,20 @@
 
         </div>
     </div>
+
+@push('scripts')
+    <script @nonce>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.issue-registration-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const studentName = this.getAttribute('data-student-name');
+                    if (!confirm('Issue a registration number for ' + studentName + '?')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+@endpush
+
 @endsection

@@ -26,7 +26,7 @@
 @endif
 
 {{-- Form Container --}}
-<form method="POST" action="{{ route('school.students.update', $student) }}" enctype="multipart/form-data" class="space-y-6" x-data="{ photoPreview: '{{ $student->photo_url }}' }">
+<form method="POST" action="{{ route('school.students.update', $student) }}" enctype="multipart/form-data" class="space-y-6" x-data='{ photoPreview: @js($student->photo_url) }'>
     @csrf
     @method('PUT')
 

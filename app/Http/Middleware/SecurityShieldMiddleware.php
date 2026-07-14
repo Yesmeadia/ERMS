@@ -82,6 +82,31 @@ class SecurityShieldMiddleware
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        // Enforce security headers
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Frame-Options', 'DENY');
+        $response->headers->set('X-XSS-Protection', '1; mode=block');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+        if ($request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+        }
+
+        // Add Content Security Policy (CSP)
+        $csp = "default-src 'self'; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net; " .
+               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
+               "img-src 'self' data: https://* http://*; " .
+               "font-src 'self' https://fonts.gstatic.com; " .
+               "connect-src 'self' https://api.cashfree.com https://sandbox.cashfree.com https://challenges.cloudflare.com; " .
+               "frame-src 'self' https://sdk.cashfree.com https://challenges.cloudflare.com; " .
+               "frame-ancestors 'none';";
+        
+        $response->headers->set('Content-Security-Policy', $csp);
+
+        return $response;
     }
 }

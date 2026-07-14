@@ -65,12 +65,12 @@
                         <tr class="hover:bg-slate-800/15 transition-all duration-150">
                             <td class="py-4 px-6">
                                 <span class="font-mono font-bold text-slate-200 block truncate max-w-[200px]"
-                                    title="{{ $payment->transaction_id ?? $payment->razorpay_order_id }}">
-                                    {{ $payment->transaction_id ?? ($payment->razorpay_order_id ?? 'Pending...') }}
+                                    title="{{ $payment->transaction_id ?? $payment->cashfree_order_id }}">
+                                    {{ $payment->transaction_id ?? ($payment->cashfree_order_id ?? 'Pending...') }}
                                 </span>
-                                @if($payment->razorpay_order_id && $payment->transaction_id !== $payment->razorpay_order_id)
+                                @if($payment->cashfree_order_id && $payment->transaction_id !== $payment->cashfree_order_id)
                                     <span class="text-[9px] text-slate-500 font-mono mt-0.5 block">Order:
-                                        {{ $payment->razorpay_order_id }}</span>
+                                        {{ $payment->cashfree_order_id }}</span>
                                 @endif
                             </td>
                             <td class="py-4 text-center">
@@ -88,7 +88,7 @@
                             <td class="py-4 text-center">
                                 <span
                                     class="text-[10px] font-bold text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700/50">
-                                    {{ $payment->payment_method ?? 'Razorpay' }}
+                                    {{ $payment->payment_method ?? 'Cashfree' }}
                                 </span>
                             </td>
                             <td class="py-4 text-center">
@@ -163,7 +163,7 @@
                                                 </div>
                                                 <div class="text-right shrink-0">
                                                     <span
-                                                        class="text-[9px] font-mono text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/50 block">{{ $student->class->code }}</span>
+                                                        class="text-[9px] font-mono text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/50 block">{{ $student->class->name ?? '—' }}</span>
                                                     <span
                                                         class="text-xs font-bold font-mono text-emerald-400 block mt-1">₹{{ number_format($student->pivot->amount, 0) }}</span>
                                                 </div>

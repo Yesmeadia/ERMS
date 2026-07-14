@@ -20,6 +20,8 @@ class Payment extends Model
         'paid_at',
         'razorpay_order_id',
         'razorpay_payment_id',
+        'cashfree_order_id',
+        'cashfree_payment_id',
     ];
 
     protected $casts = [

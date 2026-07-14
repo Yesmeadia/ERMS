@@ -30,8 +30,10 @@
                 <select name="status" required
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('status') border-rose-500 @enderror">
                     <option value="Draft" @selected(old('status')==='Draft')>Draft</option>
-                    <option value="Open" @selected(old('status')==='Open')>Open</option>
-                    <option value="Closed" @selected(old('status')==='Closed')>Closed</option>
+                    <option value="Registration Started" @selected(old('status')==='Registration Started')>Registration Started</option>
+                    <option value="Registartion closed" @selected(old('status')==='Registartion closed')>Registartion closed</option>
+                    <option value="Examination Ongoing" @selected(old('status')==='Examination Ongoing')>Examination Ongoing</option>
+                    <option value="result published" @selected(old('status')==='result published')>result published</option>
                 </select>
                 @error('status')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
             </div>

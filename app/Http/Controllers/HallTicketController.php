@@ -18,14 +18,14 @@ class HallTicketController extends Controller
     public function adminIndex(Request $request)
     {
         $query = Student::whereIn('status', ['Approved', 'Hall Ticket Issued'])
-            ->with(['school', 'class', 'category', 'examination']);
+            ->with(['school', 'class', 'category', 'examination', 'centre']);
 
         if ($request->filled('school_id')) {
             $query->where('school_id', $request->school_id);
         }
 
-        if ($request->filled('examination_id')) {
-            $query->where('examination_id', $request->examination_id);
+        if ($request->filled('centre_id')) {
+            $query->where('centre_id', $request->centre_id);
         }
 
         if ($request->filled('category_id')) {
@@ -37,7 +37,7 @@ class HallTicketController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('hall_ticket_number', 'like', "%{$search}%")
@@ -47,10 +47,11 @@ class HallTicketController extends Controller
 
         $students = $query->latest()->paginate(15);
         $schools = School::where('status', true)->get();
+        $centres = School::where('is_centre', true)->get();
         $examinations = Examination::all();
         $categories = \App\Models\CategoryMaster::where('status', true)->get();
 
-        return view('super-admin.hall-tickets.index', compact('students', 'schools', 'examinations', 'categories'));
+        return view('super-admin.hall-tickets.index', compact('students', 'schools', 'centres', 'examinations', 'categories'));
     }
 
     /**
@@ -62,10 +63,10 @@ class HallTicketController extends Controller
         
         $query = Student::where('school_id', $school->id)
             ->whereIn('status', ['Approved', 'Hall Ticket Issued'])
-            ->with(['class', 'category', 'examination']);
+            ->with(['class', 'category', 'examination', 'centre']);
 
-        if ($request->filled('examination_id')) {
-            $query->where('examination_id', $request->examination_id);
+        if ($request->filled('centre_id')) {
+            $query->where('centre_id', $request->centre_id);
         }
 
         if ($request->filled('category_id')) {
@@ -73,7 +74,7 @@ class HallTicketController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('hall_ticket_number', 'like', "%{$search}%")
@@ -82,10 +83,11 @@ class HallTicketController extends Controller
         }
 
         $students = $query->latest()->paginate(15);
+        $centres = School::where('is_centre', true)->get();
         $examinations = Examination::all();
         $categories = \App\Models\CategoryMaster::where('status', true)->get();
 
-        return view('school-admin.hall-tickets.index', compact('students', 'examinations', 'categories'));
+        return view('school-admin.hall-tickets.index', compact('students', 'centres', 'examinations', 'categories'));
     }
 
     /**
@@ -106,7 +108,7 @@ class HallTicketController extends Controller
         // enumeration attacks on the public verification portal (CWE-330).
         if (!$student->hall_ticket_number) {
             do {
-                $candidate = 'HT-' . strtoupper(bin2hex(random_bytes(6)));
+                $candidate = strtoupper(bin2hex(random_bytes(6)));
             } while (\App\Models\Student::where('hall_ticket_number', $candidate)->exists());
             $student->hall_ticket_number = $candidate;
         }
@@ -172,7 +174,7 @@ class HallTicketController extends Controller
         foreach ($students as $student) {
             // Cryptographically random hall ticket — prevents enumeration (CWE-330).
             do {
-                $candidate = 'HT-' . strtoupper(bin2hex(random_bytes(6)));
+                $candidate = strtoupper(bin2hex(random_bytes(6)));
             } while (\App\Models\Student::where('hall_ticket_number', $candidate)->exists());
             $student->hall_ticket_number = $candidate;
             

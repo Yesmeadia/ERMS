@@ -27,7 +27,7 @@
                 <label class="block text-sm font-medium text-slate-300 mb-2">Status <span class="text-rose-400">*</span></label>
                 <select name="status" required
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500">
-                    @foreach(['Draft', 'Open', 'Closed'] as $s)
+                    @foreach(['Draft', 'Registration Started', 'Registartion closed', 'Examination Ongoing', 'result published'] as $s)
                         <option value="{{ $s }}" @selected(old('status', $examination->status)===$s)>{{ $s }}</option>
                     @endforeach
                 </select>

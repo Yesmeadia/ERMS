@@ -414,7 +414,7 @@ class ResultController extends Controller
      */
     public function showPublicCheckForm()
     {
-        $examinations = Examination::all();
+        $examinations = Examination::where('status', 'result published')->get();
         return view('public.results.check', compact('examinations'));
     }
 
@@ -428,6 +428,11 @@ class ResultController extends Controller
             'search_number' => ['required', 'string'],
             'dob' => ['required', 'date'],
         ]);
+
+        $exam = Examination::findOrFail($request->examination_id);
+        if ($exam->status !== 'result published') {
+            return back()->with('error', 'Results for this examination session have not been published yet.')->withInput();
+        }
 
         $student = Student::where('examination_id', $request->examination_id)
             ->where(function($q) use ($request) {
@@ -479,6 +484,11 @@ class ResultController extends Controller
         if (!hash_equals($expectedToken, (string) session('result_auth_token', ''))) {
             return redirect()->route('results.check-form')
                 ->with('error', 'Unauthorized access. Please query candidate details from this search portal.');
+        }
+
+        if ($student->examination->status !== 'result published') {
+            return redirect()->route('results.check-form')
+                ->with('error', 'Results for this examination session have not been published yet.');
         }
 
         $result = $student->result;

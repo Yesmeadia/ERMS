@@ -38,8 +38,6 @@ class SchoolAdminTest extends TestCase
         // Create Masters
         $this->class = ClassMaster::create([
             'name' => 'Class 10',
-            'code' => 'C10',
-            'description' => '10th Standard',
             'status' => true,
         ]);
 
@@ -56,7 +54,7 @@ class SchoolAdminTest extends TestCase
             'registration_start_date' => '2026-09-01',
             'registration_end_date' => '2026-11-30',
             'hall_ticket_release_date' => '2027-02-15',
-            'status' => 'Open',
+            'status' => 'Registration Started',
         ]);
 
         // Create Schools and Users
@@ -240,7 +238,7 @@ class SchoolAdminTest extends TestCase
      */
     public function test_school_admin_cannot_register_student_when_exam_closed(): void
     {
-        $this->examination->update(['status' => 'Closed']);
+        $this->examination->update(['status' => 'Registartion closed']);
 
         $response = $this->actingAs($this->schoolAdmin)
             ->from(route('school.students.create'))
@@ -516,7 +514,7 @@ class SchoolAdminTest extends TestCase
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
             'status' => 'Hall Ticket Issued',
-            'hall_ticket_number' => 'HT-2027-000001',
+            'hall_ticket_number' => '2027-000001',
             'hall_ticket_issued_at' => now(),
         ]);
 
@@ -570,7 +568,7 @@ class SchoolAdminTest extends TestCase
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
             'status' => 'Hall Ticket Issued',
-            'hall_ticket_number' => 'HT-2027-000002',
+            'hall_ticket_number' => '2027-000002',
             'hall_ticket_issued_at' => now(),
         ]);
 
@@ -673,11 +671,11 @@ class SchoolAdminTest extends TestCase
         $superAdmin->assignRole($superAdminRole);
 
         // Define classes
-        $class3 = ClassMaster::create(['name' => 'Class 3rd', 'code' => 'C3', 'status' => true]);
-        $class4 = ClassMaster::create(['name' => 'Class 4th', 'code' => 'C4', 'status' => true]);
-        $class5 = ClassMaster::create(['name' => 'Class 5th', 'code' => 'C5', 'status' => true]);
-        $class6 = ClassMaster::create(['name' => 'Class 6th', 'code' => 'C6', 'status' => true]);
-        $class10 = ClassMaster::create(['name' => 'Class 10th', 'code' => 'C10th', 'status' => true]);
+        $class3 = ClassMaster::create(['name' => 'Class 3rd', 'status' => true]);
+        $class4 = ClassMaster::create(['name' => 'Class 4th', 'status' => true]);
+        $class5 = ClassMaster::create(['name' => 'Class 5th', 'status' => true]);
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $class10 = ClassMaster::create(['name' => 'Class 10th', 'status' => true]);
 
         // Define categories
         $catRainbow3 = CategoryMaster::create(['name' => 'Rainbow 3', 'code' => 'R3', 'status' => true]);

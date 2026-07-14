@@ -177,7 +177,7 @@ class StudentController extends Controller
         $categories = CategoryMaster::where('status', true)->get();
 
         // Only allow registering for examinations that are currently OPEN
-        $examinations = Examination::where('status', 'Open')->get();
+        $examinations = Examination::where('status', 'Registration Started')->get();
 
         if ($examinations->isEmpty()) {
             return redirect()->route('school.students.index')->with('error', 'There are no active examination sessions open for registration at this time.');
@@ -206,7 +206,7 @@ class StudentController extends Controller
 
         // Validate examination is open
         $exam = Examination::findOrFail($request->examination_id);
-        if ($exam->status !== 'Open') {
+        if ($exam->status !== 'Registration Started') {
             return back()->withErrors(['examination_id' => 'Registration is closed for this examination session.'])->withInput();
         }
 
@@ -254,7 +254,7 @@ class StudentController extends Controller
 
         $classes = ClassMaster::where('status', true)->get();
         $categories = CategoryMaster::where('status', true)->get();
-        $examinations = Examination::where('status', 'Open')->get();
+        $examinations = Examination::where('status', 'Registration Started')->get();
 
         return view('school-admin.students.edit', compact('student', 'classes', 'categories', 'examinations'));
     }
@@ -284,7 +284,7 @@ class StudentController extends Controller
         ]);
 
         $exam = Examination::findOrFail($request->examination_id);
-        if ($exam->status !== 'Open') {
+        if ($exam->status !== 'Registration Started') {
             return back()->withErrors(['examination_id' => 'Registration is closed for this examination session.'])->withInput();
         }
 
@@ -376,7 +376,7 @@ class StudentController extends Controller
         ]);
 
         $exam = Examination::findOrFail($request->import_examination_id);
-        if ($exam->status !== 'Open') {
+        if ($exam->status !== 'Registration Started') {
             return back()->with('error', 'Cannot import. Registration is closed for the selected examination session.');
         }
 

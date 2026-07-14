@@ -24,14 +24,6 @@
                 @error('name')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Class Code <span
-                        class="text-rose-400">*</span></label>
-                <input type="text" name="code" value="{{ old('code') }}" required
-                    class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 @error('code') border-rose-500 @enderror"
-                    placeholder="e.g. C10">
-                @error('code')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
-            </div>
-            <div>
                 <label class="block text-sm font-medium text-slate-300 mb-2">Registration Fee (₹) <span
                         class="text-rose-400">*</span></label>
                 <input type="number" name="registration_fee" value="{{ old('registration_fee', '120.00') }}" required
@@ -39,12 +31,6 @@
                     class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 @error('registration_fee') border-rose-500 @enderror"
                     placeholder="e.g. 500.00">
                 @error('registration_fee')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Description</label>
-                <textarea name="description" rows="2"
-                    class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                    placeholder="Optional description">{{ old('description') }}</textarea>
             </div>
             <div class="flex gap-4 pt-2">
                 <button type="submit"
