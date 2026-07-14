@@ -125,12 +125,15 @@ Route::middleware('auth')->group(function () {
 
         // Verification & Approval Management
         Route::get('/verification', [VerificationController::class, 'index'])->name('verification.index');
+        Route::post('/verification/bulk-verify', [VerificationController::class, 'bulkVerify'])->name('verification.bulk-verify');
         Route::get('/verification/{student}', [VerificationController::class, 'show'])->name('verification.show');
         Route::post('/verification/{student}/verify', [VerificationController::class, 'verify'])->name('verification.verify');
 
         // Students Management (Super Admin)
         Route::get('/students', [StudentController::class, 'adminIndex'])->name('students.index');
         Route::get('/students/{student}', [StudentController::class, 'adminShow'])->name('students.show');
+        Route::get('/students/{student}/edit', [StudentController::class, 'adminEdit'])->name('students.edit');
+        Route::put('/students/{student}', [StudentController::class, 'adminUpdate'])->name('students.update');
         Route::post('/students/{student}/issue-registration', [StudentController::class, 'adminIssueRegistration'])->name('students.issue-registration');
 
         // Hall Ticket Management

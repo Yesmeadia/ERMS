@@ -80,8 +80,7 @@
                     <p class="text-slate-300">Date: <strong
                             class="text-slate-200">{{ $payment->paid_at ? $payment->paid_at->format('d M Y, h:i A') : $payment->created_at->format('d M Y, h:i A') }}</strong>
                     </p>
-                    <p class="text-slate-400 mt-1">Payment Method:
-                        <span class="inline-flex items-center ml-1 px-2 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/50 text-slate-200 font-semibold text-[11px] uppercase tracking-wide">
+                    <p class="text-slate-400 mt-1">Payment Method: <span>
                             {{ $payment->payment_method ?? 'Cashfree' }}
                         </span>
                     </p>

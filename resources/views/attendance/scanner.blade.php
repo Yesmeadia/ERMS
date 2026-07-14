@@ -75,13 +75,11 @@
 
                     {{-- Camera Viewfinder Container (responsive square when inactive, dynamic when active) --}}
                     <div class="relative w-full rounded-2xl overflow-hidden border-2 border-indigo-500/20 bg-slate-950 shadow-2xl transition-all duration-300"
-                        :class="scanning ? 'h-auto' : 'aspect-square min-h-[300px]'"
-                        role="region"
-                        aria-label="QR code scanner viewfinder"
-                        :aria-busy="scanning"
-                    >
+                        :class="scanning ? 'h-auto' : 'aspect-square min-h-[300px]'" role="region"
+                        aria-label="QR code scanner viewfinder" :aria-busy="scanning">
                         {{-- Camera Feed --}}
-                        <div id="reader" :class="scanning ? 'relative w-full' : 'absolute inset-0'" aria-hidden="true"></div>
+                        <div id="reader" :class="scanning ? 'relative w-full' : 'absolute inset-0'" aria-hidden="true">
+                        </div>
 
                         {{-- Viewfinder Reticle (Hidden if stopped) --}}
                         <div class="absolute inset-0 pointer-events-none flex items-center justify-center"
@@ -131,7 +129,8 @@
                     {{-- Controls --}}
                     <div class="w-full max-w-sm mt-6 space-y-4">
                         <div>
-                            <label for="camera-select" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Camera
+                            <label for="camera-select"
+                                class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Camera
                                 Source</label>
                             <select id="camera-select" x-model="selectedCameraId"
                                 @change="if(scanning) { stopScanner().then(() => startScanner()); }"
@@ -146,13 +145,11 @@
                         </div>
 
                         <div class="flex gap-3" role="group" aria-label="Scanner controls">
-                            <button @click="startScanner()" x-show="!scanning"
-                                aria-label="Start camera and begin scanning"
+                            <button @click="startScanner()" x-show="!scanning" aria-label="Start camera and begin scanning"
                                 class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 cursor-pointer">
                                 Start Camera
                             </button>
-                            <button @click="stopScanner()" x-show="scanning"
-                                aria-label="Stop camera and end scanning"
+                            <button @click="stopScanner()" x-show="scanning" aria-label="Stop camera and end scanning"
                                 class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all cursor-pointer">
                                 Stop Camera
                             </button>
@@ -210,16 +207,12 @@
             </div>
         </div>
         {{-- Visually-hidden live region: announces scan results to screen readers --}}
-        <div
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            class="sr-only"
+        <div role="status" aria-live="polite" aria-atomic="true" class="sr-only"
             x-text="state === 'success' ? 'Attendance marked successfully for ' + (successData.student_name || '') :
-                    state === 'duplicate' ? 'Duplicate scan detected. Attendance already recorded.' :
-                    state === 'error' ? 'Scanner error: ' + message :
-                    state === 'verification' ? 'Student verified. Please confirm identity.' : ''"
-        ></div>
+                                                state === 'duplicate' ? 'Duplicate scan detected. Attendance already recorded.' :
+                                                state === 'error' ? 'Scanner error: ' + message :
+                                                state === 'verification' ? 'Student verified. Please confirm identity.' : ''">
+        </div>
 
         {{-- MODAL OVERLAYS (Verification, Success, Error states) --}}
 
@@ -228,8 +221,8 @@
             x-show="state === 'verification'" style="display: none;" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95"
-            role="dialog" aria-modal="true" aria-labelledby="modal-verification-title">
+            x-transition:leave-end="opacity-0 scale-95" role="dialog" aria-modal="true"
+            aria-labelledby="modal-verification-title">
             <div
                 class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
                 <div class="p-6 text-center border-b border-slate-800/60 shrink-0">
@@ -241,17 +234,16 @@
                     {{-- Photo + Name inline --}}
                     <div class="flex items-center gap-4 w-full mb-5">
                         {{-- Show photo when available, otherwise show a silhouette placeholder --}}
-                        <img
-                            x-show="student.photo_url"
-                            :src="student.photo_url"
+                        <img x-show="student.photo_url" :src="student.photo_url"
                             :alt="'Photo of ' + (student.name || 'student')"
-                            class="w-14 h-14 rounded-xl object-cover border border-slate-700/60 shadow-md shrink-0"
-                        >
-                        <div
-                            x-show="!student.photo_url"
-                            class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700/60 shrink-0 flex items-center justify-center text-slate-500"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg>
+                            class="w-14 h-14 rounded-xl object-cover border border-slate-700/60 shadow-md shrink-0">
+                        <div x-show="!student.photo_url"
+                            class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700/60 shrink-0 flex items-center justify-center text-slate-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8">
+                                <path fill-rule="evenodd"
+                                    d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </div>
                         <div class="text-left">
                             <h4 class="text-base font-bold text-white leading-tight" x-text="student.name"></h4>
@@ -277,8 +269,8 @@
                             <p class="text-sm font-semibold text-slate-300 leading-tight" x-text="student.school"></p>
                         </div>
                         <div class="col-span-2">
-                            <span class="text-[10px] text-slate-500 uppercase font-semibold">Examination Session</span>
-                            <p class="text-sm font-semibold text-indigo-400 leading-tight" x-text="student.exam_name"></p>
+                            <span class="text-[10px] text-slate-500 uppercase font-semibold">Exam Centre</span>
+                            <p class="text-sm font-semibold text-indigo-400 leading-tight" x-text="student.centre"></p>
                         </div>
                     </div>
                 </div>
@@ -302,13 +294,13 @@
             x-show="state === 'duplicate'" style="display: none;" x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95"
-            role="dialog" aria-modal="true" aria-labelledby="modal-duplicate-title">
+            x-transition:leave-end="opacity-0 scale-95" role="dialog" aria-modal="true"
+            aria-labelledby="modal-duplicate-title">
             <div
                 class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl text-center flex flex-col max-h-[90vh]">
                 <div class="p-8 overflow-y-auto min-h-0 flex-1">
-                    <div
-                        class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]" aria-hidden="true">
+                    <div class="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                        aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                             stroke="currentColor" class="w-8 h-8">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -321,16 +313,15 @@
                     <div
                         class="bg-slate-950 border border-slate-800/60 rounded-2xl p-4 mt-6 text-left flex gap-3 items-center">
                         {{-- Photo or silhouette placeholder --}}
-                        <img
-                            x-show="student.photo_url"
-                            :src="student.photo_url"
-                            class="w-12 h-12 rounded-xl object-cover shrink-0"
-                        >
-                        <div
-                            x-show="!student.photo_url"
-                            class="w-12 h-12 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-slate-500"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg>
+                        <img x-show="student.photo_url" :src="student.photo_url"
+                            class="w-12 h-12 rounded-xl object-cover shrink-0">
+                        <div x-show="!student.photo_url"
+                            class="w-12 h-12 rounded-xl bg-slate-800 shrink-0 flex items-center justify-center text-slate-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7">
+                                <path fill-rule="evenodd"
+                                    d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-200 text-sm" x-text="student.name"></h4>
@@ -353,13 +344,13 @@
             x-show="state === 'success'" style="display: none;" x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95"
-            role="dialog" aria-modal="true" aria-labelledby="modal-success-title">
+            x-transition:leave-end="opacity-0 scale-95" role="dialog" aria-modal="true"
+            aria-labelledby="modal-success-title">
             <div
                 class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl text-center flex flex-col max-h-[90vh]">
                 <div class="p-8 overflow-y-auto min-h-0 flex-1">
-                    <div
-                        class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(16,185,129,0.1)]" aria-hidden="true">
+                    <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                        aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
                             stroke="currentColor" class="w-8 h-8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -398,13 +389,13 @@
             x-show="state === 'error'" style="display: none;" x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95"
-            role="alertdialog" aria-modal="true" aria-labelledby="modal-error-title" :aria-describedby="'modal-error-desc'">
+            x-transition:leave-end="opacity-0 scale-95" role="alertdialog" aria-modal="true"
+            aria-labelledby="modal-error-title" :aria-describedby="'modal-error-desc'">
             <div
                 class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl text-center flex flex-col max-h-[90vh]">
                 <div class="p-6 sm:p-8 overflow-y-auto min-h-0 flex-1">
-                    <div
-                        class="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(244,63,94,0.1)]" aria-hidden="true">
+                    <div class="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(244,63,94,0.1)]"
+                        aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                             stroke="currentColor" class="w-7 h-7">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -466,7 +457,7 @@
                     // Memory leak prevention: stop camera if Alpine destroys this component
                     destroy() {
                         if (this.scanning && this.html5QrCode) {
-                            this.html5QrCode.stop().catch(() => {});
+                            this.html5QrCode.stop().catch(() => { });
                         }
                     },
                     loadCameras() {

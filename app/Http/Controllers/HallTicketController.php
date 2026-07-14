@@ -24,6 +24,10 @@ class HallTicketController extends Controller
             $query->where('school_id', $request->school_id);
         }
 
+        if ($request->filled('examination_id')) {
+            $query->where('examination_id', $request->examination_id);
+        }
+
         if ($request->filled('centre_id')) {
             $query->where('centre_id', $request->centre_id);
         }
@@ -38,14 +42,14 @@ class HallTicketController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%");
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%");
             });
         }
 
-        $students = $query->latest()->paginate(15);
+        $students = $query->latest()->paginate(20);
         $schools = School::where('status', true)->get();
         $centres = School::where('is_centre', true)->get();
         $examinations = Examination::all();
@@ -60,7 +64,7 @@ class HallTicketController extends Controller
     public function schoolIndex(Request $request)
     {
         $school = Auth::user()->school;
-        
+
         $query = Student::where('school_id', $school->id)
             ->whereIn('status', ['Approved', 'Hall Ticket Issued'])
             ->with(['class', 'category', 'examination', 'centre']);
@@ -75,14 +79,14 @@ class HallTicketController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%");
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%");
             });
         }
 
-        $students = $query->latest()->paginate(15);
+        $students = $query->latest()->paginate(20);
         $centres = School::where('is_centre', true)->get();
         $examinations = Examination::all();
         $categories = \App\Models\CategoryMaster::where('status', true)->get();
@@ -146,62 +150,95 @@ class HallTicketController extends Controller
     public function generateBulk(Request $request)
     {
         $request->validate([
-            'bulk_school_id' => ['required', 'exists:schools,id'],
-            'bulk_examination_id' => ['required', 'exists:examinations,id'],
+            'school_id' => ['required', 'exists:schools,id'],
+            'examination_id' => ['required', 'exists:examinations,id'],
         ]);
 
-        $students = Student::where('school_id', $request->bulk_school_id)
-            ->where('examination_id', $request->bulk_examination_id)
-            ->where('status', 'Approved')
-            ->get();
+        $query = Student::where('school_id', $request->school_id)
+            ->where('examination_id', $request->examination_id)
+            ->where('status', 'Approved');
+
+        if ($request->filled('centre_id')) {
+            $query->where('centre_id', $request->centre_id);
+        }
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Eager-load relations needed for registration-number generation & HallTicket upsert
+        $students = $query->with(['class', 'category', 'hallTicket'])->get();
 
         if ($students->isEmpty()) {
-            return back()->with('info', 'No approved students found pending hall ticket generation for this school and examination.');
+            return back()->with('info', 'No approved students found pending hall ticket generation matching the selected criteria.');
         }
 
-        // Ensure all students have a designated centre before issuing hall tickets
-        $unassignedCount = Student::where('school_id', $request->bulk_school_id)
-            ->where('examination_id', $request->bulk_examination_id)
-            ->where('status', 'Approved')
-            ->whereNull('centre_id')
-            ->count();
-
+        // Ensure every student has an exam centre before proceeding
+        $unassignedCount = $students->whereNull('centre_id')->count();
         if ($unassignedCount > 0) {
-            return back()->with('error', "{$unassignedCount} approved candidate(s) do not have an assigned Examination Centre. Please assign a centre to these candidates first.");
+            return back()->with('error', "{$unassignedCount} approved candidate(s) do not have an assigned Examination Centre. Please assign a centre first.");
         }
 
-        $count = 0;
+        // ── Step 1: Pre-fetch existing hall-ticket numbers to avoid per-student DB checks ──
+        $existingHtNos = \App\Models\Student::whereNotNull('hall_ticket_number')
+            ->pluck('hall_ticket_number')
+            ->flip(); // O(1) lookup: ['AABBCC' => 0, ...]
+
+        // ── Step 2: Generate all unique tokens in memory ────────────────────────────────
+        $tokens = [];
         foreach ($students as $student) {
-            // Cryptographically random hall ticket — prevents enumeration (CWE-330).
             do {
                 $candidate = strtoupper(bin2hex(random_bytes(6)));
-            } while (\App\Models\Student::where('hall_ticket_number', $candidate)->exists());
-            $student->hall_ticket_number = $candidate;
-            
-            if (!$student->registration_number) {
-                $student->registration_number = $student->issueRegistrationNumber();
-            }
+            } while (isset($existingHtNos[$candidate]) || in_array($candidate, $tokens, true));
 
-            $student->status = 'Hall Ticket Issued';
-            $student->hall_ticket_issued_at = now();
-            $student->save();
-
-            // Create/Update HallTicket entry with secure qr_token
-            \App\Models\HallTicket::updateOrCreate(
-                ['student_id' => $student->id],
-                [
-                    'hallticket_no' => $student->hall_ticket_number,
-                    'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
-                    'issue_date' => now(),
-                    'status' => 'Issued',
-                ]
-            );
-
-            $count++;
+            $tokens[$student->id] = $candidate;
         }
 
-        activity()
-            ->log("Bulk generated {$count} hall tickets for School ID: {$request->bulk_school_id}, Exam ID: {$request->bulk_examination_id}");
+        // ── Step 3: Resolve registration numbers in one transaction per category range ──
+        //    We call issueRegistrationNumber() only for students who need one, which
+        //    itself opens a single locked transaction per category bucket.
+        $regNumbers = [];
+        foreach ($students->where('registration_number', null) as $student) {
+            $regNumbers[$student->id] = $student->issueRegistrationNumber();
+        }
+
+        // ── Step 4: Batch-update students (one UPDATE per student, all in one TX) ───────
+        $now = now();
+        $count = 0;
+
+        \DB::transaction(function () use ($students, $tokens, $regNumbers, $now, &$count) {
+            foreach ($students as $student) {
+                \DB::table('students')->where('id', $student->id)->update([
+                    'hall_ticket_number' => $tokens[$student->id],
+                    'registration_number' => $regNumbers[$student->id] ?? $student->registration_number,
+                    'status' => 'Hall Ticket Issued',
+                    'hall_ticket_issued_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                $count++;
+            }
+        });
+
+        // ── Step 5: Bulk-upsert HallTicket records ──────────────────────────────────────
+        $hallTicketRows = $students->map(function ($student) use ($tokens, $now) {
+            return [
+                'student_id' => $student->id,
+                'hallticket_no' => $tokens[$student->id],
+                // Re-use existing qr_token if already generated — prevents invalidating old QR codes
+                'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
+                'issue_date' => $now,
+                'status' => 'Issued',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        })->toArray();
+
+        \App\Models\HallTicket::upsert(
+            $hallTicketRows,
+            ['student_id'],                                      // unique key
+            ['hallticket_no', 'qr_token', 'issue_date', 'status', 'updated_at'] // columns to update
+        );
+
+        activity()->log("Bulk generated {$count} hall tickets for School ID: {$request->school_id}, Exam ID: {$request->examination_id}");
 
         return back()->with('success', "Successfully generated {$count} hall tickets.");
     }
@@ -216,7 +253,7 @@ class HallTicketController extends Controller
         }
 
         $student->load(['school', 'class', 'category', 'examination', 'hallTicket', 'centre']);
-        
+
         $hallTicket = $student->hallTicket;
         if (!$hallTicket) {
             $hallTicket = \App\Models\HallTicket::create([
@@ -245,7 +282,7 @@ class HallTicketController extends Controller
         $pdf = Pdf::loadView('pdf.hall-ticket', compact('student', 'qrDataUri', 'verifyUrl'));
         $pdf->setPaper('a4', 'portrait');
         $pdf->setOption('isRemoteEnabled', false);
-        
+
         return $pdf->stream('hall_ticket_' . $student->hall_ticket_number . '.pdf');
     }
 
@@ -311,14 +348,22 @@ class HallTicketController extends Controller
             'examination_id' => ['required', 'exists:examinations,id'],
         ]);
 
-        $students = Student::where('school_id', $request->school_id)
+        $query = Student::where('school_id', $request->school_id)
             ->where('examination_id', $request->examination_id)
-            ->where('status', 'Hall Ticket Issued')
-            ->with(['school', 'class', 'category', 'examination', 'hallTicket', 'centre'])
-            ->get();
+            ->where('status', 'Hall Ticket Issued');
+
+        if ($request->filled('centre_id')) {
+            $query->where('centre_id', $request->centre_id);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $students = $query->with(['school', 'class', 'category', 'examination', 'hallTicket', 'centre'])->get();
 
         if ($students->isEmpty()) {
-            return back()->with('error', 'No hall tickets found issued for this school and examination session.');
+            return back()->with('error', 'No hall tickets found issued matching the selected criteria.');
         }
 
         // Generate QR codes for all

@@ -7,13 +7,14 @@
     <p class="text-sm text-slate-400">Generate and manage hall tickets for approved students.</p>
 </div>
 
-{{-- Filters --}}
+{{-- Filters & Bulk Actions --}}
 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 mb-6">
-    <form method="GET" action="{{ route('admin.hall-tickets.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+    <form method="GET" action="{{ route('admin.hall-tickets.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
+        @csrf
         <div>
             <label class="block text-xs font-medium text-slate-400 mb-1.5">Search</label>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Name, HT No, Reg No..."
-                   class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20">
+                   class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500/50">
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-400 mb-1.5">School</label>
@@ -43,6 +44,15 @@
             </select>
         </div>
         <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Examination</label>
+            <select name="examination_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+                <option value="">All Examinations</option>
+                @foreach($examinations as $exam)
+                    <option value="{{ $exam->id }}" {{ request('examination_id') == $exam->id ? 'selected' : '' }}>{{ $exam->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <label class="block text-xs font-medium text-slate-400 mb-1.5">Status</label>
             <select name="status" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
                 <option value="">All Status</option>
@@ -50,89 +60,24 @@
                 <option value="Hall Ticket Issued" {{ request('status') === 'Hall Ticket Issued' ? 'selected' : '' }}>Hall Ticket Issued</option>
             </select>
         </div>
-        <div class="flex gap-2">
-            <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors cursor-pointer">Filter</button>
-            <a href="{{ route('admin.hall-tickets.index') }}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-xl transition-colors">Reset</a>
+        <div class="xl:col-span-6 flex justify-between items-center gap-3 mt-4 pt-4 border-t border-slate-800/60 w-full flex-wrap">
+            <div class="flex flex-wrap gap-2">
+                <span class="text-xs font-semibold text-slate-400 self-center mr-2">Bulk Actions:</span>
+                <button type="submit" formaction="{{ route('admin.hall-tickets.generate-bulk') }}" formmethod="POST"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-emerald-600/10">
+                    Bulk Generate Hall Tickets
+                </button>
+                <button type="submit" formaction="{{ route('admin.hall-tickets.print-bulk') }}" formmethod="GET" formtarget="_blank"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-purple-600/10">
+                    Print Bulk Hall Tickets (PDF)
+                </button>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer">Filter</button>
+                <a href="{{ route('admin.hall-tickets.index') }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors">Reset</a>
+            </div>
         </div>
     </form>
-</div>
-
-{{-- Redesigned Bulk Actions Grid --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-    {{-- Bulk Generate Card --}}
-    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 flex flex-col justify-between">
-        <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-1.5 font-outfit">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                Bulk Generate Hall Tickets
-            </h3>
-            <p class="text-xs text-slate-400 leading-relaxed mb-4">Generate secure hall ticket numbers for all approved candidates registered under the selected criteria.</p>
-        </div>
-
-        <form method="POST" action="{{ route('admin.hall-tickets.generate-bulk') }}" class="space-y-4">
-            @csrf
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">School *</label>
-                    <select name="bulk_school_id" required class="w-full px-3 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 text-slate-200 text-xs focus:outline-none focus:border-emerald-500/50">
-                        <option value="">Select School</option>
-                        @foreach($schools as $school)
-                            <option value="{{ $school->id }}">{{ $school->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Examination *</label>
-                    <select name="bulk_examination_id" required class="w-full px-3 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 text-slate-200 text-xs focus:outline-none focus:border-emerald-500/50">
-                        <option value="">Select Examination</option>
-                        @foreach($examinations as $exam)
-                            <option value="{{ $exam->id }}">{{ $exam->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/10 text-xs cursor-pointer">
-                Generate Approved Hall Tickets
-            </button>
-        </form>
-    </div>
-
-    {{-- Bulk Print Card --}}
-    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 flex flex-col justify-between">
-        <div>
-            <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-1.5 font-outfit">
-                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                Print Bulk Hall Tickets (PDF)
-            </h3>
-            <p class="text-xs text-slate-400 leading-relaxed mb-4">Export all generated and issued hall tickets for the selected filter criteria to a single PDF document.</p>
-        </div>
-
-        <form method="GET" action="{{ route('admin.hall-tickets.print-bulk') }}" target="_blank" class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">School *</label>
-                    <select name="school_id" required class="w-full px-3 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 text-slate-200 text-xs focus:outline-none focus:border-purple-500/50">
-                        <option value="">Select School</option>
-                        @foreach($schools as $school)
-                            <option value="{{ $school->id }}">{{ $school->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Examination *</label>
-                    <select name="examination_id" required class="w-full px-3 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 text-slate-200 text-xs focus:outline-none focus:border-purple-500/50">
-                        <option value="">Select Examination</option>
-                        @foreach($examinations as $exam)
-                            <option value="{{ $exam->id }}">{{ $exam->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-purple-600/10 text-xs cursor-pointer">
-                Print Bulk PDF
-            </button>
-        </form>
-    </div>
 </div>
 
 {{-- Students Table --}}

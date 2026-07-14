@@ -39,13 +39,13 @@ class VerificationController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%");
             });
         }
 
-        $students = $query->latest()->paginate(15);
+        $students = $query->latest()->paginate(20);
         $schools = School::where('status', true)->get();
         $classes = ClassMaster::where('status', true)->get();
         $categories = CategoryMaster::where('status', true)->get();
@@ -80,7 +80,7 @@ class VerificationController extends Controller
 
         $oldStatus = $student->status;
         $student->status = $statusMap[$request->action];
-        
+
         if ($request->action === 'reject') {
             $student->remarks = $request->remarks;
         } else {
@@ -94,6 +94,50 @@ class VerificationController extends Controller
             ->log("Updated verification status from '{$oldStatus}' to '{$student->status}'" . ($request->action === 'reject' ? " with remarks: {$request->remarks}" : ''));
 
         return redirect()->route('admin.verification.index')->with('success', "Student registration is now {$student->status}.");
+    }
+
+    /**
+     * Update verification status in bulk for multiple selected students.
+     */
+    public function bulkVerify(Request $request)
+    {
+        $request->validate([
+            'student_ids' => ['required', 'array'],
+            'student_ids.*' => ['required', 'exists:students,id'],
+            'action' => ['required', 'in:review,approve,reject'],
+            'remarks' => ['required_if:action,reject', 'nullable', 'string', 'max:500'],
+        ]);
+
+        $statusMap = [
+            'review' => 'Under Review',
+            'approve' => 'Approved',
+            'reject' => 'Rejected',
+        ];
+
+        $status = $statusMap[$request->action];
+        $updatedCount = 0;
+
+        foreach ($request->student_ids as $id) {
+            $student = Student::find($id);
+            if ($student) {
+                $oldStatus = $student->status;
+                $student->status = $status;
+                if ($request->action === 'reject') {
+                    $student->remarks = $request->remarks;
+                } else {
+                    $student->remarks = null;
+                }
+                $student->save();
+
+                activity()
+                    ->performedOn($student)
+                    ->log("Updated verification status from '{$oldStatus}' to '{$student->status}' via bulk action" . ($request->action === 'reject' ? " with remarks: {$request->remarks}" : ''));
+
+                $updatedCount++;
+            }
+        }
+
+        return redirect()->route('admin.verification.index')->with('success', "Successfully updated {$updatedCount} students to {$status}.");
     }
 
     /**
@@ -112,8 +156,18 @@ class VerificationController extends Controller
 
         // Lookup by hall ticket number (primary), then registration number (fallback)
         // Only select columns required for validity display — exclude PII columns.
-        $safeColumns = ['id', 'name', 'photograph', 'school_id', 'class_id', 'category_id',
-                        'examination_id', 'hall_ticket_number', 'hall_ticket_issued_at', 'status'];
+        $safeColumns = [
+            'id',
+            'name',
+            'photograph',
+            'school_id',
+            'class_id',
+            'category_id',
+            'examination_id',
+            'hall_ticket_number',
+            'hall_ticket_issued_at',
+            'status'
+        ];
 
         $student = Student::select($safeColumns)
             ->where('hall_ticket_number', $number)

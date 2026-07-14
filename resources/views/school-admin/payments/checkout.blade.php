@@ -178,10 +178,8 @@
             {{-- ── STEP 1: First visit — show "Pay Now" which posts to initiate() ──────── --}}
             @empty($cashfreeOrderId)
             {{-- CWE-602 (Finding 6): Server-side duplicate prevention handles idempotency.
-                 The button is disabled after click only as a UX improvement, not a security boundary. --}}
-            <form method="POST" action="{{ route('school.payments.initiate') }}"
-                id="initiate-form"
-                x-on:submit="
+            The button is disabled after click only as a UX improvement, not a security boundary. --}}
+            <form method="POST" action="{{ route('school.payments.initiate') }}" id="initiate-form" x-on:submit="
                     $el.querySelector('button[type=submit]').disabled = true;
                     $el.querySelector('button[type=submit]').textContent = 'Redirecting…';
                     processing = true;
@@ -199,7 +197,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                         </svg>
-                        Pay Now with Cashfree
+                        Pay Now
                     </button>
                     <p class="text-[10px] text-slate-500 text-center">
                         This action redirects requests securely and generates a checkout session.
@@ -211,7 +209,9 @@
             {{-- ── STEP 2: Returned from initiate() — open Cashfree checkout automatically ─ --}}
             @isset($cashfreeOrderId)
                 {{-- CWE-391 / CWE-703: Inline error banner for SDK and session errors --}}
-                <div id="cf-error-banner" class="hidden mb-4 p-4 bg-rose-950/30 border border-rose-800/40 text-rose-300 rounded-2xl text-xs leading-relaxed"></div>
+                <div id="cf-error-banner"
+                    class="hidden mb-4 p-4 bg-rose-950/30 border border-rose-800/40 text-rose-300 rounded-2xl text-xs leading-relaxed">
+                </div>
 
                 <button type="button" id="cashfree-trigger-btn"
                     class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-sm cursor-pointer flex items-center justify-center gap-2 duration-200 active:scale-[0.98]">
@@ -231,7 +231,7 @@
                 <script @nonce>
                     (function () {
                         const errorBanner = document.getElementById('cf-error-banner');
-                        const triggerBtn  = document.getElementById('cashfree-trigger-btn');
+                        const triggerBtn = document.getElementById('cashfree-trigger-btn');
 
                         function showError(msg) {
                             errorBanner.textContent = msg;
