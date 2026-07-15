@@ -59,6 +59,10 @@ class VirusScanner
      */
     private function isClamAvAvailable(): bool
     {
+        if (!function_exists('exec')) {
+            return false;
+        }
+
         $command = DIRECTORY_SEPARATOR === '\\' ? 'where clamdscan' : 'which clamdscan';
         $output = [];
         $returnVar = -1;
@@ -66,7 +70,7 @@ class VirusScanner
         try {
             @exec($command, $output, $returnVar);
             return $returnVar === 0;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return false;
         }
     }
@@ -76,6 +80,10 @@ class VirusScanner
      */
     private function scanWithClamAv(string $filePath): bool
     {
+        if (!function_exists('exec')) {
+            return true;
+        }
+
         $escapedFilePath = escapeshellarg($filePath);
         $command = "clamdscan --no-summary {$escapedFilePath}";
         $output = [];
@@ -95,7 +103,7 @@ class VirusScanner
                 // Fallback to true if scanner has error so it doesn't block users if scanner breaks, but log it.
                 return true;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("VirusScanner: ClamAV execution failed: " . $e->getMessage());
             return true;
         }
