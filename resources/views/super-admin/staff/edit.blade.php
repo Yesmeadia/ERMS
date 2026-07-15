@@ -21,7 +21,7 @@
             <!-- Profile Image field -->
             <div class="pb-4 border-b border-slate-800/40">
                 <label class="block text-sm font-medium text-slate-300 mb-2">Profile Photograph</label>
-                <div class="flex items-center gap-6" x-data='{ imgPreview: @js($staff->profile_image ? asset("storage/" . $staff->profile_image) : "") }'>
+                <div class="flex items-center gap-6" x-data="{ imgPreview: '{{ $staff->profile_image ? asset('storage/' . $staff->profile_image) : '' }}' }">
                     <div class="w-20 h-20 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                         <template x-if="imgPreview">
                             <img :src="imgPreview" class="w-full h-full object-cover">

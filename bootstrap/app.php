@@ -34,3 +34,12 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*'),
         );
     })->create();
+
+// Customize public path for shared hosting (Hostinger) when ERMS and public_html structure is used
+$basePath = $app->basePath();
+$parentPath = dirname($basePath);
+if (basename($basePath) === 'ERMS' || (is_dir($parentPath . '/public_html') && !is_dir($basePath . '/public'))) {
+    $app->usePublicPath($parentPath . '/public_html');
+}
+
+return $app;
