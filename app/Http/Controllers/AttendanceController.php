@@ -115,7 +115,7 @@ class AttendanceController extends Controller
         $token = $data['token'];
 
         // 2. Verify Student
-        $student = Student::with(['school', 'class', 'category', 'examination'])->find($studentId);
+        $student = Student::with(['school', 'class', 'category', 'centre'])->find($studentId);
 
         if (!$student) {
             $this->logAction(null, 'scan_invalid', $request);
@@ -171,6 +171,7 @@ class AttendanceController extends Controller
                     'hall_ticket_number' => $student->hall_ticket_number,
                     'school' => $student->school->name,
                     'class' => $student->class->name,
+                    'centre' => optional($student->centre)->name ?? 'Not Assigned',
                     'photo_url' => $student->photo_url,
                 ]
             ]);
@@ -189,6 +190,7 @@ class AttendanceController extends Controller
                 'school' => $student->school->name,
                 'class' => $student->class->name,
                 'category' => $student->category->name,
+                'centre' => optional($student->centre)->name ?? 'Not Assigned',
                 'exam_name' => $exam->name,
                 'photo_url' => $student->photo_url,
             ],
