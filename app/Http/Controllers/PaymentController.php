@@ -494,15 +494,22 @@ class PaymentController extends Controller
 
         // Mark payment as complete
         DB::transaction(function () use ($payment, $cfOrderId, $cfPaymentId, $resolvedMethod) {
-            $payment->status = 'Paid';
-            $payment->transaction_id = $cfPaymentId ?? $cfOrderId;
-            $payment->cashfree_payment_id = $cfPaymentId;
-            $payment->payment_method = $resolvedMethod;
-            $payment->paid_at = now();
-            $payment->save();
+            // Re-lock the payment row inside the transaction to prevent TOCTOU race with webhook (CWE-367)
+            $lockedPayment = Payment::where('id', $payment->id)->lockForUpdate()->first();
+
+            if (!$lockedPayment || $lockedPayment->status === 'Paid') {
+                return; // Already processed by webhook
+            }
+
+            $lockedPayment->status = 'Paid';
+            $lockedPayment->transaction_id = $cfPaymentId ?? $cfOrderId;
+            $lockedPayment->cashfree_payment_id = $cfPaymentId;
+            $lockedPayment->payment_method = $resolvedMethod;
+            $lockedPayment->paid_at = now();
+            $lockedPayment->save();
 
             // Mark all attached students as paid and submitted
-            foreach ($payment->students as $student) {
+            foreach ($lockedPayment->students as $student) {
                 $student->payment_status = 'Paid';
                 $student->status = 'Submitted';
                 $student->save();
@@ -513,8 +520,8 @@ class PaymentController extends Controller
             }
 
             activity()
-                ->performedOn($payment)
-                ->log('Cashfree: Order ' . $cfOrderId . ' verified PAID. ₹' . number_format($payment->amount, 2) . ' collected.');
+                ->performedOn($lockedPayment)
+                ->log('Cashfree: Order ' . $cfOrderId . ' verified PAID. ₹' . number_format($lockedPayment->amount, 2) . ' collected.');
         });
 
         return redirect()->route('school.payments.receipt', $payment->id)
@@ -530,22 +537,25 @@ class PaymentController extends Controller
     {
         $webhookSecret = config('services.cashfree.webhook_secret');
 
-        if ($webhookSecret) {
-            // Verify signature: Cashfree sends x-webhook-signature and x-webhook-timestamp
-            $timestamp = $request->header('x-webhook-timestamp');
-            $signature = $request->header('x-webhook-signature');
-            $rawBody = $request->getContent();
+        if (!$webhookSecret) {
+            \Illuminate\Support\Facades\Log::critical('CASHFREE_WEBHOOK_SECRET not configured — rejecting webhook');
+            abort(500, 'Webhook verification not configured');
+        }
 
-            if (!$timestamp || !$signature) {
-                return response()->json(['status' => 'error', 'message' => 'Missing webhook signature headers'], 401);
-            }
+        // Verify signature: Cashfree sends x-webhook-signature and x-webhook-timestamp
+        $timestamp = $request->header('x-webhook-timestamp');
+        $signature = $request->header('x-webhook-signature');
+        $rawBody = $request->getContent();
 
-            $signedPayload = $timestamp . $rawBody;
-            $expectedSig = base64_encode(hash_hmac('sha256', $signedPayload, $webhookSecret, true));
+        if (!$timestamp || !$signature) {
+            return response()->json(['status' => 'error', 'message' => 'Missing webhook signature headers'], 401);
+        }
 
-            if (!hash_equals($expectedSig, $signature)) {
-                return response()->json(['status' => 'error', 'message' => 'Invalid webhook signature'], 401);
-            }
+        $signedPayload = $timestamp . $rawBody;
+        $expectedSig = base64_encode(hash_hmac('sha256', $signedPayload, $webhookSecret, true));
+
+        if (!hash_equals($expectedSig, $signature)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid webhook signature'], 401);
         }
 
         $payload = $request->json()->all();

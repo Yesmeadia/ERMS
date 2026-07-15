@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -14,6 +15,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('csp-nonce', function () {
             return base64_encode(random_bytes(16));
         });
+
+        // Bind custom password broker manager to use BcryptDatabaseTokenRepository (CWE-256)
+        $this->app->singleton('auth.password', function ($app) {
+            return new \App\Auth\Passwords\CustomPasswordBrokerManager($app);
+        });
     }
 
     /**
@@ -21,6 +27,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS scheme for all generated URLs when APP_URL is HTTPS.
+        // Required on Hostinger/shared hosting where SSL is terminated at the
+        // load balancer. Without this, APP_URL=https://... is set but Laravel
+        // still generates http:// redirect URLs (login, dashboard, etc.).
+        // The host's server then force-redirects those to https://, causing
+        // ERR_TOO_MANY_REDIRECTS. forceScheme('https') ensures all route()
+        // and redirect() calls produce https:// URLs.
+        if (str_starts_with(config('app.url', ''), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         \Illuminate\Support\Facades\Blade::directive('nonce', function () {
             return 'nonce="<?php echo app(\'csp-nonce\'); ?>"';
         });
@@ -46,16 +63,5 @@ class AppServiceProvider extends ServiceProvider
                     return response()->view('errors.429', [], 429);
                 });
         });
-
-        // Override the default password broker's token repository hasher to bcrypt.
-        // This ensures password reset tokens are stored as strong bcrypt hashes rather than SHA-1 (CWE-256 / CWE-307).
-        if (!empty(config('app.key')) && is_string(config('app.key'))) {
-            $repository = \Illuminate\Support\Facades\Password::broker()->getRepository();
-            if ($repository instanceof \Illuminate\Auth\Passwords\DatabaseTokenRepository) {
-                $reflection = new \ReflectionClass($repository);
-                $property = $reflection->getProperty('hasher');
-                $property->setValue($repository, new \Illuminate\Hashing\BcryptHasher());
-            }
-        }
     }
 }

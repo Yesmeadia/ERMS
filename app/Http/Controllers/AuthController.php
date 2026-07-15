@@ -76,8 +76,37 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::once($credentials)) {
             $user = Auth::user();
+
+            // Check if user belongs to an inactive school
+            if ($user->hasRole('school-admin') && $user->school && !$user->school->status) {
+                return back()->withErrors([
+                    'email' => 'Your school has been deactivated. Please contact the Examination Board.',
+                ]);
+            }
+
+            // Check if Super Admin requires MFA
+            if ($user->hasRole('super-admin') && $user->two_factor_enabled) {
+                // Reset both cache counter and account-level tracker on success
+                Cache::forget($attemptKey);
+                Cache::forget($attemptKey . '_locked_at');
+                $user->failed_login_attempts = 0;
+                $user->lockout_until = null;
+                $user->save();
+                $request->session()->put('auth.mfa_pending', true);
+                $request->session()->put('auth.mfa_user_id', $user->id);
+                $request->session()->put('auth.mfa_remember', $request->boolean('remember'));
+
+                activity()
+                    ->causedBy($user)
+                    ->log('Super Admin login credentials verified, MFA pending');
+
+                return redirect()->route('login.mfa');
+            }
+
+            // Standard login for non-MFA users
+            Auth::login($user, $request->boolean('remember'));
 
             // Reset both cache counter and account-level tracker on success
             Cache::forget($attemptKey);
@@ -89,30 +118,7 @@ class AuthController extends Controller
             // Store current password hash in session
             $request->session()->put('user_password_hash', $user->password);
 
-            // Check if user belongs to an inactive school
-            if ($user->hasRole('school-admin') && $user->school && !$user->school->status) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return back()->withErrors([
-                    'email' => 'Your school has been deactivated. Please contact the Examination Board.',
-                ]);
-            }
-
             $request->session()->regenerate();
-
-            // Check if Super Admin requires MFA
-            if ($user->hasRole('super-admin') && $user->two_factor_enabled) {
-                $request->session()->put('auth.mfa_pending', true);
-                $request->session()->put('auth.mfa_user_id', $user->id);
-
-                activity()
-                    ->causedBy($user)
-                    ->log('Super Admin login credentials verified, MFA pending');
-
-                return redirect()->route('login.mfa');
-            }
 
             // Log activity
             activity()
@@ -139,18 +145,20 @@ class AuthController extends Controller
             Cache::put($attemptKey . '_locked_at', time(), now()->addMinutes(15));
         }
 
+        // Prevent timing side-channel (CWE-208) by applying a uniform delay.
+        // Base the delay on the cache attempt count, which applies to both existing and non-existing accounts.
+        if ($newCount >= 3) {
+            $delay = min((int) pow(2, $newCount - 3), 8);
+            sleep($delay);
+        } else {
+            // Apply a small random delay for first/second attempts to obscure database query lookup overhead
+            usleep(random_int(100000, 300000)); // 100ms - 300ms
+        }
+
         // --- Also track per-account attempts for audit/admin visibility only ---
         $user = User::where('email', $request->email)->first();
         if ($user) {
             $user->increment('failed_login_attempts');
-
-            // Apply progressive server-side delay to slow down brute force
-            // without hard-locking the account (avoids DoS).
-            // Delay sequence: 3rd+ attempt → 1s, 4th → 2s, 5th → 4s ... max 8s
-            if ($user->failed_login_attempts >= 3) {
-                $delay = min((int) pow(2, $user->failed_login_attempts - 3), 8);
-                sleep($delay);
-            }
 
             activity()
                 ->performedOn($user)
@@ -223,9 +231,7 @@ class AuthController extends Controller
             $request->only('email')
         );
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', 'We have emailed your password reset link!')
-            : back()->withErrors(['email' => __($status)]);
+        return back()->with('status', 'We have emailed your password reset link!');
     }
 
     /**
@@ -354,22 +360,33 @@ class AuthController extends Controller
 
         // --- Path B: Recovery code fallback (8-character alphanumeric codes) ---
         if (!$verified && strlen($inputCode) === 8) {
-            $recoveryCodes = $user->mfa_recovery_codes ?? [];
-            foreach ($recoveryCodes as $index => $storedHash) {
-                if (Hash::check($inputCode, $storedHash)) {
-                    // Consume (remove) the recovery code so it cannot be reused.
-                    unset($recoveryCodes[$index]);
-                    $user->mfa_recovery_codes = array_values($recoveryCodes);
-                    $user->save();
-                    activity()->causedBy($user)->log('Super Admin used a MFA recovery code to log in (' . count($recoveryCodes) . ' remaining)');
-                    $verified = true;
-                    break;
+            $verified = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $inputCode) {
+                $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+                if (!$lockedUser) {
+                    return false;
                 }
-            }
+
+                $recoveryCodes = $lockedUser->mfa_recovery_codes ?? [];
+                foreach ($recoveryCodes as $index => $storedHash) {
+                    if (Hash::check($inputCode, $storedHash)) {
+                        // Consume (remove) the recovery code so it cannot be reused.
+                        unset($recoveryCodes[$index]);
+                        $lockedUser->mfa_recovery_codes = array_values($recoveryCodes);
+                        $lockedUser->save();
+
+                        activity()->causedBy($lockedUser)->log('Super Admin used a MFA recovery code to log in (' . count($recoveryCodes) . ' remaining)');
+                        return true;
+                    }
+                }
+                return false;
+            });
         }
 
         if ($verified) {
-            Auth::login($user);
+            $remember = $request->session()->get('auth.mfa_remember', false);
+            Auth::login($user, $remember);
+
+            $request->session()->regenerate();
 
             // Store password hash in session
             $request->session()->put('user_password_hash', $user->password);
@@ -377,7 +394,7 @@ class AuthController extends Controller
             // Clear pending session state
             $request->session()->forget('auth.mfa_pending');
             $request->session()->forget('auth.mfa_user_id');
-            $request->session()->save();
+            $request->session()->forget('auth.mfa_remember');
 
             activity()
                 ->causedBy($user)
