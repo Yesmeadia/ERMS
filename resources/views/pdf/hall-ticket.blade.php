@@ -100,8 +100,27 @@
         }
     }
 
+    if (!function_exists('imageToBase64')) {
+        function imageToBase64($path)
+        {
+            if ($path && file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                try {
+                    $data = file_get_contents($path);
+                    return 'data:image/' . $type . ';base64,' . base64_encode($data);
+                } catch (\Exception $e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+    }
+
     $leftLogoPath = file_exists(public_path('logob.png')) ? public_path('logob.png') : (file_exists(public_path('logo.png')) ? public_path('logo.png') : null);
     $rightLogoPath = file_exists(public_path('logo.png')) ? public_path('logo.png') : null;
+
+    $leftLogoBase64 = imageToBase64($leftLogoPath);
+    $rightLogoBase64 = imageToBase64($rightLogoPath);
 
     $photoPath = null;
     if ($student->photograph) {
@@ -111,6 +130,7 @@
             $photoPath = storage_path('app/public/' . $student->photograph);
         }
     }
+    $photoBase64 = imageToBase64($photoPath);
 
     // Determine banner color based on category name
     $categoryName = strtoupper($student->category->name ?? '');
@@ -451,13 +471,13 @@
         <table style="margin: 0 auto; border-collapse: collapse; margin-bottom: 12px;">
             <tr>
                 <td style="padding-right: 40px; vertical-align: middle; text-align: right;">
-                    @if($leftLogoPath)
-                        <img src="{{ $leftLogoPath }}" style="height: 52px; max-width: 220px;">
+                    @if($leftLogoBase64)
+                        <img src="{{ $leftLogoBase64 }}" style="height: 52px; max-width: 220px;">
                     @endif
                 </td>
                 <td style="padding-left: 40px; vertical-align: middle; text-align: left;">
-                    @if($rightLogoPath)
-                        <img src="{{ $rightLogoPath }}" style="height: 98px; max-width: 280px;">
+                    @if($rightLogoBase64)
+                        <img src="{{ $rightLogoBase64 }}" style="height: 98px; max-width: 280px;">
                     @endif
                 </td>
             </tr>
@@ -520,8 +540,8 @@
                         {{ $student->registration_number }}
                     </div>
                     <div class="photo-box">
-                        @if($photoPath)
-                            <img src="{{ $photoPath }}" class="photo-img">
+                        @if($photoBase64)
+                            <img src="{{ $photoBase64 }}" class="photo-img">
                         @else
                             <div class="photo-placeholder">
                                 AFFIX<br>PHOTO
@@ -605,9 +625,17 @@
                 </td>
                 <td class="controller-sig-cell">
                     <div class="controller-sig-container">
-                        @php $signPath = file_exists(public_path('sign.png')) ? public_path('sign.png') : null; @endphp
-                        @if($signPath)
-                            <img src="{{ $signPath }}"
+                        @php
+                            $signPath = null;
+                            if (file_exists(public_path('sign.png'))) {
+                                $signPath = public_path('sign.png');
+                            } elseif (file_exists(public_path('Sign.png'))) {
+                                $signPath = public_path('Sign.png');
+                            }
+                            $signBase64 = imageToBase64($signPath);
+                        @endphp
+                        @if($signBase64)
+                            <img src="{{ $signBase64 }}"
                                 style="height: 60px; width: auto; display: block; margin: 0 auto 2px auto;">
                         @else
                             <svg width="100" height="28" viewBox="0 0 100 28" xmlns="http://www.w3.org/2000/svg"

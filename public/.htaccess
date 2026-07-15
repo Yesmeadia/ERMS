@@ -3,7 +3,15 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    Options +FollowSymLinks
+
     RewriteEngine On
+
+    # Force HTTPS safely (compatible with Hostinger reverse-proxy and Cloudflare Flexible/Full SSL)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTP:CF-Visitor} !'"scheme":"https"'
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
