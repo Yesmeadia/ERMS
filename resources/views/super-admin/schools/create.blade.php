@@ -3,15 +3,7 @@
 @section('content')
     <div class="max-w-3xl mx-auto">
         <div class="flex items-center gap-3 mb-6">
-            <a href="{{ route('admin.schools.index') }}"
-                class="p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                    stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                </svg>
-            </a>
             <div>
-                <h2 class="text-xl font-bold text-white">Add New School</h2>
                 <p class="text-sm text-slate-400 mt-0.5">Create a new school registration</p>
             </div>
         </div>
@@ -91,9 +83,10 @@
                         placeholder="e.g. 9876543210">
                     @error('mobile_number')<p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>@enderror
                 </div>
-                <div class="md:col-span-2 flex items-center gap-3 bg-slate-950/40 border border-slate-800 rounded-xl p-4 mt-2">
+                <div
+                    class="md:col-span-2 flex items-center gap-3 bg-slate-950/40 border border-slate-800 rounded-xl p-4 mt-2">
                     <input type="checkbox" id="is_centre" name="is_centre" value="1" @checked(old('is_centre'))
-                           class="accent-indigo-500 w-4 h-4 rounded border-slate-700/60 bg-slate-800/50 cursor-pointer">
+                        class="accent-indigo-500 w-4 h-4 rounded border-slate-700/60 bg-slate-800/50 cursor-pointer">
                     <label for="is_centre" class="text-sm font-medium text-slate-350 select-none cursor-pointer">
                         Designate as a Centre of Examination
                     </label>

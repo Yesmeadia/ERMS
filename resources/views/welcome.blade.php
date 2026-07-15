@@ -538,7 +538,7 @@
         }
 
         .hero-gradient {
-            background: linear-gradient(130deg, #818cf8 0%, #c084fc 45%, #fbbf24 100%);
+            background:  #fbbf24;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1686,7 +1686,7 @@
 
             <p class="hero-desc">
                 A nationwide talent-identification program recognising exceptional students from
-                <strong style="color:#e2e8f0;">YES India Schools</strong> across
+                <strong style="color:#e2e8f0;">YES India Schools & Yaseen College of Integrated Studies</strong> across
                 <strong style="color:#e2e8f0;">40+ centres</strong>. Winners are celebrated at
                 the prestigious <strong style="color:#fbbf24;">Genius Jams</strong>.
             </p>
@@ -1717,7 +1717,7 @@
                         </p>
                         <p>
                             It functions as a <strong>national-level assessment and recognition platform</strong>
-                            where students from participating <strong>YES India Schools</strong> compete to
+                            where students from participating <strong>YES India Schools & Yaseen College of Integrated Studies</strong> compete to
                             showcase their intellectual prowess across multiple subject categories.
                         </p>
                         <p>
@@ -1788,9 +1788,9 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="about-feature-title">YES India Schools</div>
+                                <div class="about-feature-title">YES India Schools & Yaseen College of Integrated Studies</div>
                                 <div class="about-feature-desc">Open exclusively to students from participating YES
-                                    India Schools, ensuring a standardised and fair competitive environment.</div>
+                                    India Schools & Yaseen College of Integrated Studies, ensuring a standardised and fair competitive environment.</div>
                             </div>
                         </div>
                     </div>
@@ -1805,7 +1805,7 @@
                     <div class="section-tag-line"></div>
                 </div>
                 <h2 class="section-title">Previous Year Winners</h2>
-                <p class="section-sub">Celebrating the brightest minds from YES India Schools, recognised at Genius
+                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen College of Integrated Studies, recognised at Genius
                     Jams.</p>
 
                 @if($winners->isNotEmpty())
@@ -2115,7 +2115,7 @@
                     </div>
                     <div class="stat-item">
                         <div class="stat-num"
-                            style="color:#fbbf24; font-size:clamp(1rem,2vw,1.5rem);letter-spacing:-0.01em;">Genius Jams
+                            style="color:#fbbf24;">Genius Jams
                         </div>
                         <div class="stat-lbl">Award Ceremony</div>
                     </div>
