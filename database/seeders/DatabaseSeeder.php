@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
         // 5. Create Default Examination Sessions
         $exams = [
             [
-                'name' => 'YES GENIUS EXAMINATION SEASON-4',
+                'name' => 'YES GENIUS TALENT SEARCH SEASON-4',
                 'academic_year' => '2025-2026',
                 'registration_start_date' => '2026-09-01',
                 'registration_end_date' => '2026-11-30',

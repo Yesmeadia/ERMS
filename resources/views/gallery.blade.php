@@ -136,151 +136,7 @@
             width: 100%;
         }
 
-        /* ── NAV ── */
-        .nav-wrap {
-            position: sticky;
-            top: 14px;
-            z-index: 200;
-            padding: 0 20px;
-            max-width: 1240px;
-            margin: 0 auto;
-            pointer-events: none;
-            width: 100%;
-        }
-
-        .nav {
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 22px;
-            height: 62px;
-            background: rgba(10, 14, 26, 0.82);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 18px;
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
-            transition: border-color 0.25s, box-shadow 0.25s;
-        }
-
-        .nav:hover {
-            border-color: rgba(99, 102, 241, 0.25);
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            text-decoration: none;
-        }
-
-        .nav-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            object-fit: contain;
-            flex-shrink: 0;
-            filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.35));
-        }
-
-        .nav-logo-fallback {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: rgba(99, 102, 241, 0.18);
-            border: 1px solid rgba(99, 102, 241, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #818cf8;
-            font-weight: 900;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .nav-name {
-            font-size: 16px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.3px;
-            white-space: nowrap;
-        }
-
-        .nav-sub {
-            font-size: 8px;
-            color: var(--muted);
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 28px;
-        }
-
-        .nav-link {
-            color: #94a3b8;
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
-            padding: 8px 0;
-            transition: color 0.2s;
-            position: relative;
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            color: #fff;
-        }
-
-        .nav-link.active::after,
-        .nav-link:hover::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #6366f1, #a855f7);
-            border-radius: 99px;
-        }
-
-        .nav-cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 9px 18px;
-            border-radius: 11px;
-            background: linear-gradient(135deg, #6366f1, #4f52d6);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: all 0.2s;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.28);
-            flex-shrink: 0;
-        }
-
-        .nav-cta:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 28px rgba(99, 102, 241, 0.48);
-        }
-
-        .nav-hamburger {
-            display: none;
-        }
-
-        .mobile-drawer {
-            display: none;
-        }
-
-        /* ── PAGE HEADER ── */
+        /* ── NAV styles are in public-nav component ── */
         .page-header {
             text-align: center;
             padding: 80px 24px 52px;
@@ -325,7 +181,7 @@
         }
 
         .page-title-gradient {
-            background: linear-gradient(130deg, #818cf8 0%, #c084fc 50%, #fbbf24 100%);
+            background: #fbbf24;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -653,46 +509,7 @@
             right: 16px;
         }
 
-        /* ── FOOTER ── */
-        .footer {
-            padding: 28px 24px;
-            border-top: 1px solid var(--border);
-            background: rgba(6, 8, 16, 0.6);
-            backdrop-filter: blur(10px);
-            margin-top: auto;
-        }
-
-        .footer-inner {
-            max-width: 1240px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .footer-copy {
-            font-size: 12.5px;
-            color: var(--muted);
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            font-size: 12.5px;
-            color: var(--muted);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer-links a:hover {
-            color: #94a3b8;
-        }
+        /* ── FOOTER styles are in public-footer component ── */
 
         /* ── RESPONSIVE ── */
         @media (max-width: 900px) {
@@ -721,80 +538,7 @@
         }
 
         @media (max-width: 640px) {
-            .nav-links {
-                display: none;
-            }
-
-            .nav-hamburger {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 38px;
-                height: 38px;
-                border-radius: 10px;
-                border: 1px solid rgba(255, 255, 255, 0.09);
-                background: rgba(255, 255, 255, 0.04);
-                color: #94a3b8;
-                cursor: pointer;
-                transition: all 0.18s;
-                flex-shrink: 0;
-            }
-
-            .nav-hamburger.is-open {
-                background: rgba(99, 102, 241, 0.15);
-                border-color: rgba(99, 102, 241, 0.35);
-                color: #a5b4fc;
-            }
-
-            .mobile-drawer {
-                display: block;
-                position: fixed;
-                top: 84px;
-                left: 12px;
-                right: 12px;
-                background: rgba(10, 14, 26, 0.96);
-                backdrop-filter: blur(24px);
-                border: 1px solid rgba(255, 255, 255, 0.09);
-                border-radius: 18px;
-                padding: 16px;
-                z-index: 190;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
-                animation: drawerIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-            }
-
-            @keyframes drawerIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(-8px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .mobile-drawer a {
-                display: block;
-                padding: 12px 16px;
-                border-radius: 12px;
-                color: #94a3b8;
-                font-size: 14px;
-                font-weight: 600;
-                text-decoration: none;
-                transition: all 0.18s;
-            }
-
-            .mobile-drawer a:hover {
-                background: rgba(255, 255, 255, 0.05);
-                color: #fff;
-            }
-
-            .mobile-drawer .nav-cta {
-                display: block;
-                text-align: center;
-                margin-top: 8px;
-            }
+            /* Nav responsive styles are in public-nav component */
 
             .gallery-bento {
                 grid-template-columns: 1fr;
@@ -824,12 +568,7 @@
             }
         }
 
-        @media (max-width: 440px) {
-            .nav {
-                height: 56px;
-                padding: 0 14px;
-            }
-        }
+        /* Nav 440px override style is in public-nav component */
     </style>
 </head>
 
@@ -877,60 +616,8 @@
 }" @keydown.escape.window="closeLightbox()" @keydown.arrowleft.window="lightbox && prevPhoto()"
         @keydown.arrowright.window="lightbox && nextPhoto()">
 
-        <!-- NAV -->
-        <div class="nav-wrap" style="padding-top:14px;">
-            <nav class="nav">
-                <a href="/" class="nav-brand">
-                    @if(file_exists(public_path('logo-w.png')))
-                        <img src="{{ asset('logo-w.png') }}" alt="YES" class="nav-logo">
-                    @else
-                        <div class="nav-logo-fallback">Y</div>
-                    @endif
-                    <div>
-                        <div class="nav-name">YES Genius</div>
-                        <div class="nav-sub">National Examination</div>
-                    </div>
-                </a>
-
-                <div class="nav-links">
-                    <a href="/#about" class="nav-link">About</a>
-                    <a href="/#winners" class="nav-link">Winners</a>
-                    <a href="{{ route('gallery') }}" class="nav-link active">Gallery</a>
-                    <a href="/#portals" class="nav-link">Portals</a>
-                </div>
-
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <a href="{{ route('login') }}" class="nav-cta">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" style="width:14px;height:14px;">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                        </svg>
-                        Sign In
-                    </a>
-                    <button class="nav-hamburger" :class="{ 'is-open': menuOpen }" @click="menuOpen = !menuOpen"
-                        aria-label="Menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" style="width:18px;height:18px;" x-show="!menuOpen">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" style="width:18px;height:18px;" x-show="menuOpen">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </nav>
-            <div class="mobile-drawer" x-show="menuOpen" @click.away="menuOpen=false" x-cloak>
-                <a href="/" @click="menuOpen=false">← Home</a>
-                <a href="/#about" @click="menuOpen=false">About</a>
-                <a href="/#winners" @click="menuOpen=false">Winners</a>
-                <a href="/#utilities" @click="menuOpen=false">Hall Ticket Verify</a>
-                <a href="{{ route('results.check-form') }}" @click="menuOpen=false">Results Portal</a>
-                <a href="{{ route('login') }}" class="nav-cta" style="margin-top:8px;">Sign In →</a>
-            </div>
-        </div>
+        <!-- NAV COMPONENT -->
+        <x-public-nav page="gallery" />
 
         <!-- PAGE HEADER -->
         <div class="page-header">
@@ -1099,18 +786,8 @@
             </div>
         </div>
 
-        <!-- FOOTER -->
-        <footer class="footer">
-            <div class="footer-inner">
-                <span class="footer-copy">&copy; {{ date('Y') }} YES INDIA FOUNDATION. All rights reserved.</span>
-                <div class="footer-links">
-                    <a href="/">Home</a>
-                    <a href="/#utilities">Hall Ticket Lookup</a>
-                    <a href="{{ route('results.check-form') }}">Results Portal</a>
-                    <a href="{{ route('login') }}">Portal Login</a>
-                </div>
-            </div>
-        </footer>
+        <!-- FOOTER COMPONENT -->
+        <x-public-footer page="gallery" />
 
     </div>
 </body>
