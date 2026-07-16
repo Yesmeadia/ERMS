@@ -1914,7 +1914,7 @@
 
             <p class="hero-desc">
                 A nationwide talent-identification program recognising exceptional students from
-                <strong style="color:#e2e8f0;">YES India Schools & Yaseen College of Integrated Studies</strong> across
+                <strong style="color:#e2e8f0;">YES India Schools & Yaseen Colleges of Integrated Studies</strong> across
                 <strong style="color:#e2e8f0;">40+ centres</strong>. Winners are celebrated at
                 the prestigious <strong style="color:#fbbf24;">Genius Jam</strong>.
             </p>
@@ -1944,7 +1944,7 @@
                         </p>
                         <p>
                             It functions as a <strong>national-level assessment and recognition platform</strong>
-                            where students from participating <strong>YES India Schools & Yaseen College of Integrated Studies</strong> compete to showcase their intellectual prowess across multiple subject categories.
+                            where students from participating <strong>YES India Schools & Yaseen Colleges of Integrated Studies</strong> compete to showcase their intellectual prowess across multiple subject categories.
                         </p>
                         <p>
                             The examination is held at <strong>40+ centres nationwide</strong>, ensuring
@@ -2008,8 +2008,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="about-feature-title">YES India & Yaseen College</div>
-                                <div class="about-feature-desc">Open exclusively to students from participating YES India Schools & Yaseen College of Integrated Studies.</div>
+                                <div class="about-feature-title">YES India & Yaseen Colleges</div>
+                                <div class="about-feature-desc">Open exclusively to students from participating YES India Schools & Yaseen Colleges of Integrated Studies.</div>
                             </div>
                         </div>
                     </div>
@@ -2024,7 +2024,7 @@
                     <div class="section-tag-line"></div>
                 </div>
                 <h2 class="section-title">Previous Year Winners</h2>
-                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen College of Integrated Studies, recognized at Genius
+                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen Colleges of Integrated Studies, recognized at Genius
                     Jam.</p>
 
                 @if($winners->isNotEmpty())
