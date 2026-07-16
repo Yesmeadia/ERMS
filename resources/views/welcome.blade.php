@@ -283,160 +283,6 @@
             min-height: 100vh;
         }
 
-        /* ── NAV ── */
-        .header-wrap {
-            position: sticky;
-            top: 14px;
-            z-index: 200;
-            width: 100%;
-            max-width: 1240px;
-            margin: 0 auto;
-            padding: 0 20px;
-            pointer-events: none;
-        }
-
-        .nav {
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 22px;
-            height: 62px;
-            background: rgba(10, 14, 26, 0.80);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 18px;
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.02);
-            transition: border-color 0.25s, box-shadow 0.25s;
-        }
-
-        .nav:hover {
-            border-color: rgba(99, 102, 241, 0.28);
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.1);
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            text-decoration: none;
-        }
-
-        .nav-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            object-fit: contain;
-            flex-shrink: 0;
-            filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.35));
-        }
-
-        .nav-logo-fallback {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: rgba(99, 102, 241, 0.18);
-            border: 1px solid rgba(99, 102, 241, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #818cf8;
-            font-weight: 900;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .nav-name {
-            font-size: 16px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.3px;
-            white-space: nowrap;
-        }
-
-        .nav-sub {
-            font-size: 8px;
-            color: var(--muted);
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 28px;
-        }
-
-        .nav-link {
-            color: #94a3b8;
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
-            position: relative;
-            padding: 8px 0;
-            transition: color 0.2s;
-        }
-
-        .nav-link:hover {
-            color: #fff;
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #6366f1, #a855f7);
-            transform: scaleX(0);
-            transform-origin: center;
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            border-radius: 99px;
-        }
-
-        .nav-link:hover::after {
-            transform: scaleX(1);
-        }
-
-        .nav-cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 9px 18px;
-            border-radius: 11px;
-            background: linear-gradient(135deg, #6366f1 0%, #4f52d6 100%);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.28);
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .nav-cta:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 28px rgba(99, 102, 241, 0.48);
-        }
-
-        .nav-hamburger {
-            display: none;
-        }
-
-        .mobile-drawer {
-            display: none;
-        }
-
         /* ── HERO ── */
         .hero {
             display: flex;
@@ -725,57 +571,101 @@
         }
 
         .about-card {
-            background: var(--surface);
+            background: linear-gradient(145deg, rgba(245, 158, 11, 0.04) 0%, rgba(8, 12, 22, 0.95) 60%);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 32px;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: 28px;
+            padding: 36px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
         }
 
-        .about-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(241, 196, 15, 0.7), transparent);
+        .about-card:hover {
+            border-color: rgba(245, 158, 11, 0.35);
+            box-shadow: 0 40px 90px rgba(245, 158, 11, 0.1);
+            transform: translateY(-4px);
         }
+
+        /* background decorative gold orb */
+        .about-card-orb {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.14), transparent 70%);
+            top: -60px;
+            right: -60px;
+            pointer-events: none;
+            z-index: 0;
+            animation: aboutOrbPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes aboutOrbPulse {
+            0% { opacity: 0.5; transform: scale(0.9) translate(10px, -10px); }
+            100% { opacity: 1; transform: scale(1.1) translate(-10px, 10px); }
+        }
+
+        /* Corner accents for gold card */
+        .about-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 3;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .about-corner-tl { top: 12px; left: 12px; border-top: 1.5px solid; border-left: 1.5px solid; border-radius: 3px 0 0 0; }
+        .about-corner-tr { top: 12px; right: 12px; border-top: 1.5px solid; border-right: 1.5px solid; border-radius: 0 3px 0 0; }
+        .about-corner-bl { bottom: 12px; left: 12px; border-bottom: 1.5px solid; border-left: 1.5px solid; border-radius: 0 0 0 3px; }
+        .about-corner-br { bottom: 12px; right: 12px; border-bottom: 1.5px solid; border-right: 1.5px solid; border-radius: 0 0 3px 0; }
 
         .about-feature {
             display: flex;
             align-items: flex-start;
-            gap: 14px;
-            margin-bottom: 22px;
+            gap: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.25s ease;
         }
 
         .about-feature:last-child {
             margin-bottom: 0;
         }
 
+        .about-feature:hover {
+            transform: translateX(6px);
+        }
+
         .about-feature-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+
+        .about-feature:hover .about-feature-icon {
+            transform: scale(1.1) rotate(4deg);
         }
 
         .about-feature-title {
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 15px;
+            font-weight: 800;
             color: #f1f5f9;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
         }
 
         .about-feature-desc {
             font-size: 12.5px;
             color: #64748b;
-            line-height: 1.5;
+            line-height: 1.55;
         }
 
         /* ── WINNERS SECTION ── */
@@ -932,69 +822,132 @@
             font-size: 14px;
         }
 
-        /* ── GALLERY PREVIEW — Lunchbox/Bento Layout ── */
+        .winners-fallback-container {
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            width: 100%;
+            display: block;
+        }
+
+        .winners-fallback-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        @media (max-width: 900px) {
+            .winners-fallback-container {
+                margin-left: -16px;
+                margin-right: -16px;
+                width: calc(100% + 32px);
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+        }
+
+        /* ── GALLERY PREVIEW — Modern Bento Grid ── */
         .gallery-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            grid-template-rows: 260px 200px;
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: 240px 200px;
+            gap: 16px;
+            padding: 4px;
         }
 
         .gallery-item {
-            border-radius: 16px;
+            border-radius: 24px;
             overflow: hidden;
             position: relative;
             cursor: pointer;
-            border: 1px solid var(--border);
-            transition: transform 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s, border-color 0.28s;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--surface);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         .gallery-item:hover {
-            transform: scale(1.02);
-            box-shadow: 0 20px 48px rgba(0,0,0,0.55);
-            border-color: rgba(99,102,241,0.3);
-            z-index: 2;
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 30px 60px rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.4);
+            z-index: 5;
         }
 
-        /* Bento cell positions */
-        .gi-feat  { grid-column: 1; grid-row: 1 / 3; }   /* large left — full height */
-        .gi-tr    { grid-column: 2; grid-row: 1; }         /* top middle */
-        .gi-tl    { grid-column: 3; grid-row: 1; }         /* top right */
-        .gi-bl    { grid-column: 2; grid-row: 2; }         /* bottom middle */
-        .gi-bm    { grid-column: 3; grid-row: 2; }         /* bottom right */
+        /* Modern Asymmetric Bento cell positions */
+        .gi-feat  { grid-column: 1 / 3; grid-row: 1 / 3; } /* Large featured box on left */
+        .gi-tr    { grid-column: 3;     grid-row: 1; }
+        .gi-tl    { grid-column: 4;     grid-row: 1; }
+        .gi-bl    { grid-column: 3;     grid-row: 2; }
+        .gi-bm    { grid-column: 4;     grid-row: 2; }
 
         .gallery-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.4s;
-            filter: brightness(0.92);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: brightness(0.85) contrast(1.05);
         }
 
         .gallery-item:hover .gallery-img {
-            transform: scale(1.06);
-            filter: brightness(1);
+            transform: scale(1.08);
+            filter: brightness(1) contrast(1.05);
         }
 
         .gallery-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to top, rgba(6, 8, 16, 0.75), transparent 55%);
-            opacity: 0;
-            transition: opacity 0.3s;
+            background: linear-gradient(to top, rgba(6, 8, 16, 0.9) 0%, rgba(6, 8, 16, 0.3) 50%, transparent 100%);
+            opacity: 0.85;
+            transition: opacity 0.3s, background 0.3s;
             display: flex;
-            align-items: flex-end;
-            padding: 16px;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 24px;
         }
 
         .gallery-item:hover .gallery-overlay {
             opacity: 1;
+            background: linear-gradient(to top, rgba(6, 8, 16, 0.95) 0%, rgba(6, 8, 16, 0.4) 60%, transparent 100%);
+        }
+
+        .gallery-badge {
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            transform: translateY(4px);
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .gallery-item:hover .gallery-badge {
+            transform: translateY(0);
+            opacity: 1;
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #fff;
         }
 
         .gallery-caption {
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 14.5px;
+            font-weight: 700;
             color: #fff;
+            letter-spacing: -0.01em;
+            transform: translateY(6px);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover .gallery-caption {
+            transform: translateY(0);
         }
 
         .gallery-placeholder {
@@ -1036,10 +989,206 @@
         /* ── PUBLIC SERVICES ── */
         .utilities-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            position: relative;
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
         }
 
+        /* ── Hall Ticket Panel ── */
+        .util-panel {
+            position: relative;
+            padding: 52px 44px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 460px;
+        }
+
+        .util-panel-cyan {
+            background: linear-gradient(145deg, rgba(6,182,212,0.09) 0%, rgba(8,12,22,0.95) 55%);
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .util-panel-purple {
+            background: linear-gradient(145deg, rgba(168,85,247,0.09) 0%, rgba(8,12,22,0.95) 55%);
+        }
+
+        /* diagonal split line */
+        .util-divider {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(99,102,241,0.35) 40%, rgba(168,85,247,0.35) 60%, transparent);
+            z-index: 2;
+        }
+
+        /* background decorative orb */
+        .util-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .util-orb-cyan {
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(6,182,212,0.18), transparent 70%);
+            bottom: -80px;
+            left: -60px;
+            animation: utilOrbPulse 6s ease-in-out infinite alternate;
+        }
+
+        .util-orb-purple {
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(168,85,247,0.18), transparent 70%);
+            bottom: -80px;
+            right: -60px;
+            animation: utilOrbPulse 6s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes utilOrbPulse {
+            0% { opacity: 0.6; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* decorative scan-line strip */
+        .util-scanlines {
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(255,255,255,0.012) 3px,
+                rgba(255,255,255,0.012) 4px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* corner accent brackets */
+        .util-corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .util-corner-tl { top: 14px; left: 14px; border-top: 2px solid; border-left: 2px solid; border-radius: 4px 0 0 0; }
+        .util-corner-tr { top: 14px; right: 14px; border-top: 2px solid; border-right: 2px solid; border-radius: 0 4px 0 0; }
+        .util-corner-bl { bottom: 14px; left: 14px; border-bottom: 2px solid; border-left: 2px solid; border-radius: 0 0 0 4px; }
+        .util-corner-br { bottom: 14px; right: 14px; border-bottom: 2px solid; border-right: 2px solid; border-radius: 0 0 4px 0; }
+        .corner-cyan { border-color: rgba(6,182,212,0.3); }
+        .corner-purple { border-color: rgba(168,85,247,0.3); }
+
+        /* top coloured glow strip */
+        .util-top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            z-index: 4;
+        }
+        .util-top-bar-cyan  { background: linear-gradient(90deg, transparent, rgba(6,182,212,0.9), transparent); }
+        .util-top-bar-purple { background: linear-gradient(90deg, transparent, rgba(168,85,247,0.9), transparent); }
+
+        /* utility badge pill */
+        .util-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 13px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            width: fit-content;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        .util-badge-cyan   { background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3); color: #67e8f9; }
+        .util-badge-purple { background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); color: #d8b4fe; }
+
+        /* large icon shape */
+        .util-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 22px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .util-panel:hover .util-icon { transform: scale(1.12) rotate(-4deg); }
+        .util-icon-cyan   { background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3); color: #22d3ee; }
+        .util-icon-purple { background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; }
+
+        .util-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+            position: relative;
+            z-index: 1;
+        }
+
+        .util-desc {
+            font-size: 13.5px;
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* decorative floating stat chips */
+        .util-stat-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 26px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+        .util-stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 13px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .util-stat-chip-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-cyan   { background: #22d3ee; box-shadow: 0 0 6px rgba(34,211,238,0.8); }
+        .dot-purple { background: #c084fc; box-shadow: 0 0 6px rgba(192,132,252,0.8); }
+        .dot-green  { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.8); }
+
+        /* ── CARD stays for gateway section ── */
         .card {
             background: var(--surface);
             backdrop-filter: blur(18px);
@@ -1135,31 +1284,43 @@
             line-height: 1.65;
         }
 
+        /* ── verify input (used inside util-panel-cyan) ── */
         .verify-input-wrap {
-            margin-top: 20px;
+            margin-top: auto;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .verify-input-row {
+            display: flex;
+            gap: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(6,182,212,0.2);
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(12px);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .verify-input-row:focus-within {
+            border-color: rgba(6,182,212,0.55);
+            box-shadow: 0 0 0 3px rgba(6,182,212,0.1);
         }
 
         .verify-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            flex: 1;
+            padding: 14px 18px;
+            background: transparent;
+            border: none;
             color: #e2e8f0;
             font-size: 13.5px;
             font-family: 'Outfit', sans-serif;
             font-weight: 600;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.07em;
             text-transform: uppercase;
             outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .verify-input:focus {
-            border-color: rgba(6, 182, 212, 0.5);
         }
 
         .verify-input::placeholder {
@@ -1170,24 +1331,74 @@
         }
 
         .btn-cyan {
-            padding: 12px 20px;
-            border-radius: 12px;
-            background: rgba(6, 182, 212, 0.15);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            color: #22d3ee;
-            font-size: 13.5px;
-            font-weight: 700;
+            padding: 14px 22px;
+            background: linear-gradient(135deg, rgba(6,182,212,0.9), rgba(8,145,178,0.9));
+            border: none;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
             cursor: pointer;
-            text-align: center;
+            white-space: nowrap;
             transition: all 0.2s;
             font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.02em;
         }
 
         .btn-cyan:hover {
-            background: rgba(6, 182, 212, 0.25);
-            border-color: rgba(6, 182, 212, 0.5);
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, rgba(6,182,212,1), rgba(8,145,178,1));
+            box-shadow: 0 0 20px rgba(6,182,212,0.4);
         }
+
+        /* results CTA button */
+        .btn-purple-solid {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 28px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(126,34,206,0.85));
+            border: 1px solid rgba(168,85,247,0.4);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            transition: all 0.25s;
+            position: relative;
+            z-index: 1;
+            margin-top: auto;
+            letter-spacing: 0.01em;
+            box-shadow: 0 8px 28px rgba(168,85,247,0.2);
+        }
+        .btn-purple-solid:hover {
+            background: linear-gradient(135deg, rgba(168,85,247,1), rgba(126,34,206,1));
+            box-shadow: 0 12px 36px rgba(168,85,247,0.45);
+            transform: translateY(-2px);
+        }
+        .btn-purple-solid svg { transition: transform 0.2s; }
+        .btn-purple-solid:hover svg { transform: translateX(4px); }
+
+        /* decorative QR grid motif for results panel */
+        .util-qr-motif {
+            position: absolute;
+            bottom: 28px;
+            right: 28px;
+            width: 80px;
+            height: 80px;
+            opacity: 0.08;
+            display: grid;
+            grid-template-columns: repeat(7,1fr);
+            grid-template-rows: repeat(7,1fr);
+            gap: 3px;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .util-qr-motif span {
+            border-radius: 2px;
+            background: #c084fc;
+        }
+
+
 
         .btn-purple {
             padding: 12px 20px;
@@ -1209,95 +1420,296 @@
             transform: translateY(-1px);
         }
 
+        /* ── Responsive: stack panels on small screens ── */
+        @media (max-width: 740px) {
+            .utilities-grid {
+                grid-template-columns: 1fr;
+            }
+            .util-divider { display: none; }
+            .util-panel-cyan { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            .util-panel { padding: 40px 28px; min-height: auto; }
+        }
+
         /* ── GATEWAYS ── */
         .gateway-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            gap: 0;
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.45);
         }
 
-        .gateway-card {
+        /* individual gateway lane */
+        .gw-lane {
+            position: relative;
+            padding: 44px 36px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            overflow: hidden;
+            min-height: 400px;
+            transition: background 0.3s;
         }
 
-        .gateway-badge {
+        .gw-lane-school {
+            background: linear-gradient(160deg, rgba(99,102,241,0.09) 0%, rgba(8,12,22,0.96) 60%);
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+        .gw-lane-board {
+            background: linear-gradient(160deg, rgba(99,102,241,0.18) 0%, rgba(14,18,36,0.97) 55%);
+            border-right: 1px solid rgba(99,102,241,0.15);
+            border-left: 1px solid rgba(99,102,241,0.15);
+            z-index: 1;
+        }
+        .gw-lane-invig {
+            background: linear-gradient(160deg, rgba(6,182,212,0.09) 0%, rgba(8,12,22,0.96) 60%);
+            border-left: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* glow orb per lane */
+        .gw-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+            animation: gwOrbPulse 7s ease-in-out infinite alternate;
+        }
+        .gw-orb-indigo {
+            width: 260px; height: 260px;
+            background: radial-gradient(circle, rgba(99,102,241,0.22), transparent 70%);
+            bottom: -60px; right: -40px;
+        }
+        .gw-orb-board {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(99,102,241,0.3), transparent 70%);
+            bottom: -80px; left: 50%; transform: translateX(-50%);
+            animation-direction: alternate-reverse;
+        }
+        .gw-orb-cyan {
+            width: 260px; height: 260px;
+            background: radial-gradient(circle, rgba(6,182,212,0.22), transparent 70%);
+            bottom: -60px; left: -40px;
+        }
+        @keyframes gwOrbPulse {
+            0%   { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 1;   transform: scale(1.2); }
+        }
+        .gw-lane-board .gw-orb-board { transform: translateX(-50%) scale(1); }
+
+        /* top accent bar */
+        .gw-top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            z-index: 4;
+        }
+        .gw-top-indigo { background: linear-gradient(90deg, transparent, rgba(99,102,241,0.8), transparent); }
+        .gw-top-board  { background: linear-gradient(90deg, transparent, rgba(99,102,241,1), transparent); }
+        .gw-top-cyan   { background: linear-gradient(90deg, transparent, rgba(6,182,212,0.8), transparent); }
+
+        /* scanlines texture */
+        .gw-scanlines {
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(255,255,255,0.01) 3px,
+                rgba(255,255,255,0.01) 4px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* corner accent brackets */
+        .gw-corner {
+            position: absolute;
+            width: 18px; height: 18px;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .gw-corner-tl { top: 12px; left: 12px; border-top: 1.5px solid; border-left: 1.5px solid; border-radius: 3px 0 0 0; }
+        .gw-corner-tr { top: 12px; right: 12px; border-top: 1.5px solid; border-right: 1.5px solid; border-radius: 0 3px 0 0; }
+        .gw-corner-bl { bottom: 12px; left: 12px; border-bottom: 1.5px solid; border-left: 1.5px solid; border-radius: 0 0 0 3px; }
+        .gw-corner-br { bottom: 12px; right: 12px; border-bottom: 1.5px solid; border-right: 1.5px solid; border-radius: 0 0 3px 0; }
+        .gw-accent-indigo { border-color: rgba(99,102,241,0.3); }
+        .gw-accent-board  { border-color: rgba(99,102,241,0.55); }
+        .gw-accent-cyan   { border-color: rgba(6,182,212,0.3); }
+
+        /* role pill */
+        .gw-role-pill {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 10px;
+            gap: 6px;
+            padding: 5px 13px;
+            border-radius: 100px;
+            font-size: 9.5px;
             font-weight: 700;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             width: fit-content;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
+        .pill-indigo { background: rgba(99,102,241,0.13); border: 1px solid rgba(99,102,241,0.28); color: #a5b4fc; }
+        .pill-board  { background: rgba(99,102,241,0.22); border: 1px solid rgba(99,102,241,0.5);  color: #c7d2fe; }
+        .pill-cyan   { background: rgba(6,182,212,0.13);  border: 1px solid rgba(6,182,212,0.28);  color: #67e8f9; }
 
-        .badge-indigo {
-            background: rgba(99, 102, 241, 0.15);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.25);
+        /* large gateway icon */
+        .gw-icon {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
         }
+        .gw-lane:hover .gw-icon { transform: scale(1.14) rotate(-5deg); }
+        .gw-icon-indigo { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; }
+        .gw-icon-board  { background: rgba(99,102,241,0.25); border: 1px solid rgba(99,102,241,0.5); color: #c7d2fe; }
+        .gw-icon-cyan   { background: rgba(6,182,212,0.15);  border: 1px solid rgba(6,182,212,0.3);  color: #22d3ee; }
 
-        .badge-cyan {
-            background: rgba(6, 182, 212, 0.15);
-            color: #67e8f9;
-            border: 1px solid rgba(6, 182, 212, 0.25);
+        /* gateway title & desc */
+        .gw-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            position: relative;
+            z-index: 1;
         }
+        .gw-lane-board .gw-title { font-size: 20px; color: #fff; }
 
-        .gateway-link {
+        .gw-desc {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.68;
+            margin-bottom: auto;
+            padding-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .gw-lane-board .gw-desc { color: #7c8ca8; }
+
+        /* feature chip list */
+        .gw-features {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 26px;
+            position: relative;
+            z-index: 1;
+        }
+        .gw-feature-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .gw-feature-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .fdot-indigo { background: #818cf8; }
+        .fdot-board  { background: #c7d2fe; }
+        .fdot-cyan   { background: #22d3ee; }
+
+        /* CTA button */
+        .gw-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 13.5px;
-            font-weight: 700;
+            padding: 13px 22px;
+            border-radius: 13px;
+            font-size: 13px;
+            font-weight: 800;
             text-decoration: none;
-            border: 1px solid;
-            transition: all 0.2s;
-            margin-top: auto;
+            transition: all 0.25s;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 0.01em;
         }
+        .gw-btn svg { transition: transform 0.2s; }
+        .gw-btn:hover svg { transform: translateX(4px); }
 
-        .gateway-link-indigo {
-            color: #818cf8;
-            border-color: rgba(99, 102, 241, 0.3);
+        .gw-btn-indigo {
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(99,102,241,0.3);
+            color: #a5b4fc;
         }
-
-        .gateway-link-indigo:hover {
-            background: var(--indigo);
+        .gw-btn-indigo:hover {
+            background: rgba(99,102,241,0.25);
+            border-color: rgba(99,102,241,0.6);
+            color: #c7d2fe;
+            box-shadow: 0 8px 24px rgba(99,102,241,0.2);
+            transform: translateY(-2px);
+        }
+        .gw-btn-board {
+            background: linear-gradient(135deg, rgba(99,102,241,0.85), rgba(79,82,214,0.85));
+            border: 1px solid rgba(99,102,241,0.5);
             color: #fff;
-            border-color: var(--indigo);
+            box-shadow: 0 8px 28px rgba(99,102,241,0.25);
         }
-
-        .gateway-link-cyan {
+        .gw-btn-board:hover {
+            background: linear-gradient(135deg, #6366f1, #4f52d6);
+            box-shadow: 0 12px 36px rgba(99,102,241,0.45);
+            transform: translateY(-2px);
+        }
+        .gw-btn-cyan {
+            background: rgba(6,182,212,0.12);
+            border: 1px solid rgba(6,182,212,0.3);
             color: #22d3ee;
-            border-color: rgba(6, 182, 212, 0.3);
+        }
+        .gw-btn-cyan:hover {
+            background: rgba(6,182,212,0.25);
+            border-color: rgba(6,182,212,0.6);
+            color: #67e8f9;
+            box-shadow: 0 8px 24px rgba(6,182,212,0.2);
+            transform: translateY(-2px);
         }
 
-        .gateway-link-cyan:hover {
-            background: #0891b2;
-            color: #fff;
-            border-color: #0891b2;
+        /* STARRED badge on board lane */
+        .gw-star-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 11px;
+            border-radius: 100px;
+            background: rgba(99,102,241,0.25);
+            border: 1px solid rgba(99,102,241,0.5);
+            color: #c7d2fe;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            z-index: 5;
         }
 
-        .gateway-link svg {
-            transition: transform 0.2s;
-        }
-
-        .gateway-link:hover svg {
-            transform: translateX(4px);
-        }
-
-        .featured-card {
-            background: linear-gradient(145deg, rgba(79, 82, 214, 0.15), rgba(13, 18, 30, 0.8));
-            border-color: rgba(99, 102, 241, 0.3) !important;
-        }
-
-        .featured-card::before {
-            background: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.12), transparent 70%) !important;
+        @media (max-width: 860px) {
+            .gateway-grid {
+                grid-template-columns: 1fr;
+            }
+            .gw-lane-school { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            .gw-lane-board  { border-right: none; border-left: none; border-top: 1px solid rgba(99,102,241,0.15); border-bottom: 1px solid rgba(99,102,241,0.15); }
+            .gw-lane-invig  { border-left: none; border-top: 1px solid rgba(255,255,255,0.05); }
+            .gw-lane { min-height: auto; padding: 36px 28px; }
         }
 
         /* ── STATS BAR ── */
@@ -1340,46 +1752,7 @@
             text-transform: uppercase;
         }
 
-        /* ── FOOTER ── */
-        .footer {
-            margin-top: auto;
-            padding: 32px 24px;
-            border-top: 1px solid var(--border);
-            background: rgba(6, 8, 16, 0.6);
-            backdrop-filter: blur(10px);
-        }
-
-        .footer-inner {
-            max-width: 1240px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 14px;
-        }
-
-        .footer-copy {
-            font-size: 12.5px;
-            color: var(--muted);
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            font-size: 12.5px;
-            color: var(--muted);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer-links a:hover {
-            color: #94a3b8;
-        }
+        /* ── FOOTER: styles are in x-public-footer component ── */
 
         /* ── [x-cloak] ── */
         [x-cloak] {
@@ -1401,17 +1774,16 @@
             }
 
             .gallery-grid {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: 220px 180px;
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: 220px 220px 220px;
+                gap: 12px;
             }
 
-            .gi-feat { grid-column: 1 / 3; grid-row: 1; }
-            .gi-tr   { grid-column: 1;     grid-row: 2; }
-            .gi-tl   { grid-column: 2;     grid-row: 2; }
-            .gi-bl   { grid-column: 1;     grid-row: 3; }
-            .gi-bm   { grid-column: 2;     grid-row: 3; }
-
-            .gallery-grid { grid-template-rows: 220px 180px 180px; }
+            .gi-feat  { grid-column: 1 / 3; grid-row: 1; }
+            .gi-tr    { grid-column: 1;     grid-row: 2; }
+            .gi-tl    { grid-column: 2;     grid-row: 2; }
+            .gi-bl    { grid-column: 1;     grid-row: 3; }
+            .gi-bm    { grid-column: 2;     grid-row: 3; }
         }
 
         @media (max-width: 680px) {
@@ -1419,85 +1791,7 @@
                 padding: 70px 16px 50px;
             }
 
-            .nav-links {
-                display: none;
-            }
-
-            .nav .nav-cta {
-                display: none;
-            }
-
-            .nav-hamburger {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 38px;
-                height: 38px;
-                border-radius: 10px;
-                border: 1px solid rgba(255, 255, 255, 0.09);
-                background: rgba(255, 255, 255, 0.04);
-                color: #94a3b8;
-                cursor: pointer;
-                transition: all 0.18s;
-                flex-shrink: 0;
-            }
-
-            .nav-hamburger.is-open {
-                background: rgba(99, 102, 241, 0.15);
-                border-color: rgba(99, 102, 241, 0.35);
-                color: #a5b4fc;
-            }
-
-            .mobile-drawer {
-                display: block;
-                position: fixed;
-                top: 84px;
-                left: 12px;
-                right: 12px;
-                background: rgba(10, 14, 26, 0.96);
-                backdrop-filter: blur(24px);
-                border: 1px solid rgba(255, 255, 255, 0.09);
-                border-radius: 18px;
-                padding: 16px;
-                z-index: 190;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
-                animation: drawerIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-                pointer-events: auto;
-            }
-
-            @keyframes drawerIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(-8px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .mobile-drawer a {
-                display: block;
-                padding: 12px 16px;
-                border-radius: 12px;
-                color: #94a3b8;
-                font-size: 14px;
-                font-weight: 600;
-                text-decoration: none;
-                transition: all 0.18s;
-            }
-
-            .mobile-drawer a:hover {
-                background: rgba(255, 255, 255, 0.05);
-                color: #fff;
-            }
-
-            .mobile-drawer .nav-cta {
-                display: block;
-                text-align: center;
-                margin-top: 8px;
-            }
+            /* Nav responsive styles moved to x-public-nav component */
 
             .utilities-grid {
                 grid-template-columns: 1fr;
@@ -1549,17 +1843,7 @@
             }
         }
 
-        @media (max-width: 440px) {
-            .nav {
-                height: 56px;
-                padding: 0 14px;
-            }
-
-            .nav-cta {
-                padding: 7px 14px;
-                font-size: 12px;
-            }
-        }
+        /* @media nav 440px override moved to x-public-nav component */
     </style>
 </head>
 
@@ -1592,64 +1876,8 @@
 
     <div class="page" x-data="{ menuOpen: false }">
 
-        <!-- NAV -->
-        <div class="header-wrap" style="padding-top:14px;">
-            <nav class="nav">
-                <a href="/" class="nav-brand">
-                    @if(file_exists(public_path('icon.png')))
-                        <img src="{{ asset('icon.png') }}" alt="YES" class="nav-logo">
-                    @else
-                        <div class="nav-logo-fallback">Y</div>
-                    @endif
-                    <div>
-                        <div class="nav-name">YES Genius</div>
-                        <div class="nav-sub">National Level Talent Search</div>
-                    </div>
-                </a>
-
-                <div class="nav-links">
-                    <a href="#about" class="nav-link">About<span></span></a>
-                    <a href="#winners" class="nav-link">Winners<span></span></a>
-                    <a href="{{ route('gallery') }}" class="nav-link">Gallery<span></span></a>
-                    <a href="#portals" class="nav-link">Portals<span></span></a>
-                    <a href="{{ route('results.check-form') }}" class="nav-link">Result<span></span></a>
-                </div>
-
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <a href="{{ route('login') }}" class="nav-cta">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" style="width:14px;height:14px;">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                        </svg>
-                        Sign In
-                    </a>
-                    <button class="nav-hamburger" :class="{ 'is-open': menuOpen }" @click="menuOpen = !menuOpen"
-                        aria-label="Menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" style="width:18px;height:18px;" x-show="!menuOpen">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" style="width:18px;height:18px;" x-show="menuOpen">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </nav>
-
-            <!-- Mobile Drawer -->
-            <div class="mobile-drawer" x-show="menuOpen" @click.away="menuOpen = false" x-cloak>
-                <a href="#about" @click="menuOpen=false">About</a>
-                <a href="#winners" @click="menuOpen=false">Winners</a>
-                <a href="{{ route('gallery') }}" @click="menuOpen=false">Gallery</a>
-                <a href="#utilities" @click="menuOpen=false">Hall Ticket Verify</a>
-                <a href="{{ route('results.check-form') }}" @click="menuOpen=false">Results Portal</a>
-                <a href="#portals" @click="menuOpen=false">Portals</a>
-                <a href="{{ route('login') }}" class="nav-cta" style="margin-top:8px;">Sign In →</a>
-            </div>
-        </div>
+        <!-- NAV COMPONENT -->
+        <x-public-nav page="home" />
 
         <!-- HERO -->
         <div class="hero">
@@ -1688,7 +1916,7 @@
                 A nationwide talent-identification program recognising exceptional students from
                 <strong style="color:#e2e8f0;">YES India Schools & Yaseen College of Integrated Studies</strong> across
                 <strong style="color:#e2e8f0;">40+ centres</strong>. Winners are celebrated at
-                the prestigious <strong style="color:#fbbf24;">Genius Jams</strong>.
+                the prestigious <strong style="color:#fbbf24;">Genius Jam</strong>.
             </p>
 
             <div class="hero-actions">
@@ -1712,13 +1940,11 @@
                     <div class="about-text">
                         <p>
                             <strong>YES Genius Examination</strong> is a <strong>nationwide academic competition
-                                and talent-identification program</strong> designed to discover, celebrate, and
-                            nurture academic and cognitive abilities among students across India.
+                                and talent-identification program</strong> designed to discover, celebrate, and nurture academic and cognitive abilities among students across India.
                         </p>
                         <p>
                             It functions as a <strong>national-level assessment and recognition platform</strong>
-                            where students from participating <strong>YES India Schools & Yaseen College of Integrated Studies</strong> compete to
-                            showcase their intellectual prowess across multiple subject categories.
+                            where students from participating <strong>YES India Schools & Yaseen College of Integrated Studies</strong> compete to showcase their intellectual prowess across multiple subject categories.
                         </p>
                         <p>
                             The examination is held at <strong>40+ centres nationwide</strong>, ensuring
@@ -1727,70 +1953,63 @@
                         </p>
                         <p>
                             Outstanding performers are awarded and celebrated at the prestigious
-                            <strong style="color:#fbbf24;">Genius Jams</strong> — a grand event that honours
+                            <strong style="color:#fbbf24;">Genius Jam</strong> — a grand event that honours
                             the brightest minds and inspires the next generation of Indian scholars.
                         </p>
                     </div>
 
                     <div class="about-card">
+                        <div class="about-card-orb"></div>
+                        <div class="about-corner about-corner-tl"></div>
+                        <div class="about-corner about-corner-tr"></div>
+                        <div class="about-corner about-corner-bl"></div>
+                        <div class="about-corner about-corner-br"></div>
+
                         <div class="about-feature">
-                            <div class="about-feature-icon"
-                                style="background:rgba(241,196,15,0.12);border:1px solid rgba(241,196,15,0.3);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.7" stroke="#f1c40f" style="width:20px;height:20px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                            <div class="about-feature-icon" style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#fbbf24;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                                 </svg>
                             </div>
                             <div>
                                 <div class="about-feature-title">Talent Identification</div>
-                                <div class="about-feature-desc">Discover and spotlight exceptional academic and
-                                    cognitive abilities in students across India.</div>
+                                <div class="about-feature-desc">Discover and spotlight exceptional academic and cognitive abilities in students across India.</div>
                             </div>
                         </div>
+
                         <div class="about-feature">
-                            <div class="about-feature-icon"
-                                style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.7" stroke="#818cf8" style="width:20px;height:20px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+                            <div class="about-feature-icon" style="background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
                                 </svg>
                             </div>
                             <div>
                                 <div class="about-feature-title">40+ Exam Centres</div>
-                                <div class="about-feature-desc">Standardised examination centres across India, all with
-                                    trained invigilators and real-time attendance scanning.</div>
+                                <div class="about-feature-desc">Standardised examination centres across India, all with trained invigilators and real-time attendance scanning.</div>
                             </div>
                         </div>
+
                         <div class="about-feature">
-                            <div class="about-feature-icon"
-                                style="background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.3);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.7" stroke="#c084fc" style="width:20px;height:20px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
+                            <div class="about-feature-icon" style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:#c084fc;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
                                 </svg>
                             </div>
                             <div>
-                                <div class="about-feature-title">Genius Jams Awards</div>
-                                <div class="about-feature-desc">Winners are celebrated at Genius Jams — a prestigious
-                                    national award ceremony honouring India's brightest young minds.</div>
+                                <div class="about-feature-title">Genius Jam Awards</div>
+                                <div class="about-feature-desc">Winners are celebrated at Genius Jam — a prestigious national award ceremony honouring India's brightest young minds.</div>
                             </div>
                         </div>
+
                         <div class="about-feature">
-                            <div class="about-feature-icon"
-                                style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.3);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.7" stroke="#22d3ee" style="width:20px;height:20px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            <div class="about-feature-icon" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:#22d3ee;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                                 </svg>
                             </div>
                             <div>
-                                <div class="about-feature-title">YES India Schools & Yaseen College of Integrated Studies</div>
-                                <div class="about-feature-desc">Open exclusively to students from participating YES
-                                    India Schools & Yaseen College of Integrated Studies, ensuring a standardised and fair competitive environment.</div>
+                                <div class="about-feature-title">YES India & Yaseen College</div>
+                                <div class="about-feature-desc">Open exclusively to students from participating YES India Schools & Yaseen College of Integrated Studies.</div>
                             </div>
                         </div>
                     </div>
@@ -1805,8 +2024,8 @@
                     <div class="section-tag-line"></div>
                 </div>
                 <h2 class="section-title">Previous Year Winners</h2>
-                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen College of Integrated Studies, recognised at Genius
-                    Jams.</p>
+                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen College of Integrated Studies, recognized at Genius
+                    Jam.</p>
 
                 @if($winners->isNotEmpty())
                     @php
@@ -1888,9 +2107,8 @@
                         </div>
                     @endforeach
                 @else
-                    <div style="border-radius:24px;overflow:hidden;border:1px solid var(--border);">
-                        <img src="{{ asset('gallery/im3.jpeg') }}" alt="Previous Winners"
-                            style="width:100%;height:320px;object-fit:cover;display:block;">
+                    <div class="winners-fallback-container">
+                        <img src="{{ asset('gallery/im3.jpeg') }}" alt="Previous Winners" class="winners-fallback-img">
                     </div>
                 @endif
             </div>
@@ -1903,7 +2121,7 @@
                     <div class="section-tag-line"></div>
                 </div>
                 <h2 class="section-title">Moments of Excellence</h2>
-                <p class="section-sub">A glimpse into the YES Genius journey — from exam halls to Genius Jams
+                <p class="section-sub">A glimpse into the YES Genius journey — from exam halls to Genius Jam
                     celebrations.</p>
 
                 <div class="gallery-grid">
@@ -1920,9 +2138,6 @@
                         <div class="gallery-item {{ $item['cls'] }}">
                             <img src="{{ asset('gallery/' . $item['file']) }}"
                                 class="gallery-img" loading="lazy">
-                            <div class="gallery-overlay">
-                                <span class="gallery-caption"></span>
-                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -1952,53 +2167,92 @@
                     <div class="section-tag-line"></div>
                 </div>
                 <h2 class="section-title">Public Services</h2>
-                <p class="section-sub">No login required — look up your hall ticket or check results instantly.</p>
+                <p class="section-sub">No login required — look up your hall ticket or check your results instantly.</p>
 
                 <div class="utilities-grid">
-                    <div class="card" x-data="{ ticket: '' }">
-                        <div class="card-top-bar"
-                            style="background:linear-gradient(90deg,transparent,rgba(6,182,212,0.7),transparent)"></div>
-                        <div class="card-icon card-icon-cyan">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
-                                stroke="currentColor" style="width:22px;height:22px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-                            </svg>
+
+                    <!-- ══ HALL TICKET PANEL ══ -->
+                    <div class="util-panel util-panel-cyan" x-data="{ ticket: '' }">
+                        <div class="util-top-bar util-top-bar-cyan"></div>
+                        <div class="util-scanlines"></div>
+                        <div class="util-orb util-orb-cyan"></div>
+
+                        <!-- corner brackets -->
+                        <div class="util-corner util-corner-tl corner-cyan"></div>
+                        <div class="util-corner util-corner-tr corner-cyan"></div>
+                        <div class="util-corner util-corner-bl corner-cyan"></div>
+                        <div class="util-corner util-corner-br corner-cyan"></div>
+
+                        <span class="util-badge util-badge-cyan">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:10px;height:10px;"><circle cx="12" cy="12" r="5"/></svg>
+                            Live Verification
+                        </span>
+                        <div class="util-title">Hall Ticket<br>Verification</div>
+                        <p class="util-desc">Enter a candidate's hall ticket number to instantly verify seating details, examination centre, and reporting time.</p>
+
+                        <div class="util-stat-row">
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-cyan"></span>Instant Lookup</div>
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-green"></span>No Login Needed</div>
                         </div>
-                        <div class="card-title">Hall Ticket Verification</div>
-                        <p class="card-desc">Enter a candidate's hall ticket number to instantly verify seating details,
-                            examination centre, and reporting time.</p>
+
                         <form class="verify-input-wrap"
                             @submit.prevent="ticket.trim() ? (window.location.href='/verify/hall-ticket/'+encodeURIComponent(ticket.trim())) : null">
-                            <input type="text" class="verify-input" x-model="ticket" placeholder="e.g. F89C23D4829E"
-                                autocomplete="off">
-                            <button type="submit" class="btn-cyan">Verify Candidate →</button>
+                            <div class="verify-input-row">
+                                <input type="text" class="verify-input" x-model="ticket"
+                                    placeholder="Enter Hall Ticket No. e.g. F89C23D4829E"
+                                    autocomplete="off" id="hall-ticket-input">
+                                <button type="submit" class="btn-cyan">Verify →</button>
+                            </div>
                         </form>
                     </div>
 
-                    <div class="card" style="display:flex;flex-direction:column;">
-                        <div class="card-top-bar"
-                            style="background:linear-gradient(90deg,transparent,rgba(168,85,247,0.7),transparent)">
+                    <!-- ══ RESULTS PORTAL PANEL ══ -->
+                    <div class="util-panel util-panel-purple">
+                        <div class="util-top-bar util-top-bar-purple"></div>
+                        <div class="util-scanlines"></div>
+                        <div class="util-orb util-orb-purple"></div>
+
+                        <!-- corner brackets -->
+                        <div class="util-corner util-corner-tl corner-purple"></div>
+                        <div class="util-corner util-corner-tr corner-purple"></div>
+                        <div class="util-corner util-corner-bl corner-purple"></div>
+                        <div class="util-corner util-corner-br corner-purple"></div>
+
+                        <!-- decorative QR motif -->
+                        <div class="util-qr-motif" aria-hidden="true">
+                            @php
+                                $qr = [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1];
+                            @endphp
+                            @foreach($qr as $cell)
+                                <span style="{{ $cell ? '' : 'opacity:0;' }}"></span>
+                            @endforeach
                         </div>
-                        <div class="card-icon card-icon-purple">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
-                                stroke="currentColor" style="width:22px;height:22px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24c-.068.2-.106.416-.106.64 0 .414.336.75.75.75h1.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.106-.64m-3.537 0A3 3 0 0 1 10.5 4.5h1.5a3 3 0 0 1 2.766 1.838M3 21h10.5a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135.845-2.098 1.976-2.192a48.424 48.424 0 0 1 1.123-.08M3 21V6.108c0-1.135.845-2.098 1.976-2.192a48.424 48.424 0 0 1 1.123-.08M3 21h10.5" />
+
+                        <span class="util-badge util-badge-purple">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:10px;height:10px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                            Board Certified
+                        </span>
+
+                        <div class="util-title">Official Results<br>Portal</div>
+                        <p class="util-desc">Students and parents can access board-certified, digitally authenticated marksheets once results are published. Fully printable and QR-verified.</p>
+
+                        <div class="util-stat-row">
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-purple"></span>QR Authenticated</div>
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-green"></span>Printable PDF</div>
+                        </div>
+
+                        <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn">
+                            Check Exam Results
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:15px;height:15px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
-                        </div>
-                        <div class="card-title">Official Results Portal</div>
-                        <p class="card-desc" style="margin-bottom:auto;">Students and parents can access
-                            board-certified, digitally authenticated marksheets once results are published. Fully
-                            printable and QR-verified.</p>
-                        <div style="margin-top:24px;">
-                            <a href="{{ route('results.check-form') }}" class="btn-purple">Check Exam Results →</a>
-                        </div>
+                        </a>
                     </div>
+
                 </div>
             </div>
 
-            <!-- ── PORTAL GATEWAYS ─────────────────── -->
+            <!-- ── PORTAL GATEWAYS ───────────────── -->
             <div class="section section-sep" id="portals">
                 <div class="section-tag">
                     <div class="section-tag-line"></div>
@@ -2009,92 +2263,93 @@
                 <p class="section-sub">Choose your role to access the right portal for your work.</p>
 
                 <div class="gateway-grid">
-                    <div class="card gateway-card">
-                        <div class="card-top-bar"></div>
-                        <div>
-                            <div class="card-icon card-icon-indigo">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h18v18H3V3z" />
-                                </svg>
-                            </div>
-                            <span class="gateway-badge badge-indigo" style="margin-bottom:12px;">School Admin</span>
-                            <div class="card-title">School Partner Portal</div>
-                            <p class="card-desc">Manage student registrations, import candidate data via Excel, monitor
-                                application statuses, and bulk-download hall tickets for your institution.</p>
+
+                    <!-- ══ SCHOOL ADMIN LANE ══ -->
+                    <div class="gw-lane gw-lane-school">
+                        <div class="gw-top-bar gw-top-indigo"></div>
+                        <div class="gw-scanlines"></div>
+                        <div class="gw-orb gw-orb-indigo"></div>
+
+                        <div class="gw-corner gw-corner-tl gw-accent-indigo"></div>
+                        <div class="gw-corner gw-corner-tr gw-accent-indigo"></div>
+                        <div class="gw-corner gw-corner-bl gw-accent-indigo"></div>
+                        <div class="gw-corner gw-corner-br gw-accent-indigo"></div>
+
+                        <span class="gw-role-pill pill-indigo">School Admin</span>
+                        <div class="gw-title">School Partner Portal</div>
+                        <p class="gw-desc">Manage student registrations, import candidate data via Excel, monitor application statuses, and bulk-download hall tickets for your institution.</p>
+
+                        <div class="gw-features">
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Student Registration</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Bulk Hall Ticket Download</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Application Status Tracking</div>
                         </div>
-                        <a href="{{ route('login') }}" class="gateway-link gateway-link-indigo"
-                            style="font-family:'Outfit',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+
+                        <a href="{{ route('login') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
                             Enter School Desk
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                stroke="currentColor" style="width:14px;height:14px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
                         </a>
                     </div>
 
-                    <div class="card gateway-card featured-card">
-                        <div class="card-top-bar"
-                            style="background:linear-gradient(90deg,transparent,rgba(99,102,241,0.8),transparent);opacity:0.9;">
+                    <!-- ══ BOARD CONTROL (FEATURED) LANE ══ -->
+                    <div class="gw-lane gw-lane-board">
+                        <div class="gw-top-bar gw-top-board"></div>
+                        <div class="gw-scanlines"></div>
+                        <div class="gw-orb gw-orb-board"></div>
+
+                        <div class="gw-corner gw-corner-tl gw-accent-board"></div>
+                        <div class="gw-corner gw-corner-tr gw-accent-board"></div>
+                        <div class="gw-corner gw-corner-bl gw-accent-board"></div>
+                        <div class="gw-corner gw-corner-br gw-accent-board"></div>
+                        <span class="gw-role-pill pill-board">Board · Super Admin</span>
+                        <div class="gw-title">Board Control Panel</div>
+                        <p class="gw-desc">Full system oversight — audit schools, manage exam schedules, authorise registrations, configure invigilators, track real-time activity logs, and process final results.</p>
+
+                        <div class="gw-features">
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Full System Oversight</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Real-time Activity Logs</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Results Publishing</div>
                         </div>
-                        <div>
-                            <div class="card-icon card-icon-indigo"
-                                style="background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.35);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-                                </svg>
-                            </div>
-                            <span class="gateway-badge badge-indigo" style="margin-bottom:12px;">Super Admin ·
-                                Board</span>
-                            <div class="card-title">Board Control Panel</div>
-                            <p class="card-desc">Full system oversight — audit schools, manage exam schedules, authorize
-                                registrations, configure invigilators, track real-time activity logs, and process final
-                                results.</p>
-                        </div>
-                        <a href="{{ route('login') }}" class="gateway-link"
-                            style="color:#fff;border-color:rgba(99,102,241,0.6);background:rgba(99,102,241,0.2);font-family:'Outfit',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;justify-content:center;">
+
+                        <a href="{{ route('login') }}" class="gw-btn gw-btn-board" id="board-login-btn">
                             Board Sign In
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                stroke="currentColor" style="width:14px;height:14px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
                         </a>
                     </div>
 
-                    <div class="card gateway-card">
-                        <div class="card-top-bar"
-                            style="background:linear-gradient(90deg,transparent,rgba(6,182,212,0.6),transparent)"></div>
-                        <div>
-                            <div class="card-icon card-icon-cyan">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                                </svg>
-                            </div>
-                            <span class="gateway-badge badge-cyan" style="margin-bottom:12px;">Invigilator</span>
-                            <div class="card-title">Invigilator Desk</div>
-                            <p class="card-desc">Access live attendance scanning tools, verify candidate hall tickets
-                                via barcode, mark on-site presence, and log examination session records in real time.
-                            </p>
+                    <!-- ══ INVIGILATOR LANE ══ -->
+                    <div class="gw-lane gw-lane-invig">
+                        <div class="gw-top-bar gw-top-cyan"></div>
+                        <div class="gw-scanlines"></div>
+                        <div class="gw-orb gw-orb-cyan"></div>
+
+                        <div class="gw-corner gw-corner-tl gw-accent-cyan"></div>
+                        <div class="gw-corner gw-corner-tr gw-accent-cyan"></div>
+                        <div class="gw-corner gw-corner-bl gw-accent-cyan"></div>
+                        <div class="gw-corner gw-corner-br gw-accent-cyan"></div>
+
+                        <span class="gw-role-pill pill-cyan">Invigilator</span>
+                        <div class="gw-title">Invigilator Desk</div>
+                        <p class="gw-desc">Access live attendance scanning tools, verify candidate hall tickets via barcode, mark on-site presence, and log examination session records in real time.</p>
+
+                        <div class="gw-features">
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Barcode Hall Ticket Scan</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Live Attendance Marking</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Session Record Logging</div>
                         </div>
-                        <a href="{{ route('login') }}" class="gateway-link gateway-link-cyan"
-                            style="font-family:'Outfit',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+
+                        <a href="{{ route('login') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
                             Invigilator Access
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                stroke="currentColor" style="width:14px;height:14px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
                         </a>
                     </div>
+
                 </div>
             </div>
 
@@ -2115,7 +2370,7 @@
                     </div>
                     <div class="stat-item">
                         <div class="stat-num"
-                            style="color:#fbbf24;">Genius Jams
+                            style="color:#fbbf24;">Genius Jam
                         </div>
                         <div class="stat-lbl">Award Ceremony</div>
                     </div>
@@ -2123,18 +2378,8 @@
             </div>
         </main>
 
-        <!-- FOOTER -->
-        <footer class="footer">
-            <div class="footer-inner">
-                <span class="footer-copy">&copy; {{ date('Y') }} YES INDIA FOUNDATION. All rights reserved.</span>
-                <div class="footer-links">
-                    <a href="#utilities">Hall Ticket Lookup</a>
-                    <a href="{{ route('results.check-form') }}">Results Portal</a>
-                    <a href="{{ route('gallery') }}">Gallery</a>
-                    <a href="{{ route('login') }}">Portal Login</a>
-                </div>
-            </div>
-        </footer>
+        <!-- FOOTER COMPONENT -->
+        <x-public-footer page="home" />
 
     </div>
 </body>
