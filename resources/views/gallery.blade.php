@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="YES Genius Examination Gallery — View photos from past award ceremonies, Genius Jams celebrations, and examination events across India.">
-    <title>Gallery — YES Genius Examination</title>
+        content="YES Genius National Level Talent Search Gallery — View photos from past award ceremonies, Genius Jams celebrations, and examination events across India.">
+    <title>Gallery — YES Genius National Level Talent Search | YES India Foundation</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -588,15 +588,21 @@
     activeIdx: 0,
     filter: 'all',
     photos: [
-        { file: 'im1.jpeg' },
-        { file: 'im2.jpeg' },
-        { file: 'im3.jpeg' },
-        { file: 'im1.jpeg' },
-        { file: 'im2.jpeg' },
-        { file: 'im3.jpeg' },
-        { file: 'im1.jpeg' },
-        { file: 'im2.jpeg' },
-        { file: 'im3.jpeg' },
+        { file: 'img4.jpeg' },
+        { file: 'img11.jpeg' },
+        { file: 'img10.jpeg' },
+        { file: 'img9.jpeg' },
+        { file: 'img8.jpeg' },
+        { file: 'img7.jpeg' },
+        { file: 'img6.jpeg' },
+        { file: 'img5.jpeg' },
+        { file: 'img12.jpeg' },
+        { file: 'img3.jpeg' },
+        { file: 'img2.jpeg' },
+        { file: 'img1.jpeg' },
+        { file: 'img13.jpeg' },
+        { file: 'img14.jpeg'},
+        { file: 'img15.jpeg'},
     ],
     get filtered() {
         if (this.filter === 'all') return this.photos;

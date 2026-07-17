@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="YES Genius Examination — A nationwide academic competition to discover, celebrate and nurture academic and cognitive abilities among students across India. Held at 40+ centres nationwide.">
-    <title>YES Genius Examination — National Academic Competition</title>
+        content="YES Genius National Level Talent Search — A nationwide academic competition to discover, celebrate and nurture academic and cognitive abilities among students across India. Held at 40+ centres nationwide.">
+    <title>YES Genius National Level Talent Search | YES India Foundation</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -713,10 +713,25 @@
             transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
         }
 
-        .winner-card-img {
+        .winner-card-slider {
+            position: relative;
             width: 100%;
             height: 140px;
+            overflow: hidden;
+        }
+
+        .winner-card-slider-track {
+            display: flex;
+            width: 500%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .winner-card-img {
+            width: 20%;
+            height: 100%;
             object-fit: cover;
+            flex-shrink: 0;
             display: block;
             filter: brightness(0.82) saturate(1.1);
             transition: filter 0.3s, transform 0.35s;
@@ -830,9 +845,22 @@
             display: block;
         }
 
-        .winners-fallback-img {
+        .winners-fallback-slider {
+            position: relative;
             width: 100%;
+            overflow: hidden;
+        }
+
+        .winners-fallback-slider-track {
+            display: flex;
+            width: 500%;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .winners-fallback-img {
+            width: 20%;
             height: auto;
+            flex-shrink: 0;
             display: block;
         }
 
@@ -2008,7 +2036,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <div class="about-feature-title">YES India & Yaseen Colleges</div>
+                                <div class="about-feature-title">YES India Schools & Yaseen Colleges of Integrated Studies</div>
                                 <div class="about-feature-desc">Open exclusively to students from participating YES India Schools & Yaseen Colleges of Integrated Studies.</div>
                             </div>
                         </div>
@@ -2055,51 +2083,25 @@
                                 @foreach($topStudents as $idx => $winner)
                                     @php
                                         $rank = $idx + 1;
-                                        $rankClass = $rank === 1 ? 'rank-1' : ($rank === 2 ? 'rank-2' : 'rank-3');
                                     @endphp
                                     <div class="winner-card">
-                                        <div style="position:relative;overflow:hidden;border-radius:20px 20px 0 0;">
-                                            <img src="{{ asset('gallery/im3.jpeg') }}" alt="Winners" class="winner-card-img">
-                                            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,8,16,0.1) 0%,rgba(6,8,16,0.65) 100%);"></div>
-                                            <div style="position:absolute;bottom:10px;left:14px;">
-                                                <div class="winner-rank {{ $rankClass }}" style="width:34px;height:34px;border-radius:9px;">
-                                                    @if($rank === 1)
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path fill-rule="evenodd" d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 0 0-.584.859 6.753 6.753 0 0 0 6.138 5.6 6.73 6.73 0 0 0 2.743 1.346A6.707 6.707 0 0 1 9.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 0 1-1.112-3.173 6.73 6.73 0 0 0 2.743-1.347 6.753 6.753 0 0 0 6.139-5.6.75.75 0 0 0-.585-.858 47.077 47.077 0 0 0-3.07-.543V2.62a.75.75 0 0 0-.658-.744 49.798 49.798 0 0 0-6.093-.377.75.75 0 0 0-.657.744Zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 0 1 3.16 5.337a45.6 45.6 0 0 1 2.006-.343v.256Zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 0 1-2.863 3.207 6.72 6.72 0 0 0 .857-3.294Z" clip-rule="evenodd"/></svg>
-                                                    @elseif($rank === 2)
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path fill-rule="evenodd" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" clip-rule="evenodd"/></svg>
-                                                    @else
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z"/></svg>
-                                                    @endif
-                                                </div>
+                                        <div x-data="{ 
+                                            activeSlide: {{ ($idx + $rank) % 5 }},
+                                            init() {
+                                                setInterval(() => {
+                                                    this.activeSlide = (this.activeSlide + 1) % 5;
+                                                }, 3000 + Math.random() * 1000);
+                                            }
+                                        }" class="winner-card-slider">
+                                            <div class="winner-card-slider-track" :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}" 
+                                                         x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
+                                                         alt="Winners" 
+                                                         class="winner-card-img" 
+                                                    >
+                                                @endfor
                                             </div>
-                                        </div>
-                                        <div class="winner-card-body">
-                                            <div
-                                                style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;padding:3px 10px;border-radius:6px;display:inline-flex;{{ $palette['tag'] }}">
-                                                {{ $categoryName }}</div>
-                                            <div class="winner-name">{{ $winner->student->name ?? '—' }}</div>
-                                            <div class="winner-school">{{ $winner->student->school->name ?? 'YES India School' }}</div>
-                                            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-                                                @if($winner->marks_obtained && $winner->max_marks)
-                                                    <span class="winner-score" style="{{ $palette['score'] }}border-radius:100px;">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                            stroke-width="2" stroke="currentColor" style="width:12px;height:12px;">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                                                        </svg>
-                                                        {{ $winner->marks_obtained }}/{{ $winner->max_marks }}
-                                                    </span>
-                                                @endif
-                                                @if($winner->percentage)
-                                                    <span
-                                                        style="font-size:12px;color:#64748b;font-weight:600;">{{ number_format($winner->percentage, 1) }}%</span>
-                                                @endif
-                                            </div>
-                                            @if($winner->examination)
-                                                <div style="margin-top:8px;font-size:10.5px;color:#475569;">
-                                                    {{ $winner->examination->academic_year ?? '' }} · {{ $winner->examination->name ?? '' }}
-                                                </div>
-                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -2108,7 +2110,24 @@
                     @endforeach
                 @else
                     <div class="winners-fallback-container">
-                        <img src="{{ asset('gallery/im3.jpeg') }}" alt="Previous Winners" class="winners-fallback-img">
+                        <div x-data="{ 
+                            activeSlide: 0,
+                            init() {
+                                setInterval(() => {
+                                    this.activeSlide = (this.activeSlide + 1) % 5;
+                                }, 3000);
+                            }
+                        }" class="winners-fallback-slider">
+                            <div class="winners-fallback-slider-track" :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}" 
+                                         x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
+                                         alt="Previous Winners" 
+                                         class="winners-fallback-img" 
+                                    >
+                                @endfor
+                            </div>
+                        </div>
                     </div>
                 @endif
             </div>
@@ -2127,11 +2146,11 @@
                 <div class="gallery-grid">
                     @php
                         $galleryItems = [
-                            ['file' => 'im1.jpeg', 'cls' => 'gi-feat'],
-                            ['file' => 'im2.jpeg', 'cls' => 'gi-tr'],
-                            ['file' => 'im3.jpeg', 'cls' => 'gi-tl'],
-                            ['file' => 'im1.jpeg', 'cls' => 'gi-bl'],
-                            ['file' => 'im2.jpeg', 'cls' => 'gi-bm'],
+                            ['file' => 'img1.jpeg', 'cls' => 'gi-feat'],
+                            ['file' => 'img2.jpeg', 'cls' => 'gi-tr'],
+                            ['file' => 'img3.jpeg', 'cls' => 'gi-tl'],
+                            ['file' => 'img4.jpeg', 'cls' => 'gi-bl'],
+                            ['file' => 'img5.jpeg', 'cls' => 'gi-bm'],
                         ];
                     @endphp
                     @foreach($galleryItems as $item)
