@@ -300,6 +300,16 @@
                     Attendance Report
                 </a>
 
+                <a href="{{ route('school.results.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('school.results.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M12 13.489v-3.342m0 3.342a50.702 50.702 0 0 1-7.74-3.342M12 10.147V3.493" />
+                    </svg>
+                    Exam Results
+                </a>
+
                 <a href="{{ route('school.reports.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('school.reports.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -416,29 +426,109 @@
                 <h1 class="text-lg font-semibold text-white">@yield('page_title', 'Dashboard')</h1>
             </div>
 
-            <!-- Profile Info dropdown-style indicator -->
-            <div class="flex items-center gap-4">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-medium text-slate-200">{{ auth()->user()->name }}</p>
-                    <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                        @if(auth()->user()->hasRole('super-admin'))
-                            Board Admin
-                        @elseif(auth()->user()->hasRole('school-admin'))
-                            School Admin ({{ auth()->user()->school->code ?? 'N/A' }})
-                        @elseif(auth()->user()->hasRole('invigilator'))
-                            Invigilator / Staff
-                        @endif
-                    </p>
-                </div>
-                @if(auth()->user()->profile_image)
-                    <img src="{{ asset('storage/' . auth()->user()->profile_image) }}"
-                        class="w-10 h-10 rounded-xl object-cover shadow-md shadow-indigo-600/10 border border-slate-700/60">
-                @else
-                    <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-600/10">
-                        {{ mb_substr(auth()->user()->name, 0, 2) }}
+            <!-- Profile Info with Hover Dropdown -->
+            <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @click.outside="open = false">
+                <!-- Trigger Button -->
+                <button type="button" @click="open = !open"
+                    class="flex items-center gap-3 p-2 rounded-2xl hover:bg-black transition-all duration-200 cursor-pointer focus:outline-none"
+                    style="background-color: transparent;">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-medium text-slate-200">{{ auth()->user()->name }}</p>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                            @if(auth()->user()->hasRole('super-admin'))
+                                Board Admin
+                            @elseif(auth()->user()->hasRole('school-admin'))
+                                School Admin ({{ auth()->user()->school->code ?? 'N/A' }})
+                            @elseif(auth()->user()->hasRole('invigilator'))
+                                Invigilator / Staff
+                            @endif
+                        </p>
                     </div>
-                @endif
+                    @if(auth()->user()->profile_image)
+                        <img src="{{ asset('storage/' . auth()->user()->profile_image) }}"
+                            class="w-10 h-10 rounded-xl object-cover shadow-md shadow-indigo-600/10 border border-slate-700/60">
+                    @else
+                        <div
+                            class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-600/10">
+                            {{ mb_substr(auth()->user()->name, 0, 2) }}
+                        </div>
+                    @endif
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                        :class="open ? 'rotate-180 text-indigo-400' : ''">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                </button>
+
+                <!-- Hover Dropdown Menu (Solid Black Opaque Background) -->
+                <div x-show="open"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                    x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                    class="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-800 shadow-2xl py-2 z-50 overflow-hidden divide-y divide-slate-800"
+                    style="background-color: #000000 !important; display: none;">
+
+                    <!-- User Details Header -->
+                    <div class="px-4 py-3" style="background-color: #090d16 !important;">
+                        <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-slate-400 truncate mt-0.5">{{ auth()->user()->email }}</p>
+                        <span class="inline-block mt-1.5 px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 uppercase tracking-wider">
+                            @if(auth()->user()->hasRole('super-admin'))
+                                Board Admin
+                            @elseif(auth()->user()->hasRole('school-admin'))
+                                School Admin
+                            @elseif(auth()->user()->hasRole('invigilator'))
+                                Invigilator
+                            @endif
+                        </span>
+                    </div>
+
+                    <!-- Navigation Items -->
+                    <div class="py-1">
+                        <!-- Browse Home Page -->
+                        <a href="{{ route('home') }}" target="_blank"
+                            class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-4 h-4 text-indigo-400">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m-17.432 0A8.959 8.959 0 0 1 3 12c0-.778.099-1.533.284-2.253" />
+                            </svg>
+                            Browse Home Page
+                        </a>
+
+                        <!-- My Profile -->
+                        @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('school-admin') || auth()->user()->hasRole('invigilator'))
+                            <a href="{{ auth()->user()->hasRole('super-admin') ? route('admin.profile.edit') : (auth()->user()->hasRole('school-admin') ? route('school.profile.edit') : route('invigilator.profile.edit')) }}"
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                    stroke="currentColor" class="w-4 h-4 text-indigo-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                </svg>
+                                My Profile
+                            </a>
+                        @endif
+                    </div>
+
+                    <!-- Logout Action -->
+                    <div class="py-1">
+                        <form method="POST" action="{{ route('logout') }}" class="block">
+                            @csrf
+                            <button type="submit"
+                                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-400 hover:bg-slate-800 hover:text-rose-300 transition-colors text-left cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                    stroke="currentColor" class="w-4 h-4 text-rose-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                </svg>
+                                Sign Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </header>
 

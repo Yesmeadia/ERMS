@@ -308,6 +308,13 @@ class PaymentController extends Controller
                     $cfOrderId = 'ERMS_' . strtoupper(bin2hex(random_bytes(8)));
                     $returnUrl = route('school.payments.callback') . '?order_id=' . $cfOrderId;
 
+                    // Extract and sanitize customer phone number from school profile
+                    $phoneDigits = preg_replace('/[^0-9]/', '', $school->mobile_number ?? '');
+                    if (strlen($phoneDigits) === 12 && str_starts_with($phoneDigits, '91')) {
+                        $phoneDigits = substr($phoneDigits, 2);
+                    }
+                    $customerPhone = (strlen($phoneDigits) >= 10 && strlen($phoneDigits) <= 15) ? $phoneDigits : '9999999999';
+
                     $payload = [
                         'order_id' => $cfOrderId,
                         'order_amount' => round($totalAmount, 2),
@@ -315,7 +322,7 @@ class PaymentController extends Controller
                         'order_note' => 'YES GENIUS — Registration Fee for ' . $school->name,
                         'customer_details' => [
                             'customer_id' => 'school_' . $school->id,
-                            'customer_phone' => '9999999999',
+                            'customer_phone' => $customerPhone,
                             'customer_email' => Auth::user()->email,
                             'customer_name' => Auth::user()->name,
                         ],

@@ -20,24 +20,25 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ExamCentreController;
 
 
+// Public Homepage Route (accessible to all — guests and authenticated users)
+Route::get('/', function () {
+    $activeExam = \App\Models\Examination::whereIn('status', ['Registration Started', 'Registartion closed', 'Examination Ongoing', 'result published'])->latest()->first()
+        ?? \App\Models\Examination::latest()->first();
+
+    // Top 3 Pass students per category, from published result exams
+    $winners = \App\Models\StudentResult::with(['student.school', 'student.category', 'examination'])
+        ->where('status', 'Pass')
+        ->whereHas('examination', fn($q) => $q->where('status', 'result published'))
+        ->orderByDesc('marks_obtained')
+        ->get()
+        ->groupBy(fn($r) => optional($r->student->category)->name ?? 'General')
+        ->map(fn($group) => $group->take(3)->values());
+
+    return view('welcome', compact('activeExam', 'winners'));
+})->name('home');
+
 // 1. Guest Routes
 Route::middleware('guest')->group(function () {
-    Route::get('/', function () {
-        $activeExam = \App\Models\Examination::whereIn('status', ['Registration Started', 'Registartion closed', 'Examination Ongoing', 'result published'])->latest()->first()
-            ?? \App\Models\Examination::latest()->first();
-
-        // Top 3 Pass students per category, from published result exams
-        $winners = \App\Models\StudentResult::with(['student.school', 'student.category', 'examination'])
-            ->where('status', 'Pass')
-            ->whereHas('examination', fn($q) => $q->where('status', 'result published'))
-            ->orderByDesc('marks_obtained')
-            ->get()
-            ->groupBy(fn($r) => optional($r->student->category)->name ?? 'General')
-            ->map(fn($group) => $group->take(3)->values());
-
-        return view('welcome', compact('activeExam', 'winners'));
-    });
-
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
@@ -211,6 +212,10 @@ Route::middleware('auth')->group(function () {
 
         // Attendance Report
         Route::get('/attendance', [AttendanceController::class, 'schoolAttendanceIndex'])->name('attendance.index');
+
+        // Results
+        Route::get('/results', [ResultController::class, 'schoolIndex'])->name('results.index');
+        Route::get('/results/{student}/marksheet', [ResultController::class, 'schoolMarksheet'])->name('results.marksheet');
     });
 
     // ============================================
