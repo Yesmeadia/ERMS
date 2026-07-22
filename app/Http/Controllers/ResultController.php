@@ -529,4 +529,94 @@ class ResultController extends Controller
 
         return view('public.results.show', compact('student', 'result'));
     }
+
+    /**
+     * Display a listing of results for students registered by the logged-in school.
+     */
+    public function schoolIndex(Request $request)
+    {
+        $school = auth()->user()->school;
+
+        if (!$school) {
+            return redirect()->route('school.dashboard')->with('error', 'School account profile not found.');
+        }
+
+        // Query students registered BY THIS SCHOOL (school_id = school->id), NOT by exam centre
+        $query = Student::with(['class', 'category', 'examination', 'result'])
+            ->where('school_id', $school->id);
+
+        // Filter by Examination
+        if ($request->filled('examination_id')) {
+            $query->where('examination_id', $request->examination_id);
+        }
+
+        // Filter by Class
+        if ($request->filled('class_id')) {
+            $query->where('class_id', $request->class_id);
+        }
+
+        // Filter by Result Status
+        if ($request->filled('result_status')) {
+            if ($request->result_status === 'pending') {
+                $query->doesntHave('result');
+            } else {
+                $query->whereHas('result', function ($q) use ($request) {
+                    $q->where('status', $request->result_status);
+                });
+            }
+        }
+
+        // Search name / reg / hall ticket
+        if ($request->filled('search')) {
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $query->latest()->paginate(20);
+        $examinations = Examination::all();
+        $classes = ClassMaster::all();
+
+        // Stats summary for results declared for this school
+        $totalRegistered = Student::where('school_id', $school->id)->count();
+        $resultsDeclared = StudentResult::whereHas('student', fn($q) => $q->where('school_id', $school->id))->count();
+        $passedCount = StudentResult::whereHas('student', fn($q) => $q->where('school_id', $school->id))->where('status', 'Pass')->count();
+        $failedCount = StudentResult::whereHas('student', fn($q) => $q->where('school_id', $school->id))->where('status', 'Fail')->count();
+        $passPercentage = $resultsDeclared > 0 ? round(($passedCount / $resultsDeclared) * 100, 1) : 0;
+
+        return view('school-admin.results.index', compact(
+            'students',
+            'examinations',
+            'classes',
+            'totalRegistered',
+            'resultsDeclared',
+            'passedCount',
+            'failedCount',
+            'passPercentage'
+        ));
+    }
+
+    /**
+     * Show official marksheet for a student registered by the logged-in school.
+     */
+    public function schoolMarksheet(Student $student)
+    {
+        $school = auth()->user()->school;
+
+        if (!$school || $student->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to candidate details from another institution.');
+        }
+
+        if (!$student->result) {
+            return back()->with('error', 'Exam results for this student have not been declared yet.');
+        }
+
+        $student->load(['result', 'school', 'class', 'category', 'examination']);
+        $result = $student->result;
+
+        return view('public.results.show', compact('student', 'result'));
+    }
 }
