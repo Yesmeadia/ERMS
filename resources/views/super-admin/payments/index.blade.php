@@ -117,9 +117,9 @@
                             Breakdown</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-800/40">
-                    @forelse($payments as $payment)
-                        <tr class="hover:bg-slate-800/10 transition-colors" x-data="{ expanded: false }">
+                @forelse($payments as $payment)
+                    <tbody class="divide-y divide-slate-800/40 border-b border-slate-800/40" x-data="{ expanded: false }">
+                        <tr class="hover:bg-slate-800/10 transition-colors">
                             <td class="px-6 py-4 text-slate-300">{{ $payment->created_at->format('d M Y, h:i A') }}</td>
                             <td class="px-6 py-4">
                                 <p class="font-semibold text-slate-200">{{ $payment->school->name }}</p>
@@ -129,7 +129,7 @@
                             <td class="px-6 py-4 text-indigo-400 font-mono font-bold text-xs">{{ $payment->transaction_id }}
                             </td>
                             <td class="px-6 py-4 text-center font-mono font-semibold text-slate-300">
-                                {{ $payment->students_count ?? $payment->students()->count() }}</td>
+                                {{ $payment->students_count ?? $payment->students->count() }}</td>
                             <td class="px-6 py-4 text-right font-bold text-slate-200 font-mono">
                                 ₹{{ number_format($payment->amount, 2) }}</td>
                             <td class="px-6 py-4 text-center whitespace-nowrap">
@@ -151,25 +151,37 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right whitespace-nowrap">
-                                <button type="button" @click="expanded = !expanded"
-                                    class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs inline-flex items-center gap-0.5 cursor-pointer bg-indigo-600/10 hover:bg-indigo-600/20 px-3 py-1.5 rounded-lg border border-indigo-500/15 transition-all">
-                                    <span x-text="expanded ? 'Hide List' : 'View Candidates'">View Candidates</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                        stroke="currentColor" class="w-3 h-3 transition-transform"
-                                        :class="expanded ? 'rotate-180' : ''">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                                    </svg>
-                                </button>
+                                <div class="flex items-center justify-end gap-2">
+                                    @if($payment->status === 'Paid')
+                                        <a href="{{ route('admin.payments.receipt', $payment->id) }}"
+                                            class="text-emerald-400 hover:text-emerald-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-all"
+                                            title="View / Print Receipt">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3h7.5M6.75 21h10.5a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 7.5v11.25A2.25 2.25 0 006.75 21z" />
+                                            </svg>
+                                            Receipt
+                                        </a>
+                                    @endif
+                                    <button type="button" @click="expanded = !expanded"
+                                        class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs inline-flex items-center gap-0.5 cursor-pointer bg-indigo-600/10 hover:bg-indigo-600/20 px-3 py-1.5 rounded-lg border border-indigo-500/15 transition-all">
+                                        <span x-text="expanded ? 'Hide List' : 'View Candidates'">View Candidates</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                            stroke="currentColor" class="w-3 h-3 transition-transform"
+                                            :class="expanded ? 'rotate-180' : ''">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
 
                         {{-- Expanded Row for Candidates breakdown --}}
-                        <tr x-show="expanded" style="display: none;" class="bg-slate-950/40">
+                        <tr x-show="expanded" style="display: none;" class="bg-slate-950/40 font-normal">
                             <td colspan="7" class="px-8 py-4 border-l-4 border-indigo-500">
                                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Candidates included
-                                    in Transaction:</h4>
+                                    in Transaction ({{ $payment->students->count() }}):</h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-2">
-                                    @foreach($payment->students as $student)
+                                    @forelse($payment->students as $student)
                                         <div
                                             class="flex items-center gap-2 bg-slate-900/60 border border-slate-800/40 p-2 rounded-xl text-xs">
                                             <img src="{{ $student->photo_url }}" alt="{{ $student->name }}"
@@ -178,19 +190,23 @@
                                                 <p class="font-semibold text-slate-200 truncate">{{ $student->name }}</p>
                                                 <p class="text-[9px] text-slate-500 font-mono truncate">Class:
                                                     {{ $student->class->name ?? '—' }} · Fee:
-                                                    ₹{{ number_format($student->pivot->amount, 0) }}</p>
+                                                    ₹{{ number_format($student->pivot->amount ?? 0, 0) }}</p>
                                             </div>
                                         </div>
-                                    @endforeach
+                                    @empty
+                                        <p class="text-xs text-slate-500 italic col-span-3">No candidates linked to this transaction record.</p>
+                                    @endforelse
                                 </div>
                             </td>
                         </tr>
-                    @empty
+                    </tbody>
+                @empty
+                    <tbody class="divide-y divide-slate-800/40">
                         <tr>
                             <td colspan="7" class="px-6 py-16 text-center text-slate-500">No payment transactions found.</td>
                         </tr>
-                    @endforelse
-                </tbody>
+                    </tbody>
+                @endforelse
             </table>
         </div>
         @if($payments->hasPages())

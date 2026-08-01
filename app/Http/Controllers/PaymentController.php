@@ -688,11 +688,21 @@ class PaymentController extends Controller
     }
 
     /**
+     * Super Admin: View Payment Receipt for any transaction.
+     */
+    public function adminReceipt(Payment $payment)
+    {
+        $payment->load(['students.class', 'school']);
+
+        return view('school-admin.payments.receipt', compact('payment'));
+    }
+
+    /**
      * Super Admin: Global Payouts & Payments Report.
      */
     public function adminIndex(Request $request)
     {
-        $query = Payment::with(['school', 'students']);
+        $query = Payment::with(['school', 'students.class']);
 
         // Filter by school
         if ($request->filled('school_id')) {

@@ -40,8 +40,8 @@ class SanitizeInputMiddleware
         // Configure Content Security Policy (CSP) with request-scoped nonce
         $nonce = app('csp-nonce');
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'nonce-{$nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://sdk.cashfree.com; " .
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
+               "script-src 'self' 'nonce-{$nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://sdk.cashfree.com; " .
+               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                "font-src 'self' https://fonts.gstatic.com; " .
                "img-src 'self' data: https://*.cashfree.com; " .
                "connect-src 'self' https://challenges.cloudflare.com https://api.cashfree.com https://sandbox.cashfree.com; " .

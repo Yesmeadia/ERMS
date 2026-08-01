@@ -38,7 +38,19 @@
 
     {{-- Form Container --}}
     <form method="POST" action="{{ route('school.students.update', $student) }}" enctype="multipart/form-data"
-        class="space-y-6" x-data='{ photoPreview: @js($student->photograph ? $student->photo_url : null) }'>
+        class="space-y-6" x-data='{ photoPreview: @js($student->photo_url), photoMissingError: false }'
+        @photo-crop-done.document="if ($event.detail.hiddenId === 'photographCroppedSchoolEdit') { photoPreview = $event.detail.base64; photoMissingError = false; }"
+        @submit="
+            if (!photoPreview && !$refs.photoInput.files.length) {
+                $event.preventDefault();
+                photoMissingError = true;
+                $nextTick(() => {
+                    const el = document.getElementById('schoolEditPhotoPreview');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+                return false;
+            }
+        ">
         @csrf
         @method('PUT')
 
@@ -172,10 +184,14 @@
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1.5">Candidate Photograph</label>
                     <div class="flex items-center gap-4 mt-1.5">
-                        <div
-                            class="w-20 h-20 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 relative">
-                            <img x-show="photoPreview" :src="photoPreview" class="w-full h-full object-cover"
-                                style="display:none;">
+                        {{-- Preview thumbnail (3:4 ratio) --}}
+                        <div class="w-16 h-24 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 relative" style="aspect-ratio:3/4;">
+                            <img
+                                id="schoolEditPhotoPreview"
+                                x-show="photoPreview"
+                                :src="photoPreview"
+                                class="w-full h-full object-cover"
+                            >
                             <svg x-show="!photoPreview" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-slate-500">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -185,10 +201,36 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <input type="file" id="photoFileInput" x-ref="photoInput" name="photograph"
+                            {{-- Hidden input carries the cropped Base64 JPEG to the server --}}
+                            <input type="hidden" id="photographCroppedSchoolEdit" name="photograph_cropped" value="">
+                            {{-- Actual file input — checks 3:4 ratio before launching cropper --}}
+                            <input
+                                type="file"
+                                id="schoolEditPhotoFileInput"
+                                x-ref="photoInput"
+                                name="photograph"
                                 accept="image/jpeg,image/png,image/jpg"
-                                x-on:change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL(file); }"
-                                class="hidden">
+                                class="hidden"
+                                @change="
+                                    const file = $event.target.files[0];
+                                    if (file) {
+                                        photoMissingError = false;
+                                        const reader = new FileReader();
+                                        reader.onload = (e) => {
+                                            const dataUrl = e.target.result;
+                                            window.dispatchEvent(new CustomEvent('open-photo-cropper', {
+                                                detail: {
+                                                    imageDataUrl: dataUrl,
+                                                    targetPreviewId: 'schoolEditPhotoPreview',
+                                                    targetHiddenId: 'photographCroppedSchoolEdit',
+                                                    targetFileInputId: 'schoolEditPhotoFileInput'
+                                                }
+                                            }));
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                "
+                            >
                             <button type="button" @click="$refs.photoInput.click()"
                                 class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/10">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -196,8 +238,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                                 </svg>
-                                {{ $student->photograph ? 'Change Photo' : 'Upload Photo' }}
+                                <span x-text="photoPreview ? 'Change Candidate Photo' : 'Upload Candidate Photo'">{{ $student->photograph ? 'Change Photo' : 'Upload Photo' }}</span>
                             </button>
+                            <p x-show="photoMissingError" style="display:none;" class="text-xs text-rose-400 mt-2 font-medium flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                </svg>
+                                Candidate photograph is required.
+                            </p>
                             @if($student->photograph)
                                 <p class="text-[10px] text-emerald-400 mt-1.5 flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24"
@@ -208,11 +256,11 @@
                                     Photo uploaded. Select a new file to replace it.
                                 </p>
                             @endif
-                            <p class="text-[10px] text-slate-500 mt-1">Max size: 3MB. Formats: JPEG, JPG, PNG. Leave empty
-                                to keep current photo.</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Passport size required (35mm × 45mm ratio). Non-matching photo will auto-open cropper.</p>
                         </div>
                     </div>
                     @error('photograph') <p class="text-xs text-rose-400 mt-1">{{ $message }}</p> @enderror
+                    @error('photograph_cropped') <p class="text-xs text-rose-400 mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
         </div>
@@ -318,4 +366,7 @@
             filterClasses();
         });
     </script>
+
+    {{-- Passport Photo Crop Modal --}}
+    <x-photo-crop-modal />
 @endpush
