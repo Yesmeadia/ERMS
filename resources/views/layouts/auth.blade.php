@@ -7,6 +7,16 @@
     <title>@yield('page_title', 'Auth') | ERMS</title>
     <meta name="description" content="@yield('page_description', 'ERMS - Examination Registration Management System')">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <!-- PWA -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="YES GENIUS">
+    <link rel="apple-touch-icon" href="{{ asset('icon.png') }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ asset('icon.png') }}">
+    <link rel="apple-touch-icon" sizes="512x512" href="{{ asset('icon.png') }}">
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -374,6 +384,20 @@
         </div>
     </div>
     @include('components.password-strength-policy')
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function (reg) {
+                        console.log('[PWA] Service Worker registered:', reg.scope);
+                    })
+                    .catch(function (err) {
+                        console.warn('[PWA] Service Worker registration failed:', err);
+                    });
+            });
+        }
+    </script>
 </body>
 
 </html>
