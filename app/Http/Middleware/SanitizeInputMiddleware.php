@@ -45,7 +45,9 @@ class SanitizeInputMiddleware
                "font-src 'self' https://fonts.gstatic.com; " .
                "img-src 'self' data: https://*.cashfree.com; " .
                "connect-src 'self' https://challenges.cloudflare.com https://api.cashfree.com https://sandbox.cashfree.com; " .
-               "frame-src 'self' https://challenges.cloudflare.com https://sdk.cashfree.com;";
+               "frame-src 'self' https://challenges.cloudflare.com https://sdk.cashfree.com; " .
+               "worker-src 'self'; " .
+               "manifest-src 'self';";
                
         $response->headers->set('Content-Security-Policy', $csp);
 

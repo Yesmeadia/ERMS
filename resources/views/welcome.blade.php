@@ -8,6 +8,14 @@
         content="YES Genius National Level Talent Search — A nationwide academic competition to discover, celebrate and nurture academic and cognitive abilities among students across India. Held at 40+ centres nationwide.">
     <title>YES Genius National Level Talent Search | YES India Foundation</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+    <!-- PWA -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="YES GENIUS">
+    <link rel="apple-touch-icon" href="{{ asset('icon.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2401,6 +2409,20 @@
         <x-public-footer page="home" />
 
     </div>
+    <!-- PWA Service Worker Registration -->
+    <script @nonce>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function (reg) {
+                        console.log('[PWA] Service Worker registered:', reg.scope);
+                    })
+                    .catch(function (err) {
+                        console.warn('[PWA] Service Worker registration failed:', err);
+                    });
+            });
+        }
+    </script>
 </body>
 
 </html>

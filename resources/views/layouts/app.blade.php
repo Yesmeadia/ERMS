@@ -616,7 +616,7 @@
     @stack('scripts')
     @include('components.password-strength-policy')
     <!-- PWA Service Worker Registration -->
-    <script>
+    <script @nonce>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('/sw.js', { scope: '/' })
