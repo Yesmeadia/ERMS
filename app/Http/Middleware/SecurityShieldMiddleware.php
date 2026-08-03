@@ -97,8 +97,8 @@ class SecurityShieldMiddleware
 
         // Add Content Security Policy (CSP)
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net; " .
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
+               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                "img-src 'self' data: https://* http://*; " .
                "font-src 'self' https://fonts.gstatic.com; " .
                "connect-src 'self' https://api.cashfree.com https://sandbox.cashfree.com https://challenges.cloudflare.com; " .

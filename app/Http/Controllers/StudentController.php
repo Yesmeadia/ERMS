@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
@@ -172,11 +173,22 @@ class StudentController extends Controller
             'payment_status' => ['required', 'in:Unpaid,Paid'],
             'remarks' => ['nullable', 'string', 'max:500'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
+            'photograph_cropped' => ['nullable', 'string'],
         ]);
 
         $studentData = $validated;
+        unset($studentData['photograph_cropped']);
 
-        if ($request->hasFile('photograph')) {
+        if ($request->filled('photograph_cropped') && preg_match('/^data:image\/(\w+);base64,/', $request->input('photograph_cropped'), $type)) {
+            if ($student->photograph) {
+                Storage::disk('public')->delete($student->photograph);
+            }
+            $data = substr($request->input('photograph_cropped'), strpos($request->input('photograph_cropped'), ',') + 1);
+            $data = base64_decode($data);
+            $filename = 'students/photos/' . Str::random(40) . '.' . strtolower($type[1] ?? 'jpg');
+            Storage::disk('public')->put($filename, $data);
+            $studentData['photograph'] = $filename;
+        } elseif ($request->hasFile('photograph')) {
             // Delete old photo if it exists
             if ($student->photograph) {
                 Storage::disk('public')->delete($student->photograph);
@@ -267,6 +279,7 @@ class StudentController extends Controller
             'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree], // Max 3MB + Virus scan
+            'photograph_cropped' => ['nullable', 'string'],
         ]);
 
         // Validate examination is open
@@ -281,8 +294,15 @@ class StudentController extends Controller
             'school_id' => $school->id,
             'status' => 'Draft',
         ]);
+        unset($studentData['photograph_cropped']);
 
-        if ($request->hasFile('photograph')) {
+        if ($request->filled('photograph_cropped') && preg_match('/^data:image\/(\w+);base64,/', $request->input('photograph_cropped'), $type)) {
+            $data = substr($request->input('photograph_cropped'), strpos($request->input('photograph_cropped'), ',') + 1);
+            $data = base64_decode($data);
+            $filename = 'students/photos/' . Str::random(40) . '.' . strtolower($type[1] ?? 'jpg');
+            Storage::disk('public')->put($filename, $data);
+            $studentData['photograph'] = $filename;
+        } elseif ($request->hasFile('photograph')) {
             $studentData['photograph'] = $request->file('photograph')->store('students/photos', 'public');
         }
 
@@ -346,6 +366,7 @@ class StudentController extends Controller
             'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
             'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
+            'photograph_cropped' => ['nullable', 'string'],
         ]);
 
         $exam = Examination::findOrFail($request->examination_id);
@@ -356,8 +377,18 @@ class StudentController extends Controller
         $school = Auth::user()->school;
 
         $studentData = $validated;
+        unset($studentData['photograph_cropped']);
 
-        if ($request->hasFile('photograph')) {
+        if ($request->filled('photograph_cropped') && preg_match('/^data:image\/(\w+);base64,/', $request->input('photograph_cropped'), $type)) {
+            if ($student->photograph) {
+                Storage::disk('public')->delete($student->photograph);
+            }
+            $data = substr($request->input('photograph_cropped'), strpos($request->input('photograph_cropped'), ',') + 1);
+            $data = base64_decode($data);
+            $filename = 'students/photos/' . Str::random(40) . '.' . strtolower($type[1] ?? 'jpg');
+            Storage::disk('public')->put($filename, $data);
+            $studentData['photograph'] = $filename;
+        } elseif ($request->hasFile('photograph')) {
             // Delete old photo if it exists
             if ($student->photograph) {
                 Storage::disk('public')->delete($student->photograph);

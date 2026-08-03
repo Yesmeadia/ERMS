@@ -77,9 +77,55 @@
             <p class="text-slate-500 text-sm">No admins assigned yet.</p>
             @endforelse
         </div>
+
+        {{-- Category-Wise Registrations & Status --}}
+        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 text-sm">
+            <h3 class="font-semibold text-slate-300 mb-4">Category-Wise Registrations & Status</h3>
+            <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-800/40 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Category</th>
+                            <th class="py-2.5 px-3 text-center text-slate-400">Draft</th>
+                            <th class="py-2.5 px-3 text-center text-slate-300">Submitted</th>
+                            <th class="py-2.5 px-3 text-center text-sky-400">Under Review</th>
+                            <th class="py-2.5 px-3 text-center text-emerald-400">Approved</th>
+                            <th class="py-2.5 px-3 text-center text-rose-400">Rejected</th>
+                            <th class="py-2.5 px-3 text-center text-purple-400">Hall Tickets</th>
+                            <th class="py-2.5 px-3 text-center text-indigo-400 font-bold">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 font-medium">
+                        @forelse($categoryStats as $stat)
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="py-3 px-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-slate-200">{{ $stat->name }}</span>
+                                        @if($stat->code)
+                                            <span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400 border border-slate-700/60">{{ $stat->code }}</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3 text-center text-slate-300 font-medium">{{ number_format($stat->draft_count) }}</td>
+                                <td class="py-3 px-3 text-center text-slate-200 font-medium">{{ number_format($stat->submitted_count) }}</td>
+                                <td class="py-3 px-3 text-center text-sky-400 font-medium">{{ number_format($stat->under_review_count) }}</td>
+                                <td class="py-3 px-3 text-center text-emerald-400 font-medium">{{ number_format($stat->approved_count) }}</td>
+                                <td class="py-3 px-3 text-center text-rose-400 font-medium">{{ number_format($stat->rejected_count) }}</td>
+                                <td class="py-3 px-3 text-center text-purple-400 font-medium">{{ number_format($stat->hall_ticket_count) }}</td>
+                                <td class="py-3 px-3 text-center text-indigo-400 font-bold font-mono">{{ number_format($stat->total_students) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="py-4 text-center text-slate-500">No category registrations found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    {{-- Assign Admin Panel --}}
+    {{-- Assign Admin & Statistics Panel --}}
     <div class="space-y-6">
         <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6">
             <h3 class="text-sm font-semibold text-slate-300 mb-4">Assign New Admin</h3>

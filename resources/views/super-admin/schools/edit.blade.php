@@ -43,13 +43,14 @@
                 <select name="state" required
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('state') border-rose-500 @enderror">
                     @php
-                        $defaultStates = ['Kerala', 'Tamil Nadu', 'Karnataka', 'Andhra Pradesh', 'Telangana', 'Maharashtra'];
+                        $statesInCreate = ['Jammu and Kashmir', 'Rajasthan', 'Karnataka', 'West Bengal', 'Bihar', 'Andhra Pradesh', 'Kerala', 'Maharashtra'];
                         $currentState = old('state', $school->state);
-                        if ($currentState && !in_array($currentState, $defaultStates)) {
-                            $defaultStates[] = $currentState;
+                        if ($currentState && !in_array($currentState, $statesInCreate)) {
+                            $statesInCreate[] = $currentState;
                         }
                     @endphp
-                    @foreach($defaultStates as $state)
+                    <option value="" disabled {{ $currentState ? '' : 'selected' }}>Select State</option>
+                    @foreach($statesInCreate as $state)
                         <option value="{{ $state }}" @selected($currentState === $state)>{{ $state }}</option>
                     @endforeach
                 </select>
@@ -60,13 +61,14 @@
                 <select name="zone" required
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('zone') border-rose-500 @enderror">
                     @php
-                        $defaultZones = ['South Zone', 'Central Zone', 'North Zone', 'East Zone', 'West Zone', 'Trivandrum', 'Ernakulam'];
+                        $zonesInCreate = ['Poonch', 'Mandi', 'Srinagar', 'Rajouri', 'Surankote', 'Jammu', 'Mendar', 'Doda', 'Rajasthan', 'South', 'North East', 'Maharashtra'];
                         $currentZone = old('zone', $school->zone);
-                        if ($currentZone && !in_array($currentZone, $defaultZones)) {
-                            $defaultZones[] = $currentZone;
+                        if ($currentZone && !in_array($currentZone, $zonesInCreate)) {
+                            $zonesInCreate[] = $currentZone;
                         }
                     @endphp
-                    @foreach($defaultZones as $zone)
+                    <option value="" disabled {{ $currentZone ? '' : 'selected' }}>Select Zone</option>
+                    @foreach($zonesInCreate as $zone)
                         <option value="{{ $zone }}" @selected($currentZone === $zone)>{{ $zone }}</option>
                     @endforeach
                 </select>

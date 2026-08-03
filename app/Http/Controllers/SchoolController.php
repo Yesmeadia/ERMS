@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\School;
 use App\Models\User;
+use App\Models\CategoryMaster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use App\Mail\SchoolCreatedMail;
 use Spatie\Permission\Models\Role;
 
@@ -105,7 +107,53 @@ class SchoolController extends Controller
     public function show(School $school)
     {
         $school->load('admins', 'students.class', 'students.examination');
-        return view('super-admin.schools.show', compact('school'));
+
+        $categoryStats = CategoryMaster::leftJoin('students', function ($join) use ($school) {
+            $join->on('categories.id', '=', 'students.category_id')
+                ->where('students.school_id', '=', $school->id)
+                ->whereNull('students.deleted_at');
+        })
+            ->select(
+                'categories.id',
+                'categories.name',
+                'categories.code',
+                'categories.status as category_status',
+                DB::raw('COUNT(students.id) as total_students'),
+                DB::raw('COUNT(CASE WHEN students.status = "Draft" THEN 1 END) as draft_count'),
+                DB::raw('COUNT(CASE WHEN students.status = "Submitted" THEN 1 END) as submitted_count'),
+                DB::raw('COUNT(CASE WHEN students.status = "Under Review" THEN 1 END) as under_review_count'),
+                DB::raw('COUNT(CASE WHEN students.status = "Approved" THEN 1 END) as approved_count'),
+                DB::raw('COUNT(CASE WHEN students.status = "Rejected" THEN 1 END) as rejected_count'),
+                DB::raw('COUNT(CASE WHEN students.status = "Hall Ticket Issued" THEN 1 END) as hall_ticket_count')
+            )
+            ->groupBy('categories.id', 'categories.name', 'categories.code', 'categories.status')
+            ->get();
+
+        $customOrder = [
+            'RAINBOW 3',
+            'RAINBOW 4',
+            'RAINBOW 5',
+            'PLANET',
+            'GALAXY HS',
+            'GALAXY HSS (ARTS)',
+            'GALAXY HSS (SCIENCE)',
+        ];
+
+        $categoryStats = $categoryStats->sortBy(function ($stat) use ($customOrder) {
+            $name = strtoupper(trim($stat->name));
+            $pos = array_search($name, $customOrder);
+            if ($pos !== false) {
+                return $pos;
+            }
+            foreach ($customOrder as $idx => $orderName) {
+                if (str_contains($name, $orderName) || str_contains($orderName, $name)) {
+                    return $idx;
+                }
+            }
+            return 999;
+        })->values();
+
+        return view('super-admin.schools.show', compact('school', 'categoryStats'));
     }
 
     /**

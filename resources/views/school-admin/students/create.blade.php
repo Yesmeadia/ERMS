@@ -17,7 +17,19 @@
 
     {{-- Form Container --}}
     <form method="POST" action="{{ route('school.students.store') }}" enctype="multipart/form-data" class="space-y-6"
-        x-data="{ photoPreview: null }">
+        x-data="{ photoPreview: null, photoMissingError: false }"
+        @photo-crop-done.document="if ($event.detail.hiddenId === 'photographCroppedCreate') { photoPreview = $event.detail.base64; photoMissingError = false; }"
+        @submit="
+            if (!photoPreview && !$refs.photoInput.files.length) {
+                $event.preventDefault();
+                photoMissingError = true;
+                $nextTick(() => {
+                    const el = document.getElementById('schoolCreatePhotoPreview');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+                return false;
+            }
+        ">
         @csrf
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -151,25 +163,54 @@
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1.5">Candidate Photograph</label>
                     <div class="flex items-center gap-4 mt-1.5">
-                        <div
-                            class="w-16 h-16 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                            <template x-if="photoPreview">
-                                <img :src="photoPreview" class="w-full h-full object-cover">
-                            </template>
-                            <template x-if="!photoPreview">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                    stroke="currentColor" class="w-6 h-6 text-slate-500">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                                </svg>
-                            </template>
+                        {{-- Preview thumbnail --}}
+                        <div class="w-16 h-24 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0" style="aspect-ratio:3/4;">
+                            <img
+                                id="schoolCreatePhotoPreview"
+                                x-show="photoPreview"
+                                :src="photoPreview"
+                                class="w-full h-full object-cover"
+                                style="display:none;"
+                            >
+                            <svg x-show="!photoPreview" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6 text-slate-500">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                            </svg>
                         </div>
                         <div class="flex-1">
-                            <input type="file" x-ref="photoInput" name="photograph" accept="image/jpeg,image/png,image/jpg"
-                                @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL(file); }"
-                                class="hidden">
+                            {{-- Hidden input carries the cropped Base64 JPEG to the server --}}
+                            <input type="hidden" id="photographCroppedCreate" name="photograph_cropped" value="">
+                            {{-- Actual file input — checks 3:4 ratio before launching cropper --}}
+                            <input
+                                type="file"
+                                id="schoolCreatePhotoFileInput"
+                                name="photograph"
+                                x-ref="photoInput"
+                                accept="image/jpeg,image/png,image/jpg"
+                                class="hidden"
+                                @change="
+                                    const file = $event.target.files[0];
+                                    if (file) {
+                                        photoMissingError = false;
+                                        const reader = new FileReader();
+                                        reader.onload = (e) => {
+                                            const dataUrl = e.target.result;
+                                            window.dispatchEvent(new CustomEvent('open-photo-cropper', {
+                                                detail: {
+                                                    imageDataUrl: dataUrl,
+                                                    targetPreviewId: 'schoolCreatePhotoPreview',
+                                                    targetHiddenId: 'photographCroppedCreate',
+                                                    targetFileInputId: 'schoolCreatePhotoFileInput'
+                                                }
+                                            }));
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                "
+                            >
                             <button type="button" @click="$refs.photoInput.click()"
                                 class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/10">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -177,12 +218,19 @@
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                                 </svg>
-                                Upload Photo
+                                <span x-text="photoPreview ? 'Change Candidate Photo' : 'Upload Candidate Photo'">Upload Candidate Photo</span>
                             </button>
-                            <p class="text-[10px] text-slate-500 mt-2">Max size: 3MB. Formats: JPEG, JPG, PNG.</p>
+                            <p x-show="photoMissingError" style="display:none;" class="text-xs text-rose-400 mt-2 font-medium flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                </svg>
+                                Candidate photograph is required to save draft.
+                            </p>
+                            <p class="text-[10px] text-slate-500 mt-1.5">Passport size required (35mm × 45mm ratio). Non-matching photo will auto-open cropper.</p>
                         </div>
                     </div>
                     @error('photograph') <p class="text-xs text-rose-400 mt-1">{{ $message }}</p> @enderror
+                    @error('photograph_cropped') <p class="text-xs text-rose-400 mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
         </div>
@@ -288,4 +336,7 @@
             filterClasses();
         });
     </script>
+
+    {{-- Passport Photo Crop Modal --}}
+    <x-photo-crop-modal />
 @endpush

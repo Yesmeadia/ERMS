@@ -49,7 +49,7 @@
                     <select name="state" required
                         class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 @error('state') border-rose-500 @enderror">
                         <option value="" disabled {{ old('state') ? '' : 'selected' }}>Select State</option>
-                        @foreach(['Jammu and Kashmir', 'Rajasthan', 'Karnatka', 'West Bengal', 'Bihar', 'Andhra Pradesh', 'Kerala', 'Maharashtra',] as $state)
+                        @foreach(['Jammu and Kashmir', 'Rajasthan', 'Karnataka', 'West Bengal', 'Bihar', 'Andhra Pradesh', 'Kerala', 'Maharashtra',] as $state)
                             <option value="{{ $state }}" @selected(old('state') === $state)>{{ $state }}</option>
                         @endforeach
                     </select>
