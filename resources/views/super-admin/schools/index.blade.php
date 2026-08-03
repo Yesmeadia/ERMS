@@ -21,6 +21,13 @@
     <form method="GET" class="flex flex-wrap gap-3 mb-6">
         <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, code, zone…"
             class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64">
+        <select name="zone"
+            class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+            <option value="">All Zones</option>
+            @foreach($zones as $zone)
+                <option value="{{ $zone }}" @selected(request('zone') === $zone)>{{ $zone }}</option>
+            @endforeach
+        </select>
         <select name="status"
             class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
             <option value="">All Status</option>
@@ -29,7 +36,7 @@
         </select>
         <button type="submit"
             class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-        @if(request()->hasAny(['search', 'status']))
+        @if(request()->hasAny(['search', 'zone', 'status']))
             <a href="{{ route('admin.schools.index') }}"
                 class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-4 py-2.5 rounded-xl transition-all">Clear</a>
         @endif

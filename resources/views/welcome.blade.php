@@ -2312,12 +2312,30 @@
                             <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Application Status Tracking</div>
                         </div>
 
-                        <a href="{{ route('login') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
-                            Enter School Desk
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                            </svg>
-                        </a>
+                        @auth
+                            @if(auth()->user()->hasRole('school-admin'))
+                                <a href="{{ route('school.dashboard') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
+                                    Go to School Desk
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
+                                    Enter School Desk
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @endif
+                        @else
+                            <a href="{{ route('login') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
+                                Enter School Desk
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                </svg>
+                            </a>
+                        @endauth
                     </div>
 
                     <!-- ══ BOARD CONTROL (FEATURED) LANE ══ -->
@@ -2340,12 +2358,30 @@
                             <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Results Publishing</div>
                         </div>
 
-                        <a href="{{ route('login') }}" class="gw-btn gw-btn-board" id="board-login-btn">
-                            Board Sign In
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                            </svg>
-                        </a>
+                        @auth
+                            @if(auth()->user()->hasRole('super-admin'))
+                                <a href="{{ route('admin.dashboard') }}" class="gw-btn gw-btn-board" id="board-login-btn">
+                                    Go to Board Panel
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="gw-btn gw-btn-board" id="board-login-btn">
+                                    Board Sign In
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @endif
+                        @else
+                            <a href="{{ route('login') }}" class="gw-btn gw-btn-board" id="board-login-btn">
+                                Board Sign In
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                </svg>
+                            </a>
+                        @endauth
                     </div>
 
                     <!-- ══ INVIGILATOR LANE ══ -->
@@ -2369,12 +2405,30 @@
                             <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Session Record Logging</div>
                         </div>
 
-                        <a href="{{ route('login') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
-                            Invigilator Access
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                            </svg>
-                        </a>
+                        @auth
+                            @if(auth()->user()->hasRole('invigilator'))
+                                <a href="{{ route('attendance.scanner') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
+                                    Go to Invigilator Desk
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
+                                    Invigilator Access
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @endif
+                        @else
+                            <a href="{{ route('login') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
+                                Invigilator Access
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                </svg>
+                            </a>
+                        @endauth
                     </div>
 
                 </div>
