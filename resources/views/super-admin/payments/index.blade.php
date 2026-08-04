@@ -58,8 +58,8 @@
     <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 mb-8">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Filter Transactions</h3>
         <form method="GET" action="{{ route('admin.payments.index') }}"
-            class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-            <div class="sm:col-span-1">
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Search Transaction</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="TXN ID..."
                     class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
@@ -85,10 +85,15 @@
                     <option value="Failed" @selected(request('status') === 'Failed')>Failed</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Date</label>
+                <input type="date" name="date" value="{{ request('date') }}"
+                    class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+            </div>
             <div class="flex gap-2 justify-end mt-2">
                 <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-                @if(request()->hasAny(['search', 'school_id', 'status']))
+                @if(request()->hasAny(['search', 'school_id', 'status', 'date']))
                     <a href="{{ route('admin.payments.index') }}"
                         class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-all flex items-center justify-center">Clear</a>
                 @endif
@@ -120,7 +125,7 @@
                 @forelse($payments as $payment)
                     <tbody class="divide-y divide-slate-800/40 border-b border-slate-800/40" x-data="{ expanded: false }">
                         <tr class="hover:bg-slate-800/10 transition-colors">
-                            <td class="px-6 py-4 text-slate-300">{{ $payment->created_at->format('d M Y, h:i A') }}</td>
+                            <td class="px-6 py-4 text-slate-300">{{ ($payment->paid_at ?? $payment->created_at)->format('d M Y, h:i A') }}</td>
                             <td class="px-6 py-4">
                                 <p class="font-semibold text-slate-200">{{ $payment->school->name }}</p>
                                 <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-0.5">Code:

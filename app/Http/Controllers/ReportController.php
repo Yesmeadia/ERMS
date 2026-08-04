@@ -127,7 +127,10 @@ class ReportController extends Controller
         switch ($type) {
             case 'school_wise':
                 $headings = ['School Code', 'School Name', 'Total Students', 'Drafts', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'];
-                $query = School::leftJoin('students', 'schools.id', '=', 'students.school_id');
+                $query = School::leftJoin('students', function ($join) {
+                    $join->on('schools.id', '=', 'students.school_id')
+                        ->whereNull('students.deleted_at');
+                });
 
                 if ($examinationId) {
                     $query->where(function ($q) use ($examinationId) {
@@ -254,7 +257,8 @@ class ReportController extends Controller
 
                 $query = CategoryMaster::leftJoin('students', function ($join) use ($examinationId) {
                     $join->on('categories.id', '=', 'students.category_id')
-                        ->where('students.status', '=', 'Hall Ticket Issued');
+                        ->where('students.status', '=', 'Hall Ticket Issued')
+                        ->whereNull('students.deleted_at');
                     if ($examinationId) {
                         $join->where('students.examination_id', '=', $examinationId);
                     }
@@ -349,8 +353,11 @@ class ReportController extends Controller
                 break;
 
             case 'class_wise':
-                $headings = ['Class Code', 'Class Name', 'Total Students Registered'];
-                $query = ClassMaster::leftJoin('students', 'classes.id', '=', 'students.class_id');
+                $headings = ['Class Name', 'Total Students Registered'];
+                $query = ClassMaster::leftJoin('students', function ($join) {
+                    $join->on('classes.id', '=', 'students.class_id')
+                        ->whereNull('students.deleted_at');
+                });
 
                 if ($examinationId) {
                     $query->where(function ($q) use ($examinationId) {
@@ -363,7 +370,7 @@ class ReportController extends Controller
                     ->get();
 
                 foreach ($data as $item) {
-                    $row = [$item->code, $item->name, $item->total];
+                    $row = [$item->name, $item->total];
                     $rows[] = $row;
                     $exportRows[] = $row;
                 }
@@ -381,7 +388,10 @@ class ReportController extends Controller
 
             case 'category_wise':
                 $headings = ['Category Code', 'Category Name', 'Total Students Registered'];
-                $query = CategoryMaster::leftJoin('students', 'categories.id', '=', 'students.category_id');
+                $query = CategoryMaster::leftJoin('students', function ($join) {
+                    $join->on('categories.id', '=', 'students.category_id')
+                        ->whereNull('students.deleted_at');
+                });
 
                 if ($examinationId) {
                     $query->where(function ($q) use ($examinationId) {
@@ -412,7 +422,10 @@ class ReportController extends Controller
 
             case 'examination_wise':
                 $headings = ['Examination Name', 'Academic Year', 'Total Registrations'];
-                $data = Examination::leftJoin('students', 'examinations.id', '=', 'students.examination_id')
+                $data = Examination::leftJoin('students', function ($join) {
+                    $join->on('examinations.id', '=', 'students.examination_id')
+                        ->whereNull('students.deleted_at');
+                })
                     ->select('examinations.name', 'examinations.academic_year', DB::raw('count(students.id) as total'))
                     ->groupBy('examinations.name', 'examinations.academic_year')
                     ->get();
