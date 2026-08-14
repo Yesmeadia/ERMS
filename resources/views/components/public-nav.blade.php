@@ -261,14 +261,33 @@
         </div>
 
         <div style="display:flex;align-items:center;gap:10px;">
-            <a href="{{ route('login') }}" class="nav-cta">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                    stroke="currentColor" style="width:14px;height:14px;">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                </svg>
-                Sign In
-            </a>
+            @auth
+                @php
+                    $user = auth()->user();
+                    $dashUrl = $user->hasRole('super-admin')
+                        ? route('admin.dashboard')
+                        : ($user->hasRole('school-admin')
+                            ? route('school.dashboard')
+                            : route('attendance.scanner'));
+                @endphp
+                <a href="{{ $dashUrl }}" class="nav-cta">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" style="width:14px;height:14px;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                    </svg>
+                    Dashboard
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="nav-cta">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" style="width:14px;height:14px;">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                    Sign In
+                </a>
+            @endauth
             <button class="nav-hamburger" :class="{ 'is-open': menuOpen }" @click="menuOpen = !menuOpen"
                 aria-label="Menu">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -295,6 +314,10 @@
         <a href="{{ $isHome ? '#utilities' : '/#utilities' }}" @click="menuOpen=false">Hall Ticket Verify</a>
         <a href="{{ route('results.check-form') }}" @click="menuOpen=false">Results Portal</a>
         <a href="{{ $isHome ? '#portals' : '/#portals' }}" @click="menuOpen=false">Portals</a>
-        <a href="{{ route('login') }}" class="nav-cta" style="margin-top:8px;">Sign In →</a>
+        @auth
+            <a href="{{ $dashUrl }}" class="nav-cta" style="margin-top:8px;">Dashboard →</a>
+        @else
+            <a href="{{ route('login') }}" class="nav-cta" style="margin-top:8px;">Sign In →</a>
+        @endauth
     </div>
 </div>

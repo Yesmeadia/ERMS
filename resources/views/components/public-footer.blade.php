@@ -49,7 +49,8 @@
 
 <footer class="footer">
     <div class="footer-inner">
-        <span class="footer-copy">&copy; {{ date('Y') }} YES INDIA FOUNDATION. All rights reserved.</span>
+        <span class="footer-copy">&copy; {{ date('Y') }} YASIN EDUCATION SERVICES INDIA FOUNDATION. All rights
+            reserved.</span>
         <div class="footer-links">
             @if(!$isHome)
                 <a href="/">Home</a>
@@ -59,7 +60,21 @@
             @if($isHome)
                 <a href="{{ route('gallery') }}">Gallery</a>
             @endif
-            <a href="{{ route('login') }}">Portal Login</a>
+            <a href="{{ route('privacy-policy') }}">Privacy Policy</a>
+            <a href="{{ route('terms-and-conditions') }}">Terms & Conditions</a>
+            @auth
+                @php
+                    $user = auth()->user();
+                    $dashUrl = $user->hasRole('super-admin')
+                        ? route('admin.dashboard')
+                        : ($user->hasRole('school-admin')
+                            ? route('school.dashboard')
+                            : route('attendance.scanner'));
+                @endphp
+                <a href="{{ $dashUrl }}">Dashboard</a>
+            @else
+                <a href="{{ route('login') }}">Portal Login</a>
+            @endauth
         </div>
     </div>
 </footer>

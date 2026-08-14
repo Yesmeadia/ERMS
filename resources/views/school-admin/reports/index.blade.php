@@ -9,44 +9,60 @@
 
 {{-- Report Type Selector & Filters --}}
 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 mb-6">
-    <form method="GET" action="{{ route('school.reports.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-        <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1.5">Report Type</label>
-            <select name="type" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
-                <option value="registered" {{ $reportType === 'registered' ? 'selected' : '' }}>Registered Students</option>
-                <option value="submitted" {{ $reportType === 'submitted' ? 'selected' : '' }}>Submitted Registrations</option>
-                <option value="approved" {{ $reportType === 'approved' ? 'selected' : '' }}>Approved Registrations</option>
-                <option value="rejected" {{ $reportType === 'rejected' ? 'selected' : '' }}>Rejected Registrations</option>
-                <option value="hall_ticket" {{ $reportType === 'hall_ticket' ? 'selected' : '' }}>Hall Tickets Downloaded</option>
-                <option value="attendance" {{ $reportType === 'attendance' ? 'selected' : '' }}>Attendance Report</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1.5">Examination Session</label>
-            <select name="examination_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
-                <option value="">All Sessions</option>
-                @foreach($examinations as $exam)
-                    <option value="{{ $exam->id }}" {{ $examinationId == $exam->id ? 'selected' : '' }}>{{ $exam->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        @if($reportType === 'attendance')
-        <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1.5 font-semibold">Category</label>
-            <select name="category_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
-                <option value="">All Categories</option>
-                @foreach(\App\Models\CategoryMaster::where('status', true)->get() as $cat)
-                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-slate-400 mb-1.5 font-semibold">Date</label>
-            <input type="date" name="date" value="{{ request('date') }}" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
-        </div>
-        @endif
-        <div>
-            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors cursor-pointer">Generate Report</button>
+    <form method="GET" action="{{ route('school.reports.index') }}" id="schoolReportForm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Report Type</label>
+                <select name="type" id="schoolReportTypeSelect" onchange="updateSchoolFilters(this.value)" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+                    <option value="registered" {{ $reportType === 'registered' ? 'selected' : '' }}>Registered Students</option>
+                    <option value="submitted" {{ $reportType === 'submitted' ? 'selected' : '' }}>Submitted Registrations</option>
+                    <option value="approved" {{ $reportType === 'approved' ? 'selected' : '' }}>Approved Registrations</option>
+                    <option value="rejected" {{ $reportType === 'rejected' ? 'selected' : '' }}>Rejected Registrations</option>
+                    <option value="hall_ticket" {{ $reportType === 'hall_ticket' ? 'selected' : '' }}>Hall Tickets Downloaded</option>
+                    <option value="attendance" {{ $reportType === 'attendance' ? 'selected' : '' }}>Attendance Report</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Examination Session</label>
+                <select name="examination_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+                    <option value="">All Sessions</option>
+                    @foreach($examinations as $exam)
+                        <option value="{{ $exam->id }}" {{ $examinationId == $exam->id ? 'selected' : '' }}>{{ $exam->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Class Filter (shown for non-attendance types) --}}
+            <div id="schoolFilterClass" class="hidden">
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Filter by Class</label>
+                <select name="class_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+                    <option value="">All Classes</option>
+                    @foreach($classes as $cls)
+                        <option value="{{ $cls->id }}" {{ $classId == $cls->id ? 'selected' : '' }}>{{ $cls->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Category Filter (shown for non-attendance types + attendance) --}}
+            <div id="schoolFilterCategory" class="hidden">
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Filter by Category</label>
+                <select name="category_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+                    <option value="">All Categories</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ $categoryId == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Date Filter (attendance only) --}}
+            <div id="schoolFilterDate" class="hidden">
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Date</label>
+                <input type="date" name="date" value="{{ request('date') }}" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+            </div>
+
+            <div>
+                <button type="submit" class="w-full px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors cursor-pointer">Generate Report</button>
+            </div>
         </div>
     </form>
 </div>
@@ -54,21 +70,21 @@
 {{-- Export Buttons --}}
 @if(count($reportData['rows']) > 0)
 <div class="flex flex-wrap gap-3 mb-6">
-    <a href="{{ route('school.reports.export', ['type' => $reportType, 'examination_id' => $examinationId, 'category_id' => request('category_id'), 'date' => request('date'), 'format' => 'excel']) }}"
+    <a href="{{ route('school.reports.export', array_filter(['type' => $reportType, 'examination_id' => $examinationId, 'class_id' => $classId, 'category_id' => $categoryId, 'date' => request('date'), 'format' => 'excel'])) }}"
        class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
         </svg>
         Export Excel
     </a>
-    <a href="{{ route('school.reports.export', ['type' => $reportType, 'examination_id' => $examinationId, 'category_id' => request('category_id'), 'date' => request('date'), 'format' => 'csv']) }}"
+    <a href="{{ route('school.reports.export', array_filter(['type' => $reportType, 'examination_id' => $examinationId, 'class_id' => $classId, 'category_id' => $categoryId, 'date' => request('date'), 'format' => 'csv'])) }}"
        class="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-xl transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
         </svg>
         Export CSV
     </a>
-    <a href="{{ route('school.reports.export', ['type' => $reportType, 'examination_id' => $examinationId, 'category_id' => request('category_id'), 'date' => request('date'), 'format' => 'pdf']) }}"
+    <a href="{{ route('school.reports.export', array_filter(['type' => $reportType, 'examination_id' => $examinationId, 'class_id' => $classId, 'category_id' => $categoryId, 'date' => request('date'), 'format' => 'pdf'])) }}"
        class="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-medium rounded-xl transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -126,4 +142,28 @@
         </table>
     </div>
 </div>
+
+@push('scripts')
+    <script @nonce>
+        function updateSchoolFilters(type) {
+            // attendance shows category + date; all others show class + category
+            const isAttendance = type === 'attendance';
+
+            const classEl    = document.getElementById('schoolFilterClass');
+            const catEl      = document.getElementById('schoolFilterCategory');
+            const dateEl     = document.getElementById('schoolFilterDate');
+
+            // class filter: only for non-attendance
+            if (classEl)  { isAttendance ? classEl.classList.add('hidden')  : classEl.classList.remove('hidden');  }
+            // category filter: for all types
+            if (catEl)    { catEl.classList.remove('hidden'); }
+            // date filter: only for attendance
+            if (dateEl)   { isAttendance ? dateEl.classList.remove('hidden') : dateEl.classList.add('hidden'); }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateSchoolFilters(document.getElementById('schoolReportTypeSelect').value);
+        });
+    </script>
+@endpush
 @endsection

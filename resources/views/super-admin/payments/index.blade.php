@@ -21,8 +21,12 @@
         </div>
     </div>
 
-    {{-- KPI cards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    {{-- KPI cards + Speedometer --}}
+    @php
+        $gaugeTotal = $totalCollected + $totalOutstanding;
+        $gaugePct = $gaugeTotal > 0 ? round(($totalCollected / $gaugeTotal) * 100, 1) : 0;
+    @endphp
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {{-- Card 1 --}}
         <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden group">
             <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Fees Collected</p>
@@ -52,14 +56,28 @@
             <p class="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">Schools with completed
                 payments</p>
         </div>
+
+        {{-- Speedometer card — last --}}
+        <div
+            class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="relative" style="width:180px;height:98px">
+                <canvas id="speedometerCanvas" width="180" height="98" style="width:180px;height:98px"></canvas>
+            </div>
+            <div class="flex items-center gap-3 mt-2">
+                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400"><span
+                        class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>Collected</span>
+                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-400"><span
+                        class="w-2 h-2 rounded-full bg-rose-400 inline-block"></span>Outstanding</span>
+            </div>
+        </div>
     </div>
 
     {{-- Filters --}}
     <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 mb-8">
         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Filter Transactions</h3>
         <form method="GET" action="{{ route('admin.payments.index') }}"
-            class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-            <div class="sm:col-span-1">
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Search Transaction</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="TXN ID..."
                     class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
@@ -85,10 +103,15 @@
                     <option value="Failed" @selected(request('status') === 'Failed')>Failed</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Date</label>
+                <input type="date" name="date" value="{{ request('date') }}"
+                    class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+            </div>
             <div class="flex gap-2 justify-end mt-2">
                 <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-                @if(request()->hasAny(['search', 'school_id', 'status']))
+                @if(request()->hasAny(['search', 'school_id', 'status', 'date']))
                     <a href="{{ route('admin.payments.index') }}"
                         class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-all flex items-center justify-center">Clear</a>
                 @endif
@@ -120,16 +143,19 @@
                 @forelse($payments as $payment)
                     <tbody class="divide-y divide-slate-800/40 border-b border-slate-800/40" x-data="{ expanded: false }">
                         <tr class="hover:bg-slate-800/10 transition-colors">
-                            <td class="px-6 py-4 text-slate-300">{{ $payment->created_at->format('d M Y, h:i A') }}</td>
+                            <td class="px-6 py-4 text-slate-300">
+                                {{ ($payment->paid_at ?? $payment->created_at)->format('d M Y, h:i A') }}</td>
                             <td class="px-6 py-4">
                                 <p class="font-semibold text-slate-200">{{ $payment->school->name }}</p>
                                 <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-0.5">Code:
-                                    {{ $payment->school->code }}</p>
+                                    {{ $payment->school->code }}
+                                </p>
                             </td>
                             <td class="px-6 py-4 text-indigo-400 font-mono font-bold text-xs">{{ $payment->transaction_id }}
                             </td>
                             <td class="px-6 py-4 text-center font-mono font-semibold text-slate-300">
-                                {{ $payment->students_count ?? $payment->students->count() }}</td>
+                                {{ $payment->students_count ?? $payment->students->count() }}
+                            </td>
                             <td class="px-6 py-4 text-right font-bold text-slate-200 font-mono">
                                 ₹{{ number_format($payment->amount, 2) }}</td>
                             <td class="px-6 py-4 text-center whitespace-nowrap">
@@ -156,8 +182,10 @@
                                         <a href="{{ route('admin.payments.receipt', $payment->id) }}"
                                             class="text-emerald-400 hover:text-emerald-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-all"
                                             title="View / Print Receipt">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3h7.5M6.75 21h10.5a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 7.5v11.25A2.25 2.25 0 006.75 21z" />
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                                stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3h7.5M6.75 21h10.5a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 7.5v11.25A2.25 2.25 0 006.75 21z" />
                                             </svg>
                                             Receipt
                                         </a>
@@ -165,10 +193,11 @@
                                     <button type="button" @click="expanded = !expanded"
                                         class="text-indigo-400 hover:text-indigo-300 font-semibold text-xs inline-flex items-center gap-0.5 cursor-pointer bg-indigo-600/10 hover:bg-indigo-600/20 px-3 py-1.5 rounded-lg border border-indigo-500/15 transition-all">
                                         <span x-text="expanded ? 'Hide List' : 'View Candidates'">View Candidates</span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                            stroke="currentColor" class="w-3 h-3 transition-transform"
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="2.5" stroke="currentColor" class="w-3 h-3 transition-transform"
                                             :class="expanded ? 'rotate-180' : ''">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                                         </svg>
                                     </button>
                                 </div>
@@ -190,11 +219,13 @@
                                                 <p class="font-semibold text-slate-200 truncate">{{ $student->name }}</p>
                                                 <p class="text-[9px] text-slate-500 font-mono truncate">Class:
                                                     {{ $student->class->name ?? '—' }} · Fee:
-                                                    ₹{{ number_format($student->pivot->amount ?? 0, 0) }}</p>
+                                                    ₹{{ number_format($student->pivot->amount ?? 0, 0) }}
+                                                </p>
                                             </div>
                                         </div>
                                     @empty
-                                        <p class="text-xs text-slate-500 italic col-span-3">No candidates linked to this transaction record.</p>
+                                        <p class="text-xs text-slate-500 italic col-span-3">No candidates linked to this transaction
+                                            record.</p>
                                     @endforelse
                                 </div>
                             </td>
@@ -213,4 +244,113 @@
             <div class="px-6 py-4 border-t border-slate-800/60">{{ $payments->links() }}</div>
         @endif
     </div>
+    @push('scripts')
+        <script @nonce>
+            (function () {
+                const targetPct = {{ $gaugePct }};
+                const canvas = document.getElementById('speedometerCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const W = canvas.width, H = canvas.height;
+                const cx = W / 2, cy = H - 14;
+                const R = Math.min(W, (H - 18) * 2) / 2;
+
+                // 0% = Math.PI (left, 9 o'clock), 50% = 1.5*PI (top, 12 o'clock), 100% = 2*PI (right, 3 o'clock)
+                const pctToAngle = p => Math.PI + (p / 100) * Math.PI;
+
+                function drawGauge(currentPct) {
+                    ctx.clearRect(0, 0, W, H);
+
+                    // 1. Color zones - Red (0-40%), Amber (40-70%), Green (70-100%)
+                    const zones = [
+                        { from: 0,  to: 40,  color: '#f43f5e' }, // Rose Red
+                        { from: 40, to: 70,  color: '#f59e0b' }, // Amber Yellow
+                        { from: 70, to: 100, color: '#10b981' }, // Emerald Green
+                    ];
+
+                    zones.forEach(z => {
+                        const aStart = pctToAngle(z.from);
+                        const aEnd = pctToAngle(z.to);
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, R, aStart, aEnd, false); // false = clockwise in top half
+                        ctx.lineWidth = 14;
+                        ctx.strokeStyle = z.color;
+                        ctx.stroke();
+                    });
+
+                    // 2. Active collection progress accent arc
+                    if (currentPct > 0) {
+                        const activeEnd = pctToAngle(currentPct);
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, R - 9, Math.PI, activeEnd, false);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    }
+
+                    // 3. Ticks & Labels
+                    [0, 25, 50, 75, 100].forEach(p => {
+                        const a = pctToAngle(p);
+                        const innerR = R - 8;
+                        const outerR = R + 4;
+                        ctx.beginPath();
+                        ctx.moveTo(cx + innerR * Math.cos(a), cy + innerR * Math.sin(a));
+                        ctx.lineTo(cx + outerR * Math.cos(a), cy + outerR * Math.sin(a));
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.stroke();
+
+                        const labelR = R - 20;
+                        ctx.font = 'bold 8px monospace';
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(p + '%', cx + labelR * Math.cos(a), cy + labelR * Math.sin(a));
+                    });
+
+                    // 4. Needle
+                    const needleAngle = pctToAngle(currentPct);
+                    const nLen = R - 4;
+                    const nX = cx + nLen * Math.cos(needleAngle);
+                    const nY = cy + nLen * Math.sin(needleAngle);
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(nX, nY);
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#ffffff';
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+
+                    // 5. Hub
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#6366f1';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                let current = 0;
+                const step = targetPct / 60;
+                function animate() {
+                    if (current < targetPct) {
+                        current = Math.min(current + step, targetPct);
+                        drawGauge(current);
+                        requestAnimationFrame(animate);
+                    } else {
+                        drawGauge(targetPct);
+                    }
+                }
+                setTimeout(animate, 300);
+            })();
+        </script>
+    @endpush
 @endsection

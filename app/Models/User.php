@@ -12,6 +12,7 @@ use Illuminate\Notifications\Notifiable;
 
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['name', 'email', 'password', 'school_id', 'profile_image', 'two_factor_secret', 'two_factor_enabled', 'mfa_recovery_codes'])]
@@ -27,6 +28,16 @@ class User extends Authenticatable
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class, 'school_id');
+    }
+
+    /**
+     * Announcements read by this user.
+     */
+    public function announcements(): BelongsToMany
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_user')
+            ->withPivot('read_at')
+            ->withTimestamps();
     }
 
     /**

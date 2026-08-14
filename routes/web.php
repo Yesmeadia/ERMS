@@ -18,6 +18,7 @@ use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\ResultController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ExamCentreController;
+use App\Http\Controllers\SuperAdmin\AnnouncementController;
 
 
 // Public Homepage Route (accessible to all — guests and authenticated users)
@@ -55,6 +56,15 @@ Route::get('/photo-gallery', function () {
     return view('gallery');
 })->name('gallery');
 
+// Public Legal Pages
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy-policy');
+
+Route::get('/terms-and-conditions', function () {
+    return view('terms-and-conditions');
+})->name('terms-and-conditions');
+
 // MFA Verification Routes (Accessible by authenticated users before completing MFA verification)
 Route::get('/login/mfa', [AuthController::class, 'showMfaVerification'])->name('login.mfa');
 Route::post('/login/mfa', [AuthController::class, 'verifyMfa'])->name('login.mfa.verify')->middleware('throttle:mfa');
@@ -83,6 +93,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/change-password', [AuthController::class, 'updatePassword'])->name('password.update');
 
+    // Global Announcement Dismissal & Polling routes (accessible to any logged-in user)
+    Route::get('/announcements/check-unread', [AnnouncementController::class, 'checkUnread'])->name('announcements.check-unread-global');
+    Route::post('/announcements/read-direct', [AnnouncementController::class, 'markAsRead'])->name('announcements.read-direct');
+    Route::post('/announcements/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('announcements.read-global');
+
     // ============================================
     // SUPER ADMIN (BOARD) ROUTES
     // ============================================
@@ -98,6 +113,10 @@ Route::middleware('auth')->group(function () {
 
         // Staff Management
         Route::resource('staff', StaffController::class);
+
+        // Announcement Management (Broadcasts)
+        Route::post('/announcements/{announcement}/toggle', [AnnouncementController::class, 'toggleStatus'])->name('announcements.toggle');
+        Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'destroy']);
 
         // Super Admin Management
         Route::resource('admins', SuperAdminController::class)->except(['show']);
@@ -217,6 +236,10 @@ Route::middleware('auth')->group(function () {
         // Results
         Route::get('/results', [ResultController::class, 'schoolIndex'])->name('results.index');
         Route::get('/results/{student}/marksheet', [ResultController::class, 'schoolMarksheet'])->name('results.marksheet');
+
+        // Announcement Dismissal & Polling
+        Route::get('/announcements/check-unread', [AnnouncementController::class, 'checkUnread'])->name('announcements.check-unread');
+        Route::post('/announcements/{id}/read', [AnnouncementController::class, 'markAsRead'])->name('announcements.read');
     });
 
     // ============================================

@@ -32,13 +32,23 @@ class SchoolController extends Controller
             });
         }
 
+        if ($request->filled('zone')) {
+            $query->where('zone', $request->zone);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status === 'active');
         }
 
+        $zones = School::whereNotNull('zone')
+            ->where('zone', '!=', '')
+            ->distinct()
+            ->orderBy('zone')
+            ->pluck('zone');
+
         $schools = $query->latest()->paginate(10);
 
-        return view('super-admin.schools.index', compact('schools'));
+        return view('super-admin.schools.index', compact('schools', 'zones'));
     }
 
     /**

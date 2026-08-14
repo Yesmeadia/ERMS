@@ -10,6 +10,7 @@ use App\Models\CategoryMaster;
 use App\Models\Student;
 use App\Models\Attendance;
 use App\Models\Examination;
+use App\Models\Announcement;
 use Spatie\Activitylog\Models\Activity;
 use Illuminate\Support\Facades\DB;
 
@@ -169,7 +170,20 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        return view('school-admin.dashboard', compact('school', 'stats', 'statusDistribution', 'registrationTrend'));
+        // Check for active unread broadcast announcement for this user/school
+        $user = Auth::user();
+        $userId = $user ? $user->id : 0;
+        $unreadAnnouncement = Announcement::where('is_active', true)
+            ->whereNotExists(function ($query) use ($userId) {
+                $query->select(DB::raw(1))
+                    ->from('announcement_user')
+                    ->whereColumn('announcement_user.announcement_id', 'announcements.id')
+                    ->where('announcement_user.user_id', $userId);
+            })
+            ->latest()
+            ->first();
+
+        return view('school-admin.dashboard', compact('school', 'stats', 'statusDistribution', 'registrationTrend', 'unreadAnnouncement'));
     }
 
     /**

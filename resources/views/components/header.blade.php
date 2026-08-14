@@ -36,7 +36,15 @@
             <!-- Inline Sign In / Dashboard button -->
             <div :class="{ 'mobile-show-inline': menuOpen }" class="nav-mobile-btn-container">
                 @auth
-                    <a href="{{ url('/dashboard') }}" class="nav-cta">
+                    @php
+                        $user = auth()->user();
+                        $dashUrl = $user->hasRole('super-admin')
+                            ? route('admin.dashboard')
+                            : ($user->hasRole('school-admin')
+                                ? route('school.dashboard')
+                                : route('attendance.scanner'));
+                    @endphp
+                    <a href="{{ $dashUrl }}" class="nav-cta">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2"
                             stroke="currentColor" style="width:15px;height:15px;">
                             <path stroke-linecap="round" stroke-linejoin="round"

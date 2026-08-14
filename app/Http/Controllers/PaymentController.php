@@ -714,13 +714,30 @@ class PaymentController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by date
+        if ($request->filled('date')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', $request->date)
+                  ->orWhereDate('created_at', $request->date);
+            });
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
         // Search Transaction ID
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where('transaction_id', 'like', "%{$search}%");
         }
 
-        $payments = $query->latest()->paginate(15)->withQueryString();
+        $payments = $query->orderByRaw('COALESCE(paid_at, created_at) DESC')
+            ->orderBy('id', 'DESC')
+            ->paginate(20)
+            ->withQueryString();
 
         // Metrics
         $totalCollected = Payment::where('status', 'Paid')->sum('amount');
@@ -730,6 +747,7 @@ class PaymentController extends Controller
             ->join('classes', 'students.class_id', '=', 'classes.id')
             ->leftJoin('categories', 'students.category_id', '=', 'categories.id')
             ->where('students.payment_status', 'Unpaid')
+            ->whereNull('students.deleted_at')
             ->select(DB::raw('SUM(CASE WHEN categories.registration_fee > 0 THEN categories.registration_fee ELSE classes.registration_fee END) as outstanding'))
             ->first();
 
@@ -765,12 +783,22 @@ class PaymentController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where('transaction_id', 'like', "%{$search}%");
         }
 
-        $payments = $query->latest()->get();
+        $payments = $query->orderByRaw('COALESCE(paid_at, created_at) DESC')->orderBy('id', 'DESC')->get();
 
         $headers = [
             "Content-type" => "text/csv",

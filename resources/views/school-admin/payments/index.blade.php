@@ -46,8 +46,12 @@
         </div>
     @endif
 
-    {{-- ─── KPI Cards ─── --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+    {{-- ─── KPI Cards + Speedometer ─── --}}
+    @php
+        $gaugeTotal = $totalPaidAmount + $totalOutstandingAmount;
+        $gaugePct = $gaugeTotal > 0 ? round(($totalPaidAmount / $gaugeTotal) * 100, 1) : 0;
+    @endphp
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
         {{-- Card 1: Registered Candidates --}}
         <div
@@ -138,6 +142,26 @@
             </div>
             <p class="text-[10px] text-slate-500 mt-7">Outstanding fees for {{ $totalOutstandingCount }} draft registrations
             </p>
+        </div>
+
+        {{-- Speedometer Card --}}
+        <div
+            class="relative overflow-hidden rounded-3xl bg-slate-900/40 backdrop-blur-md border border-slate-800/60 p-5 shadow-xl flex flex-col items-center justify-center">
+            <div class="relative" style="width:190px;height:104px">
+                <canvas id="schoolSpeedometerCanvas" width="190" height="104" style="width:190px;height:104px"></canvas>
+            </div>
+            <div class="flex items-center gap-3 mt-2">
+                <span class="inline-flex items-center gap-1.5 text-[9px] font-bold text-emerald-400">
+                    <span
+                        class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_4px_1px_rgba(52,211,153,0.5)] inline-block"></span>
+                    Collected
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[9px] font-bold text-rose-400">
+                    <span
+                        class="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_4px_1px_rgba(251,113,133,0.5)] inline-block"></span>
+                    Outstanding
+                </span>
+            </div>
         </div>
 
     </div>
@@ -364,4 +388,113 @@
         </div>
     </div>
 
+    @push('scripts')
+        <script @nonce>
+            (function () {
+                const targetPct = {{ $gaugePct }};
+                const canvas = document.getElementById('schoolSpeedometerCanvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const W = canvas.width, H = canvas.height;
+                const cx = W / 2, cy = H - 14;
+                const R = Math.min(W, (H - 18) * 2) / 2;
+
+                // 0% = Math.PI (left, 9 o'clock), 50% = 1.5*PI (top, 12 o'clock), 100% = 2*PI (right, 3 o'clock)
+                const pctToAngle = p => Math.PI + (p / 100) * Math.PI;
+
+                function drawGauge(currentPct) {
+                    ctx.clearRect(0, 0, W, H);
+
+                    // 1. Color zones - Red (0-40%), Amber (40-70%), Green (70-100%)
+                    const zones = [
+                        { from: 0,  to: 40,  color: '#f43f5e' }, // Rose Red
+                        { from: 40, to: 70,  color: '#f59e0b' }, // Amber Yellow
+                        { from: 70, to: 100, color: '#10b981' }, // Emerald Green
+                    ];
+
+                    zones.forEach(z => {
+                        const aStart = pctToAngle(z.from);
+                        const aEnd = pctToAngle(z.to);
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, R, aStart, aEnd, false); // false = clockwise in top half
+                        ctx.lineWidth = 14;
+                        ctx.strokeStyle = z.color;
+                        ctx.stroke();
+                    });
+
+                    // 2. Active collection progress accent arc
+                    if (currentPct > 0) {
+                        const activeEnd = pctToAngle(currentPct);
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, R - 9, Math.PI, activeEnd, false);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    }
+
+                    // 3. Ticks & Labels
+                    [0, 25, 50, 75, 100].forEach(p => {
+                        const a = pctToAngle(p);
+                        const innerR = R - 8;
+                        const outerR = R + 4;
+                        ctx.beginPath();
+                        ctx.moveTo(cx + innerR * Math.cos(a), cy + innerR * Math.sin(a));
+                        ctx.lineTo(cx + outerR * Math.cos(a), cy + outerR * Math.sin(a));
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.stroke();
+
+                        const labelR = R - 20;
+                        ctx.font = 'bold 8px monospace';
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(p + '%', cx + labelR * Math.cos(a), cy + labelR * Math.sin(a));
+                    });
+
+                    // 4. Needle
+                    const needleAngle = pctToAngle(currentPct);
+                    const nLen = R - 4;
+                    const nX = cx + nLen * Math.cos(needleAngle);
+                    const nY = cy + nLen * Math.sin(needleAngle);
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(nX, nY);
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#ffffff';
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+
+                    // 5. Hub
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#6366f1';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                let current = 0;
+                const step = targetPct / 60;
+                function animate() {
+                    if (current < targetPct) {
+                        current = Math.min(current + step, targetPct);
+                        drawGauge(current);
+                        requestAnimationFrame(animate);
+                    } else {
+                        drawGauge(targetPct);
+                    }
+                }
+                setTimeout(animate, 300);
+            })();
+        </script>
+    @endpush
 @endsection
