@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="YES Genius National Level Talent Search — A nationwide academic competition to discover, celebrate and nurture academic and cognitive abilities among students across India. Held at 40+ centres nationwide.">
-    <title>YES Genius National Level Talent Search | YES India Foundation</title>
+    <title>YES Genius National Level Talent Search | YASIN EDUCATION SERVICES INDIA FOUNDATION</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- PWA -->
     <link rel="manifest" href="{{ asset('manifest.json') }}">
@@ -392,7 +392,7 @@
         }
 
         .hero-gradient {
-            background:  #fbbf24;
+            background: #fbbf24;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -611,8 +611,15 @@
         }
 
         @keyframes aboutOrbPulse {
-            0% { opacity: 0.5; transform: scale(0.9) translate(10px, -10px); }
-            100% { opacity: 1; transform: scale(1.1) translate(-10px, 10px); }
+            0% {
+                opacity: 0.5;
+                transform: scale(0.9) translate(10px, -10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.1) translate(-10px, 10px);
+            }
         }
 
         /* Corner accents for gold card */
@@ -624,10 +631,38 @@
             z-index: 3;
             border-color: rgba(245, 158, 11, 0.3);
         }
-        .about-corner-tl { top: 12px; left: 12px; border-top: 1.5px solid; border-left: 1.5px solid; border-radius: 3px 0 0 0; }
-        .about-corner-tr { top: 12px; right: 12px; border-top: 1.5px solid; border-right: 1.5px solid; border-radius: 0 3px 0 0; }
-        .about-corner-bl { bottom: 12px; left: 12px; border-bottom: 1.5px solid; border-left: 1.5px solid; border-radius: 0 0 0 3px; }
-        .about-corner-br { bottom: 12px; right: 12px; border-bottom: 1.5px solid; border-right: 1.5px solid; border-radius: 0 0 3px 0; }
+
+        .about-corner-tl {
+            top: 12px;
+            left: 12px;
+            border-top: 1.5px solid;
+            border-left: 1.5px solid;
+            border-radius: 3px 0 0 0;
+        }
+
+        .about-corner-tr {
+            top: 12px;
+            right: 12px;
+            border-top: 1.5px solid;
+            border-right: 1.5px solid;
+            border-radius: 0 3px 0 0;
+        }
+
+        .about-corner-bl {
+            bottom: 12px;
+            left: 12px;
+            border-bottom: 1.5px solid;
+            border-left: 1.5px solid;
+            border-radius: 0 0 0 3px;
+        }
+
+        .about-corner-br {
+            bottom: 12px;
+            right: 12px;
+            border-bottom: 1.5px solid;
+            border-right: 1.5px solid;
+            border-radius: 0 0 3px 0;
+        }
 
         .about-feature {
             display: flex;
@@ -911,11 +946,31 @@
         }
 
         /* Modern Asymmetric Bento cell positions */
-        .gi-feat  { grid-column: 1 / 3; grid-row: 1 / 3; } /* Large featured box on left */
-        .gi-tr    { grid-column: 3;     grid-row: 1; }
-        .gi-tl    { grid-column: 4;     grid-row: 1; }
-        .gi-bl    { grid-column: 3;     grid-row: 2; }
-        .gi-bm    { grid-column: 4;     grid-row: 2; }
+        .gi-feat {
+            grid-column: 1 / 3;
+            grid-row: 1 / 3;
+        }
+
+        /* Large featured box on left */
+        .gi-tr {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .gi-tl {
+            grid-column: 4;
+            grid-row: 1;
+        }
+
+        .gi-bl {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .gi-bm {
+            grid-column: 4;
+            grid-row: 2;
+        }
 
         .gallery-img {
             width: 100%;
@@ -1030,8 +1085,8 @@
             position: relative;
             border-radius: 28px;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
         }
 
         /* ── Hall Ticket Panel ── */
@@ -1045,12 +1100,12 @@
         }
 
         .util-panel-cyan {
-            background: linear-gradient(145deg, rgba(6,182,212,0.09) 0%, rgba(8,12,22,0.95) 55%);
-            border-right: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(145deg, rgba(6, 182, 212, 0.09) 0%, rgba(8, 12, 22, 0.95) 55%);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .util-panel-purple {
-            background: linear-gradient(145deg, rgba(168,85,247,0.09) 0%, rgba(8,12,22,0.95) 55%);
+            background: linear-gradient(145deg, rgba(168, 85, 247, 0.09) 0%, rgba(8, 12, 22, 0.95) 55%);
         }
 
         /* diagonal split line */
@@ -1060,7 +1115,7 @@
             right: 0;
             width: 1px;
             height: 100%;
-            background: linear-gradient(to bottom, transparent, rgba(99,102,241,0.35) 40%, rgba(168,85,247,0.35) 60%, transparent);
+            background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.35) 40%, rgba(168, 85, 247, 0.35) 60%, transparent);
             z-index: 2;
         }
 
@@ -1076,7 +1131,7 @@
         .util-orb-cyan {
             width: 340px;
             height: 340px;
-            background: radial-gradient(circle, rgba(6,182,212,0.18), transparent 70%);
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.18), transparent 70%);
             bottom: -80px;
             left: -60px;
             animation: utilOrbPulse 6s ease-in-out infinite alternate;
@@ -1085,28 +1140,33 @@
         .util-orb-purple {
             width: 340px;
             height: 340px;
-            background: radial-gradient(circle, rgba(168,85,247,0.18), transparent 70%);
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.18), transparent 70%);
             bottom: -80px;
             right: -60px;
             animation: utilOrbPulse 6s ease-in-out infinite alternate-reverse;
         }
 
         @keyframes utilOrbPulse {
-            0% { opacity: 0.6; transform: scale(1); }
-            100% { opacity: 1; transform: scale(1.15); }
+            0% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.15);
+            }
         }
 
         /* decorative scan-line strip */
         .util-scanlines {
             position: absolute;
             inset: 0;
-            background-image: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 3px,
-                rgba(255,255,255,0.012) 3px,
-                rgba(255,255,255,0.012) 4px
-            );
+            background-image: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 3px,
+                    rgba(255, 255, 255, 0.012) 3px,
+                    rgba(255, 255, 255, 0.012) 4px);
             pointer-events: none;
             z-index: 0;
         }
@@ -1119,22 +1179,64 @@
             pointer-events: none;
             z-index: 3;
         }
-        .util-corner-tl { top: 14px; left: 14px; border-top: 2px solid; border-left: 2px solid; border-radius: 4px 0 0 0; }
-        .util-corner-tr { top: 14px; right: 14px; border-top: 2px solid; border-right: 2px solid; border-radius: 0 4px 0 0; }
-        .util-corner-bl { bottom: 14px; left: 14px; border-bottom: 2px solid; border-left: 2px solid; border-radius: 0 0 0 4px; }
-        .util-corner-br { bottom: 14px; right: 14px; border-bottom: 2px solid; border-right: 2px solid; border-radius: 0 0 4px 0; }
-        .corner-cyan { border-color: rgba(6,182,212,0.3); }
-        .corner-purple { border-color: rgba(168,85,247,0.3); }
+
+        .util-corner-tl {
+            top: 14px;
+            left: 14px;
+            border-top: 2px solid;
+            border-left: 2px solid;
+            border-radius: 4px 0 0 0;
+        }
+
+        .util-corner-tr {
+            top: 14px;
+            right: 14px;
+            border-top: 2px solid;
+            border-right: 2px solid;
+            border-radius: 0 4px 0 0;
+        }
+
+        .util-corner-bl {
+            bottom: 14px;
+            left: 14px;
+            border-bottom: 2px solid;
+            border-left: 2px solid;
+            border-radius: 0 0 0 4px;
+        }
+
+        .util-corner-br {
+            bottom: 14px;
+            right: 14px;
+            border-bottom: 2px solid;
+            border-right: 2px solid;
+            border-radius: 0 0 4px 0;
+        }
+
+        .corner-cyan {
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .corner-purple {
+            border-color: rgba(168, 85, 247, 0.3);
+        }
 
         /* top coloured glow strip */
         .util-top-bar {
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             height: 3px;
             z-index: 4;
         }
-        .util-top-bar-cyan  { background: linear-gradient(90deg, transparent, rgba(6,182,212,0.9), transparent); }
-        .util-top-bar-purple { background: linear-gradient(90deg, transparent, rgba(168,85,247,0.9), transparent); }
+
+        .util-top-bar-cyan {
+            background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.9), transparent);
+        }
+
+        .util-top-bar-purple {
+            background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.9), transparent);
+        }
 
         /* utility badge pill */
         .util-badge {
@@ -1152,8 +1254,18 @@
             position: relative;
             z-index: 1;
         }
-        .util-badge-cyan   { background: rgba(6,182,212,0.12); border: 1px solid rgba(6,182,212,0.3); color: #67e8f9; }
-        .util-badge-purple { background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); color: #d8b4fe; }
+
+        .util-badge-cyan {
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #67e8f9;
+        }
+
+        .util-badge-purple {
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #d8b4fe;
+        }
 
         /* large icon shape */
         .util-icon {
@@ -1167,11 +1279,24 @@
             flex-shrink: 0;
             position: relative;
             z-index: 1;
-            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .util-panel:hover .util-icon { transform: scale(1.12) rotate(-4deg); }
-        .util-icon-cyan   { background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3); color: #22d3ee; }
-        .util-icon-purple { background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; }
+
+        .util-panel:hover .util-icon {
+            transform: scale(1.12) rotate(-4deg);
+        }
+
+        .util-icon-cyan {
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #22d3ee;
+        }
+
+        .util-icon-purple {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #c084fc;
+        }
 
         .util-title {
             font-size: 22px;
@@ -1202,6 +1327,7 @@
             z-index: 1;
             flex-wrap: wrap;
         }
+
         .util-stat-chip {
             display: flex;
             align-items: center;
@@ -1211,18 +1337,31 @@
             font-size: 11px;
             font-weight: 700;
             color: #94a3b8;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
         }
+
         .util-stat-chip-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
-        .dot-cyan   { background: #22d3ee; box-shadow: 0 0 6px rgba(34,211,238,0.8); }
-        .dot-purple { background: #c084fc; box-shadow: 0 0 6px rgba(192,132,252,0.8); }
-        .dot-green  { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.8); }
+
+        .dot-cyan {
+            background: #22d3ee;
+            box-shadow: 0 0 6px rgba(34, 211, 238, 0.8);
+        }
+
+        .dot-purple {
+            background: #c084fc;
+            box-shadow: 0 0 6px rgba(192, 132, 252, 0.8);
+        }
+
+        .dot-green {
+            background: #4ade80;
+            box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
+        }
 
         /* ── CARD stays for gateway section ── */
         .card {
@@ -1335,14 +1474,15 @@
             gap: 0;
             border-radius: 14px;
             overflow: hidden;
-            border: 1px solid rgba(6,182,212,0.2);
-            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(12px);
             transition: border-color 0.2s, box-shadow 0.2s;
         }
+
         .verify-input-row:focus-within {
-            border-color: rgba(6,182,212,0.55);
-            box-shadow: 0 0 0 3px rgba(6,182,212,0.1);
+            border-color: rgba(6, 182, 212, 0.55);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
         }
 
         .verify-input {
@@ -1368,7 +1508,7 @@
 
         .btn-cyan {
             padding: 14px 22px;
-            background: linear-gradient(135deg, rgba(6,182,212,0.9), rgba(8,145,178,0.9));
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.9), rgba(8, 145, 178, 0.9));
             border: none;
             color: #fff;
             font-size: 13px;
@@ -1381,8 +1521,8 @@
         }
 
         .btn-cyan:hover {
-            background: linear-gradient(135deg, rgba(6,182,212,1), rgba(8,145,178,1));
-            box-shadow: 0 0 20px rgba(6,182,212,0.4);
+            background: linear-gradient(135deg, rgba(6, 182, 212, 1), rgba(8, 145, 178, 1));
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
         }
 
         /* results CTA button */
@@ -1393,8 +1533,8 @@
             gap: 10px;
             padding: 15px 28px;
             border-radius: 14px;
-            background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(126,34,206,0.85));
-            border: 1px solid rgba(168,85,247,0.4);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.85), rgba(126, 34, 206, 0.85));
+            border: 1px solid rgba(168, 85, 247, 0.4);
             color: #fff;
             font-size: 14px;
             font-weight: 800;
@@ -1404,15 +1544,22 @@
             z-index: 1;
             margin-top: auto;
             letter-spacing: 0.01em;
-            box-shadow: 0 8px 28px rgba(168,85,247,0.2);
+            box-shadow: 0 8px 28px rgba(168, 85, 247, 0.2);
         }
+
         .btn-purple-solid:hover {
-            background: linear-gradient(135deg, rgba(168,85,247,1), rgba(126,34,206,1));
-            box-shadow: 0 12px 36px rgba(168,85,247,0.45);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 1), rgba(126, 34, 206, 1));
+            box-shadow: 0 12px 36px rgba(168, 85, 247, 0.45);
             transform: translateY(-2px);
         }
-        .btn-purple-solid svg { transition: transform 0.2s; }
-        .btn-purple-solid:hover svg { transform: translateX(4px); }
+
+        .btn-purple-solid svg {
+            transition: transform 0.2s;
+        }
+
+        .btn-purple-solid:hover svg {
+            transform: translateX(4px);
+        }
 
         /* decorative QR grid motif for results panel */
         .util-qr-motif {
@@ -1423,12 +1570,13 @@
             height: 80px;
             opacity: 0.08;
             display: grid;
-            grid-template-columns: repeat(7,1fr);
-            grid-template-rows: repeat(7,1fr);
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(7, 1fr);
             gap: 3px;
             z-index: 0;
             pointer-events: none;
         }
+
         .util-qr-motif span {
             border-radius: 2px;
             background: #c084fc;
@@ -1461,9 +1609,20 @@
             .utilities-grid {
                 grid-template-columns: 1fr;
             }
-            .util-divider { display: none; }
-            .util-panel-cyan { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
-            .util-panel { padding: 40px 28px; min-height: auto; }
+
+            .util-divider {
+                display: none;
+            }
+
+            .util-panel-cyan {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .util-panel {
+                padding: 40px 28px;
+                min-height: auto;
+            }
         }
 
         /* ── GATEWAYS ── */
@@ -1473,8 +1632,8 @@
             gap: 0;
             border-radius: 28px;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.45);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.45);
         }
 
         /* individual gateway lane */
@@ -1489,18 +1648,20 @@
         }
 
         .gw-lane-school {
-            background: linear-gradient(160deg, rgba(99,102,241,0.09) 0%, rgba(8,12,22,0.96) 60%);
-            border-right: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(160deg, rgba(99, 102, 241, 0.09) 0%, rgba(8, 12, 22, 0.96) 60%);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         .gw-lane-board {
-            background: linear-gradient(160deg, rgba(99,102,241,0.18) 0%, rgba(14,18,36,0.97) 55%);
-            border-right: 1px solid rgba(99,102,241,0.15);
-            border-left: 1px solid rgba(99,102,241,0.15);
+            background: linear-gradient(160deg, rgba(99, 102, 241, 0.18) 0%, rgba(14, 18, 36, 0.97) 55%);
+            border-right: 1px solid rgba(99, 102, 241, 0.15);
+            border-left: 1px solid rgba(99, 102, 241, 0.15);
             z-index: 1;
         }
+
         .gw-lane-invig {
-            background: linear-gradient(160deg, rgba(6,182,212,0.09) 0%, rgba(8,12,22,0.96) 60%);
-            border-left: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(160deg, rgba(6, 182, 212, 0.09) 0%, rgba(8, 12, 22, 0.96) 60%);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* glow orb per lane */
@@ -1512,50 +1673,80 @@
             z-index: 0;
             animation: gwOrbPulse 7s ease-in-out infinite alternate;
         }
+
         .gw-orb-indigo {
-            width: 260px; height: 260px;
-            background: radial-gradient(circle, rgba(99,102,241,0.22), transparent 70%);
-            bottom: -60px; right: -40px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.22), transparent 70%);
+            bottom: -60px;
+            right: -40px;
         }
+
         .gw-orb-board {
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(99,102,241,0.3), transparent 70%);
-            bottom: -80px; left: 50%; transform: translateX(-50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.3), transparent 70%);
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
             animation-direction: alternate-reverse;
         }
+
         .gw-orb-cyan {
-            width: 260px; height: 260px;
-            background: radial-gradient(circle, rgba(6,182,212,0.22), transparent 70%);
-            bottom: -60px; left: -40px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.22), transparent 70%);
+            bottom: -60px;
+            left: -40px;
         }
+
         @keyframes gwOrbPulse {
-            0%   { opacity: 0.5; transform: scale(1); }
-            100% { opacity: 1;   transform: scale(1.2); }
+            0% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
         }
-        .gw-lane-board .gw-orb-board { transform: translateX(-50%) scale(1); }
+
+        .gw-lane-board .gw-orb-board {
+            transform: translateX(-50%) scale(1);
+        }
 
         /* top accent bar */
         .gw-top-bar {
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             height: 3px;
             z-index: 4;
         }
-        .gw-top-indigo { background: linear-gradient(90deg, transparent, rgba(99,102,241,0.8), transparent); }
-        .gw-top-board  { background: linear-gradient(90deg, transparent, rgba(99,102,241,1), transparent); }
-        .gw-top-cyan   { background: linear-gradient(90deg, transparent, rgba(6,182,212,0.8), transparent); }
+
+        .gw-top-indigo {
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.8), transparent);
+        }
+
+        .gw-top-board {
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 1), transparent);
+        }
+
+        .gw-top-cyan {
+            background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.8), transparent);
+        }
 
         /* scanlines texture */
         .gw-scanlines {
             position: absolute;
             inset: 0;
-            background-image: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 3px,
-                rgba(255,255,255,0.01) 3px,
-                rgba(255,255,255,0.01) 4px
-            );
+            background-image: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 3px,
+                    rgba(255, 255, 255, 0.01) 3px,
+                    rgba(255, 255, 255, 0.01) 4px);
             pointer-events: none;
             z-index: 0;
         }
@@ -1563,17 +1754,55 @@
         /* corner accent brackets */
         .gw-corner {
             position: absolute;
-            width: 18px; height: 18px;
+            width: 18px;
+            height: 18px;
             pointer-events: none;
             z-index: 3;
         }
-        .gw-corner-tl { top: 12px; left: 12px; border-top: 1.5px solid; border-left: 1.5px solid; border-radius: 3px 0 0 0; }
-        .gw-corner-tr { top: 12px; right: 12px; border-top: 1.5px solid; border-right: 1.5px solid; border-radius: 0 3px 0 0; }
-        .gw-corner-bl { bottom: 12px; left: 12px; border-bottom: 1.5px solid; border-left: 1.5px solid; border-radius: 0 0 0 3px; }
-        .gw-corner-br { bottom: 12px; right: 12px; border-bottom: 1.5px solid; border-right: 1.5px solid; border-radius: 0 0 3px 0; }
-        .gw-accent-indigo { border-color: rgba(99,102,241,0.3); }
-        .gw-accent-board  { border-color: rgba(99,102,241,0.55); }
-        .gw-accent-cyan   { border-color: rgba(6,182,212,0.3); }
+
+        .gw-corner-tl {
+            top: 12px;
+            left: 12px;
+            border-top: 1.5px solid;
+            border-left: 1.5px solid;
+            border-radius: 3px 0 0 0;
+        }
+
+        .gw-corner-tr {
+            top: 12px;
+            right: 12px;
+            border-top: 1.5px solid;
+            border-right: 1.5px solid;
+            border-radius: 0 3px 0 0;
+        }
+
+        .gw-corner-bl {
+            bottom: 12px;
+            left: 12px;
+            border-bottom: 1.5px solid;
+            border-left: 1.5px solid;
+            border-radius: 0 0 0 3px;
+        }
+
+        .gw-corner-br {
+            bottom: 12px;
+            right: 12px;
+            border-bottom: 1.5px solid;
+            border-right: 1.5px solid;
+            border-radius: 0 0 3px 0;
+        }
+
+        .gw-accent-indigo {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .gw-accent-board {
+            border-color: rgba(99, 102, 241, 0.55);
+        }
+
+        .gw-accent-cyan {
+            border-color: rgba(6, 182, 212, 0.3);
+        }
 
         /* role pill */
         .gw-role-pill {
@@ -1591,13 +1820,29 @@
             position: relative;
             z-index: 1;
         }
-        .pill-indigo { background: rgba(99,102,241,0.13); border: 1px solid rgba(99,102,241,0.28); color: #a5b4fc; }
-        .pill-board  { background: rgba(99,102,241,0.22); border: 1px solid rgba(99,102,241,0.5);  color: #c7d2fe; }
-        .pill-cyan   { background: rgba(6,182,212,0.13);  border: 1px solid rgba(6,182,212,0.28);  color: #67e8f9; }
+
+        .pill-indigo {
+            background: rgba(99, 102, 241, 0.13);
+            border: 1px solid rgba(99, 102, 241, 0.28);
+            color: #a5b4fc;
+        }
+
+        .pill-board {
+            background: rgba(99, 102, 241, 0.22);
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            color: #c7d2fe;
+        }
+
+        .pill-cyan {
+            background: rgba(6, 182, 212, 0.13);
+            border: 1px solid rgba(6, 182, 212, 0.28);
+            color: #67e8f9;
+        }
 
         /* large gateway icon */
         .gw-icon {
-            width: 56px; height: 56px;
+            width: 56px;
+            height: 56px;
             border-radius: 16px;
             display: flex;
             align-items: center;
@@ -1606,12 +1851,30 @@
             flex-shrink: 0;
             position: relative;
             z-index: 1;
-            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .gw-lane:hover .gw-icon { transform: scale(1.14) rotate(-5deg); }
-        .gw-icon-indigo { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; }
-        .gw-icon-board  { background: rgba(99,102,241,0.25); border: 1px solid rgba(99,102,241,0.5); color: #c7d2fe; }
-        .gw-icon-cyan   { background: rgba(6,182,212,0.15);  border: 1px solid rgba(6,182,212,0.3);  color: #22d3ee; }
+
+        .gw-lane:hover .gw-icon {
+            transform: scale(1.14) rotate(-5deg);
+        }
+
+        .gw-icon-indigo {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+        }
+
+        .gw-icon-board {
+            background: rgba(99, 102, 241, 0.25);
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            color: #c7d2fe;
+        }
+
+        .gw-icon-cyan {
+            background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #22d3ee;
+        }
 
         /* gateway title & desc */
         .gw-title {
@@ -1624,7 +1887,11 @@
             position: relative;
             z-index: 1;
         }
-        .gw-lane-board .gw-title { font-size: 20px; color: #fff; }
+
+        .gw-lane-board .gw-title {
+            font-size: 20px;
+            color: #fff;
+        }
 
         .gw-desc {
             font-size: 13px;
@@ -1635,7 +1902,10 @@
             position: relative;
             z-index: 1;
         }
-        .gw-lane-board .gw-desc { color: #7c8ca8; }
+
+        .gw-lane-board .gw-desc {
+            color: #7c8ca8;
+        }
 
         /* feature chip list */
         .gw-features {
@@ -1646,6 +1916,7 @@
             position: relative;
             z-index: 1;
         }
+
         .gw-feature-row {
             display: flex;
             align-items: center;
@@ -1654,14 +1925,25 @@
             color: #64748b;
             font-weight: 600;
         }
+
         .gw-feature-dot {
-            width: 5px; height: 5px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
             flex-shrink: 0;
         }
-        .fdot-indigo { background: #818cf8; }
-        .fdot-board  { background: #c7d2fe; }
-        .fdot-cyan   { background: #22d3ee; }
+
+        .fdot-indigo {
+            background: #818cf8;
+        }
+
+        .fdot-board {
+            background: #c7d2fe;
+        }
+
+        .fdot-cyan {
+            background: #22d3ee;
+        }
 
         /* CTA button */
         .gw-btn {
@@ -1679,42 +1961,53 @@
             z-index: 1;
             letter-spacing: 0.01em;
         }
-        .gw-btn svg { transition: transform 0.2s; }
-        .gw-btn:hover svg { transform: translateX(4px); }
+
+        .gw-btn svg {
+            transition: transform 0.2s;
+        }
+
+        .gw-btn:hover svg {
+            transform: translateX(4px);
+        }
 
         .gw-btn-indigo {
-            background: rgba(99,102,241,0.12);
-            border: 1px solid rgba(99,102,241,0.3);
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
             color: #a5b4fc;
         }
+
         .gw-btn-indigo:hover {
-            background: rgba(99,102,241,0.25);
-            border-color: rgba(99,102,241,0.6);
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.6);
             color: #c7d2fe;
-            box-shadow: 0 8px 24px rgba(99,102,241,0.2);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
             transform: translateY(-2px);
         }
+
         .gw-btn-board {
-            background: linear-gradient(135deg, rgba(99,102,241,0.85), rgba(79,82,214,0.85));
-            border: 1px solid rgba(99,102,241,0.5);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(79, 82, 214, 0.85));
+            border: 1px solid rgba(99, 102, 241, 0.5);
             color: #fff;
-            box-shadow: 0 8px 28px rgba(99,102,241,0.25);
+            box-shadow: 0 8px 28px rgba(99, 102, 241, 0.25);
         }
+
         .gw-btn-board:hover {
             background: linear-gradient(135deg, #6366f1, #4f52d6);
-            box-shadow: 0 12px 36px rgba(99,102,241,0.45);
+            box-shadow: 0 12px 36px rgba(99, 102, 241, 0.45);
             transform: translateY(-2px);
         }
+
         .gw-btn-cyan {
-            background: rgba(6,182,212,0.12);
-            border: 1px solid rgba(6,182,212,0.3);
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
             color: #22d3ee;
         }
+
         .gw-btn-cyan:hover {
-            background: rgba(6,182,212,0.25);
-            border-color: rgba(6,182,212,0.6);
+            background: rgba(6, 182, 212, 0.25);
+            border-color: rgba(6, 182, 212, 0.6);
             color: #67e8f9;
-            box-shadow: 0 8px 24px rgba(6,182,212,0.2);
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2);
             transform: translateY(-2px);
         }
 
@@ -1728,8 +2021,8 @@
             gap: 5px;
             padding: 4px 11px;
             border-radius: 100px;
-            background: rgba(99,102,241,0.25);
-            border: 1px solid rgba(99,102,241,0.5);
+            background: rgba(99, 102, 241, 0.25);
+            border: 1px solid rgba(99, 102, 241, 0.5);
             color: #c7d2fe;
             font-size: 9px;
             font-weight: 800;
@@ -1742,10 +2035,28 @@
             .gateway-grid {
                 grid-template-columns: 1fr;
             }
-            .gw-lane-school { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
-            .gw-lane-board  { border-right: none; border-left: none; border-top: 1px solid rgba(99,102,241,0.15); border-bottom: 1px solid rgba(99,102,241,0.15); }
-            .gw-lane-invig  { border-left: none; border-top: 1px solid rgba(255,255,255,0.05); }
-            .gw-lane { min-height: auto; padding: 36px 28px; }
+
+            .gw-lane-school {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .gw-lane-board {
+                border-right: none;
+                border-left: none;
+                border-top: 1px solid rgba(99, 102, 241, 0.15);
+                border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+            }
+
+            .gw-lane-invig {
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .gw-lane {
+                min-height: auto;
+                padding: 36px 28px;
+            }
         }
 
         /* ── STATS BAR ── */
@@ -1815,11 +2126,30 @@
                 gap: 12px;
             }
 
-            .gi-feat  { grid-column: 1 / 3; grid-row: 1; }
-            .gi-tr    { grid-column: 1;     grid-row: 2; }
-            .gi-tl    { grid-column: 2;     grid-row: 2; }
-            .gi-bl    { grid-column: 1;     grid-row: 3; }
-            .gi-bm    { grid-column: 2;     grid-row: 3; }
+            .gi-feat {
+                grid-column: 1 / 3;
+                grid-row: 1;
+            }
+
+            .gi-tr {
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            .gi-tl {
+                grid-column: 2;
+                grid-row: 2;
+            }
+
+            .gi-bl {
+                grid-column: 1;
+                grid-row: 3;
+            }
+
+            .gi-bm {
+                grid-column: 2;
+                grid-row: 3;
+            }
         }
 
         @media (max-width: 680px) {
@@ -1855,7 +2185,11 @@
                 grid-template-rows: auto;
             }
 
-            .gi-feat, .gi-tr, .gi-tl, .gi-bl, .gi-bm {
+            .gi-feat,
+            .gi-tr,
+            .gi-tl,
+            .gi-bl,
+            .gi-bm {
                 grid-column: 1;
                 grid-row: auto;
                 min-height: 200px;
@@ -1976,11 +2310,14 @@
                     <div class="about-text">
                         <p>
                             <strong>YES Genius Examination</strong> is a <strong>nationwide academic competition
-                                and talent-identification program</strong> designed to discover, celebrate, and nurture academic and cognitive abilities among students across India.
+                                and talent-identification program</strong> designed to discover, celebrate, and nurture
+                            academic and cognitive abilities among students across India.
                         </p>
                         <p>
                             It functions as a <strong>national-level assessment and recognition platform</strong>
-                            where students from participating <strong>YES India Schools & Yaseen Colleges of Integrated Studies</strong> compete to showcase their intellectual prowess across multiple subject categories.
+                            where students from participating <strong>YES India Schools & Yaseen Colleges of Integrated
+                                Studies</strong> compete to showcase their intellectual prowess across multiple subject
+                            categories.
                         </p>
                         <p>
                             The examination is held at <strong>40+ centres nationwide</strong>, ensuring
@@ -2002,50 +2339,67 @@
                         <div class="about-corner about-corner-br"></div>
 
                         <div class="about-feature">
-                            <div class="about-feature-icon" style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#fbbf24;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                            <div class="about-feature-icon"
+                                style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); color:#fbbf24;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                                 </svg>
                             </div>
                             <div>
                                 <div class="about-feature-title">Talent Identification</div>
-                                <div class="about-feature-desc">Discover and spotlight exceptional academic and cognitive abilities in students across India.</div>
+                                <div class="about-feature-desc">Discover and spotlight exceptional academic and
+                                    cognitive abilities in students across India.</div>
                             </div>
                         </div>
 
                         <div class="about-feature">
-                            <div class="about-feature-icon" style="background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+                            <div class="about-feature-icon"
+                                style="background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); color:#818cf8;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
                                 </svg>
                             </div>
                             <div>
                                 <div class="about-feature-title">40+ Exam Centres</div>
-                                <div class="about-feature-desc">Standardised examination centres across India, all with trained invigilators and real-time attendance scanning.</div>
+                                <div class="about-feature-desc">Standardised examination centres across India, all with
+                                    trained invigilators and real-time attendance scanning.</div>
                             </div>
                         </div>
 
                         <div class="about-feature">
-                            <div class="about-feature-icon" style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:#c084fc;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
+                            <div class="about-feature-icon"
+                                style="background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.3); color:#c084fc;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
                                 </svg>
                             </div>
                             <div>
                                 <div class="about-feature-title">Genius Jam Awards</div>
-                                <div class="about-feature-desc">Winners are celebrated at Genius Jam — a prestigious national award ceremony honouring India's brightest young minds.</div>
+                                <div class="about-feature-desc">Winners are celebrated at Genius Jam — a prestigious
+                                    national award ceremony honouring India's brightest young minds.</div>
                             </div>
                         </div>
 
                         <div class="about-feature">
-                            <div class="about-feature-icon" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:#22d3ee;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            <div class="about-feature-icon"
+                                style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:#22d3ee;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.8" stroke="currentColor" style="width:22px;height:22px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                                 </svg>
                             </div>
                             <div>
-                                <div class="about-feature-title">YES India Schools & Yaseen Colleges of Integrated Studies</div>
-                                <div class="about-feature-desc">Open exclusively to students from participating YES India Schools & Yaseen Colleges of Integrated Studies.</div>
+                                <div class="about-feature-title">YES India Schools & Yaseen Colleges of Integrated
+                                    Studies</div>
+                                <div class="about-feature-desc">Open exclusively to students from participating YES
+                                    India Schools & Yaseen Colleges of Integrated Studies.</div>
                             </div>
                         </div>
                     </div>
@@ -2060,7 +2414,8 @@
                     <div class="section-tag-line"></div>
                 </div>
                 <h2 class="section-title">Previous Year Winners</h2>
-                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen Colleges of Integrated Studies, recognized at Genius
+                <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen Colleges of
+                    Integrated Studies, recognized at Genius
                     Jam.</p>
 
                 @if($winners->isNotEmpty())
@@ -2084,7 +2439,8 @@
                                 <span
                                     style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:0.12em;text-transform:uppercase;">Category</span>
                                 <h3 style="font-size:18px;font-weight:800;color:#f1f5f9;letter-spacing:-0.01em;">
-                                    {{ $categoryName }}</h3>
+                                    {{ $categoryName }}
+                                </h3>
                                 <div style="height:1px;flex:1;background:rgba(255,255,255,0.08);"></div>
                             </div>
                             <div class="winners-grid">
@@ -2094,20 +2450,19 @@
                                     @endphp
                                     <div class="winner-card">
                                         <div x-data="{ 
-                                            activeSlide: {{ ($idx + $rank) % 5 }},
-                                            init() {
-                                                setInterval(() => {
-                                                    this.activeSlide = (this.activeSlide + 1) % 5;
-                                                }, 3000 + Math.random() * 1000);
-                                            }
-                                        }" class="winner-card-slider">
-                                            <div class="winner-card-slider-track" :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
+                                                                    activeSlide: {{ ($idx + $rank) % 5 }},
+                                                                    init() {
+                                                                        setInterval(() => {
+                                                                            this.activeSlide = (this.activeSlide + 1) % 5;
+                                                                        }, 3000 + Math.random() * 1000);
+                                                                    }
+                                                                }" class="winner-card-slider">
+                                            <div class="winner-card-slider-track"
+                                                :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
                                                 @for($i = 1; $i <= 5; $i++)
-                                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}" 
-                                                         x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
-                                                         alt="Winners" 
-                                                         class="winner-card-img" 
-                                                    >
+                                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}"
+                                                        x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
+                                                        alt="Winners" class="winner-card-img">
                                                 @endfor
                                             </div>
                                         </div>
@@ -2119,20 +2474,19 @@
                 @else
                     <div class="winners-fallback-container">
                         <div x-data="{ 
-                            activeSlide: 0,
-                            init() {
-                                setInterval(() => {
-                                    this.activeSlide = (this.activeSlide + 1) % 5;
-                                }, 3000);
-                            }
-                        }" class="winners-fallback-slider">
-                            <div class="winners-fallback-slider-track" :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
+                                    activeSlide: 0,
+                                    init() {
+                                        setInterval(() => {
+                                            this.activeSlide = (this.activeSlide + 1) % 5;
+                                        }, 3000);
+                                    }
+                                }" class="winners-fallback-slider">
+                            <div class="winners-fallback-slider-track"
+                                :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
                                 @for($i = 1; $i <= 5; $i++)
-                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}" 
-                                         x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
-                                         alt="Previous Winners" 
-                                         class="winners-fallback-img" 
-                                    >
+                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}"
+                                        x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
+                                        alt="Previous Winners" class="winners-fallback-img">
                                 @endfor
                             </div>
                         </div>
@@ -2163,8 +2517,7 @@
                     @endphp
                     @foreach($galleryItems as $item)
                         <div class="gallery-item {{ $item['cls'] }}">
-                            <img src="{{ asset('gallery/' . $item['file']) }}"
-                                class="gallery-img" loading="lazy">
+                            <img src="{{ asset('gallery/' . $item['file']) }}" class="gallery-img" loading="lazy">
                         </div>
                     @endforeach
                 </div>
@@ -2211,23 +2564,29 @@
                         <div class="util-corner util-corner-br corner-cyan"></div>
 
                         <span class="util-badge util-badge-cyan">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:10px;height:10px;"><circle cx="12" cy="12" r="5"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                style="width:10px;height:10px;">
+                                <circle cx="12" cy="12" r="5" />
+                            </svg>
                             Live Verification
                         </span>
                         <div class="util-title">Hall Ticket<br>Verification</div>
-                        <p class="util-desc">Enter a candidate's hall ticket number to instantly verify seating details, examination centre, and reporting time.</p>
+                        <p class="util-desc">Enter a candidate's hall ticket number to instantly verify seating details,
+                            examination centre, and reporting time.</p>
 
                         <div class="util-stat-row">
-                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-cyan"></span>Instant Lookup</div>
-                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-green"></span>No Login Needed</div>
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-cyan"></span>Instant Lookup
+                            </div>
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-green"></span>No Login
+                                Needed</div>
                         </div>
 
                         <form class="verify-input-wrap"
                             @submit.prevent="ticket.trim() ? (window.location.href='/verify/hall-ticket/'+encodeURIComponent(ticket.trim())) : null">
                             <div class="verify-input-row">
                                 <input type="text" class="verify-input" x-model="ticket"
-                                    placeholder="Enter Hall Ticket No. e.g. F89C23D4829E"
-                                    autocomplete="off" id="hall-ticket-input">
+                                    placeholder="Enter Hall Ticket No. e.g. F89C23D4829E" autocomplete="off"
+                                    id="hall-ticket-input">
                                 <button type="submit" class="btn-cyan">Verify →</button>
                             </div>
                         </form>
@@ -2256,22 +2615,31 @@
                         </div>
 
                         <span class="util-badge util-badge-purple">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:10px;height:10px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                stroke="currentColor" style="width:10px;height:10px;">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
                             Board Certified
                         </span>
 
                         <div class="util-title">Official Results<br>Portal</div>
-                        <p class="util-desc">Students and parents can access board-certified, digitally authenticated marksheets once results are published. Fully printable and QR-verified.</p>
+                        <p class="util-desc">Students and parents can access board-certified, digitally authenticated
+                            marksheets once results are published. Fully printable and QR-verified.</p>
 
                         <div class="util-stat-row">
-                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-purple"></span>QR Authenticated</div>
-                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-green"></span>Printable PDF</div>
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-purple"></span>QR
+                                Authenticated</div>
+                            <div class="util-stat-chip"><span class="util-stat-chip-dot dot-green"></span>Printable PDF
+                            </div>
                         </div>
 
                         <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn">
                             Check Exam Results
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:15px;height:15px;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                stroke="currentColor" style="width:15px;height:15px;">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                             </svg>
                         </a>
                     </div>
@@ -2304,35 +2672,45 @@
 
                         <span class="gw-role-pill pill-indigo">School Admin</span>
                         <div class="gw-title">School Partner Portal</div>
-                        <p class="gw-desc">Manage student registrations, import candidate data via Excel, monitor application statuses, and bulk-download hall tickets for your institution.</p>
+                        <p class="gw-desc">Manage student registrations, import candidate data via Excel, monitor
+                            application statuses, and bulk-download hall tickets for your institution.</p>
 
                         <div class="gw-features">
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Student Registration</div>
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Bulk Hall Ticket Download</div>
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Application Status Tracking</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Student
+                                Registration</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Bulk Hall Ticket
+                                Download</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-indigo"></span>Application
+                                Status Tracking</div>
                         </div>
 
                         @auth
                             @if(auth()->user()->hasRole('school-admin'))
                                 <a href="{{ route('school.dashboard') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
                                     Go to School Desk
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @else
                                 <a href="{{ route('login') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
                                     Enter School Desk
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @endif
                         @else
                             <a href="{{ route('login') }}" class="gw-btn gw-btn-indigo" id="school-login-btn">
                                 Enter School Desk
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                    stroke="currentColor" style="width:13px;height:13px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                 </svg>
                             </a>
                         @endauth
@@ -2350,35 +2728,46 @@
                         <div class="gw-corner gw-corner-br gw-accent-board"></div>
                         <span class="gw-role-pill pill-board">Board · Super Admin</span>
                         <div class="gw-title">Board Control Panel</div>
-                        <p class="gw-desc">Full system oversight — audit schools, manage exam schedules, authorise registrations, configure invigilators, track real-time activity logs, and process final results.</p>
+                        <p class="gw-desc">Full system oversight — audit schools, manage exam schedules, authorise
+                            registrations, configure invigilators, track real-time activity logs, and process final
+                            results.</p>
 
                         <div class="gw-features">
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Full System Oversight</div>
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Real-time Activity Logs</div>
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Results Publishing</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Full System
+                                Oversight</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Real-time
+                                Activity Logs</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-board"></span>Results
+                                Publishing</div>
                         </div>
 
                         @auth
                             @if(auth()->user()->hasRole('super-admin'))
                                 <a href="{{ route('admin.dashboard') }}" class="gw-btn gw-btn-board" id="board-login-btn">
                                     Go to Board Panel
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @else
                                 <a href="{{ route('login') }}" class="gw-btn gw-btn-board" id="board-login-btn">
                                     Board Sign In
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @endif
                         @else
                             <a href="{{ route('login') }}" class="gw-btn gw-btn-board" id="board-login-btn">
                                 Board Sign In
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                    stroke="currentColor" style="width:13px;height:13px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                 </svg>
                             </a>
                         @endauth
@@ -2397,35 +2786,45 @@
 
                         <span class="gw-role-pill pill-cyan">Invigilator</span>
                         <div class="gw-title">Invigilator Desk</div>
-                        <p class="gw-desc">Access live attendance scanning tools, verify candidate hall tickets via barcode, mark on-site presence, and log examination session records in real time.</p>
+                        <p class="gw-desc">Access live attendance scanning tools, verify candidate hall tickets via
+                            barcode, mark on-site presence, and log examination session records in real time.</p>
 
                         <div class="gw-features">
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Barcode Hall Ticket Scan</div>
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Live Attendance Marking</div>
-                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Session Record Logging</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Barcode Hall
+                                Ticket Scan</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Live Attendance
+                                Marking</div>
+                            <div class="gw-feature-row"><span class="gw-feature-dot fdot-cyan"></span>Session Record
+                                Logging</div>
                         </div>
 
                         @auth
                             @if(auth()->user()->hasRole('invigilator'))
                                 <a href="{{ route('attendance.scanner') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
                                     Go to Invigilator Desk
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @else
                                 <a href="{{ route('login') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
                                     Invigilator Access
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:13px;height:13px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @endif
                         @else
                             <a href="{{ route('login') }}" class="gw-btn gw-btn-cyan" id="invig-login-btn">
                                 Invigilator Access
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:13px;height:13px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                    stroke="currentColor" style="width:13px;height:13px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                 </svg>
                             </a>
                         @endauth
@@ -2450,8 +2849,7 @@
                         <div class="stat-lbl">Level Programme</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-num"
-                            style="color:#fbbf24;">Genius Jam
+                        <div class="stat-num" style="color:#fbbf24;">Genius Jam
                         </div>
                         <div class="stat-lbl">Award Ceremony</div>
                     </div>

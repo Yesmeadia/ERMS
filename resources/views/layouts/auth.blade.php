@@ -319,8 +319,14 @@
             </div>
 
             <!-- Footer Copyright -->
-            <div>
-                <p class="text-xs text-slate-500">&copy; {{ date('Y') }} YES INDIA FOUNDATION. All rights reserved.</p>
+            <div class="space-y-1">
+                <p class="text-xs text-slate-500">&copy; {{ date('Y') }} YASIN EDUCATION SERVICES INDIA FOUNDATION. All
+                    rights reserved.</p>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <a href="{{ route('privacy-policy') }}" class="hover:text-slate-300 transition-colors">Privacy Policy</a>
+                    <span class="text-slate-700">&bull;</span>
+                    <a href="{{ route('terms-and-conditions') }}" class="hover:text-slate-300 transition-colors">Terms & Conditions</a>
+                </div>
             </div>
         </div>
 

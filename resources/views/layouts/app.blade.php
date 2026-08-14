@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('page_title', 'Dashboard') | Examination Management System | YES INDIA FOUNDATION</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('page_title', 'Dashboard') | Examination Management System | YASIN EDUCATION SERVICES INDIA FOUNDATION
+    </title>
     <meta name="description" content="@yield('page_description', 'ERMS - Examination Registration Management System')">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <!-- PWA -->
@@ -132,6 +134,16 @@
                             d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                     </svg>
                     Manage Staff
+                </a>
+
+                <a href="{{ route('admin.announcements.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.announcements.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M10.34 15.84c-.688-.06-1.38-.09-2.072-.09H7.5A3.75 3.75 0 013.75 12V8.25A3.75 3.75 0 017.5 4.5h.768c.693 0 1.384-.03 2.072-.09m0 11.43c.277.015.556.027.835.037m-1.07-11.467c.279-.01.558-.022.835-.037m0 0a24.16 24.16 0 018.318 0m-8.318 0a24.16 24.16 0 000 11.467m8.318-11.467a24.16 24.16 0 010 11.467m0 0A24.16 24.16 0 0019.5 12V8.25A3.75 3.75 0 0015.75 4.5h-.768M10.34 15.84V18.75a2.25 2.25 0 002.25 2.25h1.5a2.25 2.25 0 002.25-2.25v-2.91" />
+                    </svg>
+                    Broadcast Messages
                 </a>
 
                 <a href="{{ route('admin.admins.index') }}"
@@ -437,7 +449,8 @@
             </div>
 
             <!-- Profile Info with Hover Dropdown -->
-            <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @click.outside="open = false">
+            <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false"
+                @click.outside="open = false">
                 <!-- Trigger Button -->
                 <button type="button" @click="open = !open"
                     class="flex items-center gap-3 p-2 rounded-2xl hover:bg-black transition-all duration-200 cursor-pointer focus:outline-none"
@@ -471,8 +484,7 @@
                 </button>
 
                 <!-- Hover Dropdown Menu (Solid Black Opaque Background) -->
-                <div x-show="open"
-                    x-transition:enter="transition ease-out duration-200"
+                <div x-show="open" x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
                     x-transition:leave="transition ease-in duration-150"
@@ -485,7 +497,8 @@
                     <div class="px-4 py-3" style="background-color: #090d16 !important;">
                         <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name }}</p>
                         <p class="text-xs text-slate-400 truncate mt-0.5">{{ auth()->user()->email }}</p>
-                        <span class="inline-block mt-1.5 px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 uppercase tracking-wider">
+                        <span
+                            class="inline-block mt-1.5 px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 uppercase tracking-wider">
                             @if(auth()->user()->hasRole('super-admin'))
                                 Board Admin
                             @elseif(auth()->user()->hasRole('school-admin'))
@@ -529,8 +542,8 @@
                             @csrf
                             <button type="submit"
                                 class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-400 hover:bg-slate-800 hover:text-rose-300 transition-colors text-left cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                    stroke="currentColor" class="w-4 h-4 text-rose-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-rose-400">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                                 </svg>
@@ -600,8 +613,12 @@
             <!-- Footer -->
             <footer
                 class="mt-20 pt-8 pb-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 shrink-0">
-                <div>
-                    &copy; {{ date('Y') }} YES INDIA FOUNDATION. All rights reserved.
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span>&copy; {{ date('Y') }} YASIN EDUCATION SERVICES INDIA FOUNDATION. All rights reserved.</span>
+                    <span class="text-slate-700 hidden sm:inline">&bull;</span>
+                    <a href="{{ route('privacy-policy') }}" class="hover:text-slate-300 transition-colors">Privacy Policy</a>
+                    <span class="text-slate-700">&bull;</span>
+                    <a href="{{ route('terms-and-conditions') }}" class="hover:text-slate-300 transition-colors">Terms & Conditions</a>
                 </div>
                 <div class="flex items-center gap-2">
                     <span>Designed and developed by</span>

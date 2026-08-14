@@ -21,17 +21,39 @@ class ReportController extends Controller
      */
     public function adminIndex(Request $request)
     {
-        $reportType = $request->get('type', 'school_wise');
+        $reportType    = $request->get('type', 'school_wise');
         $examinationId = $request->get('examination_id');
+        $classId       = $request->get('class_id');
+        $categoryId    = $request->get('category_id');
+        $zone          = $request->get('zone');
 
         $examinations = Examination::all();
-        $reportData = $this->getAdminReportData($reportType, $examinationId);
+
+        // Only show classes/categories that have student registrations
+        $studentQuery = Student::whereNull('deleted_at');
+        if ($examinationId) {
+            $studentQuery->where('examination_id', $examinationId);
+        }
+        $registeredClassIds    = (clone $studentQuery)->distinct()->pluck('class_id');
+        $registeredCategoryIds = (clone $studentQuery)->distinct()->pluck('category_id');
+
+        $classes    = ClassMaster::whereIn('id', $registeredClassIds)->orderBy('name')->get();
+        $categories = CategoryMaster::whereIn('id', $registeredCategoryIds)->orderBy('name')->get();
+        $zones      = School::whereNotNull('zone')->where('zone', '!=', '')->distinct()->orderBy('zone')->pluck('zone');
+
+        $reportData   = $this->getAdminReportData($reportType, $examinationId, $classId, $categoryId, $zone);
         $reportCharts = $this->getAdminReportCharts($examinationId);
 
         return view('super-admin.reports.index', compact(
             'reportType',
             'examinationId',
+            'classId',
+            'categoryId',
+            'zone',
             'examinations',
+            'classes',
+            'categories',
+            'zones',
             'reportData',
             'reportCharts'
         ));
@@ -42,17 +64,35 @@ class ReportController extends Controller
      */
     public function schoolIndex(Request $request)
     {
-        $reportType = $request->get('type', 'registered');
+        $reportType    = $request->get('type', 'registered');
         $examinationId = $request->get('examination_id');
+        $classId       = $request->get('class_id');
+        $categoryId    = $request->get('category_id');
 
-        $school = Auth::user()->school;
+        $school       = Auth::user()->school;
         $examinations = Examination::all();
-        $reportData = $this->getSchoolReportData($reportType, $school->id, $examinationId);
+
+        // Only show classes/categories that have student registrations for this school
+        $studentQuery = Student::whereNull('deleted_at')->where('school_id', $school->id);
+        if ($examinationId) {
+            $studentQuery->where('examination_id', $examinationId);
+        }
+        $registeredClassIds    = (clone $studentQuery)->distinct()->pluck('class_id');
+        $registeredCategoryIds = (clone $studentQuery)->distinct()->pluck('category_id');
+
+        $classes    = ClassMaster::whereIn('id', $registeredClassIds)->orderBy('name')->get();
+        $categories = CategoryMaster::whereIn('id', $registeredCategoryIds)->orderBy('name')->get();
+
+        $reportData = $this->getSchoolReportData($reportType, $school->id, $examinationId, $classId, $categoryId);
 
         return view('school-admin.reports.index', compact(
             'reportType',
             'examinationId',
+            'classId',
+            'categoryId',
             'examinations',
+            'classes',
+            'categories',
             'reportData'
         ));
     }
@@ -62,11 +102,14 @@ class ReportController extends Controller
      */
     public function adminExport(Request $request)
     {
-        $reportType = $request->get('type', 'school_wise');
+        $reportType    = $request->get('type', 'school_wise');
         $examinationId = $request->get('examination_id');
-        $format = $request->get('format', 'excel'); // excel, csv, pdf
+        $classId       = $request->get('class_id');
+        $categoryId    = $request->get('category_id');
+        $zone          = $request->get('zone');
+        $format        = $request->get('format', 'excel'); // excel, csv, pdf
 
-        $reportData = $this->getAdminReportData($reportType, $examinationId);
+        $reportData = $this->getAdminReportData($reportType, $examinationId, $classId, $categoryId, $zone);
         $title = ucwords(str_replace('_', ' ', $reportType)) . ' Report';
 
         if ($format === 'pdf') {
@@ -90,13 +133,15 @@ class ReportController extends Controller
      */
     public function schoolExport(Request $request)
     {
-        $reportType = $request->get('type', 'registered');
+        $reportType    = $request->get('type', 'registered');
         $examinationId = $request->get('examination_id');
-        $format = $request->get('format', 'excel');
+        $classId       = $request->get('class_id');
+        $categoryId    = $request->get('category_id');
+        $format        = $request->get('format', 'excel');
 
-        $school = Auth::user()->school;
-        $reportData = $this->getSchoolReportData($reportType, $school->id, $examinationId);
-        $title = $school->code . ' - ' . ucwords(str_replace('_', ' ', $reportType)) . ' Report';
+        $school     = Auth::user()->school;
+        $reportData = $this->getSchoolReportData($reportType, $school->id, $examinationId, $classId, $categoryId);
+        $title      = $school->code . ' - ' . ucwords(str_replace('_', ' ', $reportType)) . ' Report';
 
         if ($format === 'pdf') {
             $pdf = Pdf::loadView('pdf.report', compact('reportData', 'title'));
@@ -117,7 +162,7 @@ class ReportController extends Controller
     /**
      * Helper to get Super Admin Report Queries and structure.
      */
-    protected function getAdminReportData($type, $examinationId = null)
+    protected function getAdminReportData($type, $examinationId = null, $classId = null, $categoryId = null, $zone = null)
     {
         $headings = [];
         $rows = [];
@@ -125,8 +170,8 @@ class ReportController extends Controller
         $chart = null;
 
         switch ($type) {
-            case 'school_wise':
-                $headings = ['School Code', 'School Name', 'Total Students', 'Drafts', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'];
+            case 'zone_wise':
+                $headings = ['Zone', 'Total Schools', 'Total Students', 'Drafts', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'];
                 $query = School::leftJoin('students', function ($join) {
                     $join->on('schools.id', '=', 'students.school_id')
                         ->whereNull('students.deleted_at');
@@ -137,10 +182,20 @@ class ReportController extends Controller
                         $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
                     });
                 }
+                if ($classId) {
+                    $query->where(function ($q) use ($classId) {
+                        $q->where('students.class_id', $classId)->orWhereNull('students.id');
+                    });
+                }
+                if ($categoryId) {
+                    $query->where(function ($q) use ($categoryId) {
+                        $q->where('students.category_id', $categoryId)->orWhereNull('students.id');
+                    });
+                }
 
                 $data = $query->select(
-                    'schools.code',
-                    'schools.name',
+                    DB::raw('COALESCE(schools.zone, "Unassigned") as zone_name'),
+                    DB::raw('count(distinct schools.id) as total_schools'),
                     DB::raw('count(students.id) as total'),
                     DB::raw('sum(case when students.status = "Draft" then 1 else 0 end) as draft'),
                     DB::raw('sum(case when students.status = "Submitted" then 1 else 0 end) as submitted'),
@@ -149,13 +204,79 @@ class ReportController extends Controller
                     DB::raw('sum(case when students.status = "Rejected" then 1 else 0 end) as rejected'),
                     DB::raw('sum(case when students.status = "Hall Ticket Issued" then 1 else 0 end) as ht_issued')
                 )
-                    ->groupBy('schools.code', 'schools.name')
+                    ->groupBy('zone_name')
+                    ->get();
+
+                foreach ($data as $item) {
+                    $row = [
+                        $item->zone_name,
+                        $item->total_schools,
+                        $item->total,
+                        $item->draft ?? 0,
+                        $item->submitted ?? 0,
+                        $item->under_review ?? 0,
+                        $item->approved ?? 0,
+                        $item->rejected ?? 0,
+                        $item->ht_issued ?? 0,
+                    ];
+                    $rows[]       = $row;
+                    $exportRows[] = $row;
+                }
+
+                $ordered = $data->sortByDesc('total')->values();
+
+                $chart = [
+                    'title'      => 'Students by Zone',
+                    'chartType'  => 'bar',
+                    'stacked'    => true,
+                    'categories' => $ordered->pluck('zone_name')->all(),
+                    'series'     => [
+                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn($v) => (int)($v ?? 0))->all()],
+                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn($v) => (int)($v ?? 0))->all()],
+                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn($v) => (int)($v ?? 0))->all()],
+                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn($v) => (int)($v ?? 0))->all()],
+                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn($v) => (int)($v ?? 0))->all()],
+                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn($v) => (int)($v ?? 0))->all()],
+                    ],
+                ];
+                break;
+
+            case 'school_wise':
+                $headings = ['School Code', 'School Name', 'Zone', 'Total Students', 'Drafts', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'];
+                $query = School::leftJoin('students', function ($join) {
+                    $join->on('schools.id', '=', 'students.school_id')
+                        ->whereNull('students.deleted_at');
+                });
+
+                if ($examinationId) {
+                    $query->where(function ($q) use ($examinationId) {
+                        $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
+                    });
+                }
+                if ($zone) {
+                    $query->where('schools.zone', $zone);
+                }
+
+                $data = $query->select(
+                    'schools.code',
+                    'schools.name',
+                    DB::raw('COALESCE(schools.zone, "Unassigned") as zone_name'),
+                    DB::raw('count(students.id) as total'),
+                    DB::raw('sum(case when students.status = "Draft" then 1 else 0 end) as draft'),
+                    DB::raw('sum(case when students.status = "Submitted" then 1 else 0 end) as submitted'),
+                    DB::raw('sum(case when students.status = "Under Review" then 1 else 0 end) as under_review'),
+                    DB::raw('sum(case when students.status = "Approved" then 1 else 0 end) as approved'),
+                    DB::raw('sum(case when students.status = "Rejected" then 1 else 0 end) as rejected'),
+                    DB::raw('sum(case when students.status = "Hall Ticket Issued" then 1 else 0 end) as ht_issued')
+                )
+                    ->groupBy('schools.code', 'schools.name', 'zone_name')
                     ->get();
 
                 foreach ($data as $item) {
                     $row = [
                         $item->code,
                         $item->name,
+                        $item->zone_name,
                         $item->total,
                         $item->draft ?? 0,
                         $item->submitted ?? 0,
@@ -364,6 +485,15 @@ class ReportController extends Controller
                         $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
                     });
                 }
+                if ($categoryId) {
+                    $query->where(function ($q) use ($categoryId) {
+                        $q->where('students.category_id', $categoryId)->orWhereNull('students.id');
+                    });
+                }
+                if ($zone) {
+                    $query->leftJoin('schools as s_zone', 's_zone.id', '=', 'students.school_id')
+                          ->where('s_zone.zone', $zone);
+                }
 
                 $data = $query->select('classes.name', DB::raw('count(students.id) as total'))
                     ->groupBy('classes.name')
@@ -397,6 +527,15 @@ class ReportController extends Controller
                     $query->where(function ($q) use ($examinationId) {
                         $q->where('students.examination_id', $examinationId)->orWhereNull('students.id');
                     });
+                }
+                if ($classId) {
+                    $query->where(function ($q) use ($classId) {
+                        $q->where('students.class_id', $classId)->orWhereNull('students.id');
+                    });
+                }
+                if ($zone) {
+                    $query->leftJoin('schools as s_zone2', 's_zone2.id', '=', 'students.school_id')
+                          ->where('s_zone2.zone', $zone);
                 }
 
                 $data = $query->select('categories.code', 'categories.name', DB::raw('count(students.id) as total'))
@@ -541,6 +680,7 @@ class ReportController extends Controller
     protected function getAdminReportCharts($examinationId = null): array
     {
         $types = [
+            'zone_wise',
             'school_wise',
             'class_wise',
             'category_wise',
@@ -565,7 +705,7 @@ class ReportController extends Controller
     /**
      * Helper to get School Admin Report Queries and structure.
      */
-    protected function getSchoolReportData($type, $schoolId, $examinationId = null)
+    protected function getSchoolReportData($type, $schoolId, $examinationId = null, $classId = null, $categoryId = null)
     {
         $headings = [];
         $rows = [];
@@ -644,9 +784,16 @@ class ReportController extends Controller
                         break;
                 }
 
+                // Apply optional class and category filters
+                if ($classId) {
+                    $query->where('students.class_id', $classId);
+                }
+                if ($categoryId) {
+                    $query->where('students.category_id', $categoryId);
+                }
+
                 $data = $query->select(
                     'students.registration_number',
-
                     'students.name as student_name',
                     'classes.name as class_name',
                     'categories.name as category_name',
@@ -659,7 +806,6 @@ class ReportController extends Controller
                 foreach ($data as $item) {
                     $row = [
                         $item->registration_number ?? 'N/A',
-
                         $item->student_name,
                         $item->class_name,
                         $item->category_name,
