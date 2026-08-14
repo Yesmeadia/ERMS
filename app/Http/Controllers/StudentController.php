@@ -479,10 +479,12 @@ class StudentController extends Controller
         $school = Auth::user()->school;
 
         try {
-            Excel::import(
-                new StudentsImport($exam->id, $school->id),
-                $request->file('excel_file')
-            );
+            DB::transaction(function () use ($exam, $school, $request) {
+                Excel::import(
+                    new StudentsImport($exam->id, $school->id),
+                    $request->file('excel_file')
+                );
+            });
 
             activity()
                 ->log("Bulk imported student registrations for examination: {$exam->name} from Excel");
