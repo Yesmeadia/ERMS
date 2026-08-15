@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
 
         // Schools Management
         Route::post('/schools/{school}/toggle-status', [SchoolController::class, 'toggleStatus'])->name('schools.toggle-status');
+        Route::post('/schools/{school}/toggle-fine', [SchoolController::class, 'toggleFine'])->name('schools.toggle-fine');
         Route::post('/schools/{school}/assign-admin', [SchoolController::class, 'assignAdmin'])->name('schools.assign-admin');
         Route::post('/schools/{school}/reset-password', [SchoolController::class, 'resetPassword'])->name('schools.reset-password');
         Route::resource('schools', SchoolController::class);

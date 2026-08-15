@@ -58,6 +58,7 @@
                     <th
                         class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                         Students</th>
+                    <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Fine Setting</th>
                     <th class="text-center px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status
                     </th>
                     <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions
@@ -101,6 +102,26 @@
                         </td>
                         <td class="px-6 py-4 text-center hidden lg:table-cell">
                             <span class="text-slate-300 font-medium">{{ $school->students_count }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center hidden sm:table-cell">
+                            <form method="POST" action="{{ route('admin.schools.toggle-fine', $school) }}" class="inline-block">
+                                @csrf
+                                @if($school->is_fine_enabled ?? true)
+                                    <button type="submit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer shadow-sm active:scale-95 duration-150"
+                                        title="Fine is currently active (₹50/student). Click to waive fine for this school.">
+                                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                        <span>Fine Active (₹50)</span>
+                                    </button>
+                                @else
+                                    <button type="submit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700/60 hover:bg-slate-700 hover:text-slate-200 transition-all cursor-pointer shadow-sm active:scale-95 duration-150"
+                                        title="Fine is currently waived (₹0). Click to enable fine for this school.">
+                                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                                        <span>Fine Waived (₹0)</span>
+                                    </button>
+                                @endif
+                            </form>
                         </td>
                         <td class="px-6 py-4 text-center">
                             @if($school->status)

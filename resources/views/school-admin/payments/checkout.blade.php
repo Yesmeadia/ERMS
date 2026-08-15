@@ -90,9 +90,12 @@
                                 Category</th>
                             <th class="py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">
                                 Gender</th>
-                            <th
-                                class="py-3 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
-                                Fee (INR)</th>
+                            <th class="py-3 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
+                                Base Fee</th>
+                            <th class="py-3 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
+                                Fine</th>
+                            <th class="py-3 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">
+                                Total (INR)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-850/60">
@@ -112,8 +115,14 @@
                                 <td class="py-3 text-center text-slate-400 uppercase">
                                     {{ $student->gender }}
                                 </td>
-                                <td class="py-3 px-6 text-right font-mono font-bold text-slate-200">
+                                <td class="py-3 px-6 text-right font-mono font-medium text-slate-300">
                                     ₹{{ number_format($student->registration_fee, 2) }}
+                                </td>
+                                <td class="py-3 px-3 text-right font-mono font-medium text-amber-400">
+                                    ₹{{ number_format($finePerStudent ?? 0, 2) }}
+                                </td>
+                                <td class="py-3 px-6 text-right font-mono font-bold text-slate-100">
+                                    ₹{{ number_format($student->registration_fee + ($finePerStudent ?? 0), 2) }}
                                 </td>
                             </tr>
                         @endforeach
@@ -142,7 +151,7 @@
             <div class="space-y-4 mb-8">
                 <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Class-wise Breakdown</h4>
                 <div class="space-y-2">
-                    @foreach($classBreakdown as $class)
+                    @foreach($classBreakdown ?? [] as $class)
                         <div
                             class="flex justify-between items-center py-2 px-4 bg-slate-950/20 border border-slate-800/60 rounded-xl">
                             <div>
@@ -157,11 +166,30 @@
                 </div>
             </div>
 
+            {{-- Fee & Fine Breakdown --}}
+            <div class="border-t border-slate-800/80 pt-4 pb-4 space-y-2 text-xs">
+                <div class="flex justify-between items-center text-slate-300">
+                    <span>Base Registration Total ({{ count($students) }} students):</span>
+                    <span class="font-mono font-semibold">₹{{ number_format($baseTotal ?? 0, 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="flex items-center gap-1.5 text-amber-400 font-medium">
+                        Fine Amount (₹{{ number_format($finePerStudent ?? 0, 0) }} / student):
+                        @if($isFineApplicable ?? false)
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Late Fine</span>
+                        @else
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Fine Waived</span>
+                        @endif
+                    </span>
+                    <span class="font-mono font-bold text-amber-400">₹{{ number_format($fineTotal ?? 0, 2) }}</span>
+                </div>
+            </div>
+
             {{-- Order Summary --}}
             <div
                 class="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Amount Due</p>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Amount Payable</p>
                     <p class="text-3xl font-black text-white font-mono mt-1">₹{{ number_format($totalAmount, 2) }}</p>
                 </div>
                 <div class="text-xs text-slate-500 leading-normal max-w-xs">
@@ -177,6 +205,11 @@
 
             {{-- ── STEP 1: First visit — show "Pay Now" which posts to initiate() ──────── --}}
             @empty($cashfreeOrderId)
+            @if(\App\Models\Examination::isRegistrationClosed())
+                <div class="p-4 bg-rose-950/40 border border-rose-900/40 text-rose-300 rounded-2xl text-xs font-bold text-center">
+                    Registration is closed for this examination. Payments for drafted candidates are disabled.
+                </div>
+            @else
             {{-- CWE-602 (Finding 6): Server-side duplicate prevention handles idempotency.
             The button is disabled after click only as a UX improvement, not a security boundary. --}}
             <form method="POST" action="{{ route('school.payments.initiate') }}" id="initiate-form" x-on:submit="
@@ -204,6 +237,7 @@
                     </p>
                 </div>
             </form>
+            @endif
             @endisset
 
             {{-- ── STEP 2: Returned from initiate() — open Cashfree checkout automatically ─ --}}

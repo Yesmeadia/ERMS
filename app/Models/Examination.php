@@ -41,4 +41,35 @@ class Examination extends Model
     {
         return $this->hasMany(StudentResult::class, 'examination_id');
     }
+
+    /**
+     * Get the active examination session.
+     */
+    public static function getActiveExam()
+    {
+        return self::whereIn('status', ['Registration Started', 'Registartion closed', 'Examination Ongoing', 'result published'])
+            ->latest()
+            ->first() ?? self::latest()->first();
+    }
+
+    /**
+     * Check if registration is open for payments and candidate registrations.
+     */
+    public static function isRegistrationOpen(): bool
+    {
+        $activeExam = self::getActiveExam();
+        if (!$activeExam) {
+            return false;
+        }
+
+        return $activeExam->status === 'Registration Started';
+    }
+
+    /**
+     * Check if registration is closed.
+     */
+    public static function isRegistrationClosed(): bool
+    {
+        return !self::isRegistrationOpen();
+    }
 }

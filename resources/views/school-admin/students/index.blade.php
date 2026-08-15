@@ -258,6 +258,19 @@
     </div>
 @endif
 
+{{-- ─── Registration Closed Banner ────────────────────────────────────────── --}}
+@if($isRegistrationClosed)
+<div class="mb-5 flex items-center gap-3 bg-gradient-to-r from-rose-950/70 via-slate-900/80 to-slate-950 border border-rose-900/50 rounded-2xl px-5 py-4 shadow-xl">
+    <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-rose-400"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+    </div>
+    <div>
+        <h4 class="font-extrabold text-sm text-rose-300 tracking-tight">Registration Closed</h4>
+        <p class="text-xs text-rose-300/80 mt-0.5">Registration is closed for this examination session. Drafted candidates are no longer allowed to pay registration fees.</p>
+    </div>
+</div>
+@endif
+
 {{-- ─── Bulk Payment Banner (only when unpaid Draft/Rejected exist) ─────────── --}}
 @if($unpaidTotal > 0)
 <div class="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-indigo-950/60 to-slate-900/60 border border-indigo-950 rounded-2xl px-5 py-4 shadow-xl">
@@ -273,17 +286,25 @@
         </div>
     </div>
     {{-- Pay All Unpaid (all pages) --}}
-    <form method="POST" action="{{ route('school.payments.checkout') }}" class="shrink-0">
-        @csrf
-        @foreach($allUnpaidIds as $uid)
-            <input type="hidden" name="student_ids[]" value="{{ $uid }}">
-        @endforeach
-        <button type="submit"
-                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-600/20 active:scale-95 duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
-            Pay All Unpaid ({{ $unpaidTotal }})
+    @if($isRegistrationClosed)
+        <button type="button" disabled
+                class="inline-flex items-center gap-2 bg-slate-800 text-slate-500 text-xs font-bold px-4 py-2.5 rounded-xl cursor-not-allowed border border-slate-700/60 opacity-70">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+            Registration Closed
         </button>
-    </form>
+    @else
+        <form method="POST" action="{{ route('school.payments.checkout') }}" class="shrink-0">
+            @csrf
+            @foreach($allUnpaidIds as $uid)
+                <input type="hidden" name="student_ids[]" value="{{ $uid }}">
+            @endforeach
+            <button type="submit"
+                    class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-600/20 active:scale-95 duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                Pay All Unpaid ({{ $unpaidTotal }})
+            </button>
+        </form>
+    @endif
 </div>
 @endif
 
@@ -568,21 +589,31 @@
                 </button>
 
                 {{-- Pay Selected (Bulk Checkout Form) --}}
-                <form method="POST" action="{{ route('school.payments.checkout') }}" class="flex-1 sm:flex-initial" id="bulk-payment-form">
-                    @csrf
-                    <template x-for="id in selectedIds" :key="id">
-                        <input type="hidden" name="student_ids[]" :value="id">
-                    </template>
-                    <button type="submit"
+                @if($isRegistrationClosed)
+                    <button type="button" disabled
                             class="w-full inline-flex items-center justify-center gap-2
-                                   px-6 py-2.5 bg-gradient-to-r from-indigo-650 to-purple-600 hover:from-indigo-600 hover:to-purple-550
-                                   text-white text-xs font-bold rounded-xl
-                                   transition-all shadow-lg shadow-indigo-600/30 cursor-pointer active:scale-95 duration-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Pay Selected &mdash;
-                        ₹<span x-text="selectedFee.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                                   px-6 py-2.5 bg-slate-800 text-slate-500 text-xs font-bold rounded-xl
+                                   cursor-not-allowed border border-slate-700/60 opacity-70">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                        Registration Closed
                     </button>
-                </form>
+                @else
+                    <form method="POST" action="{{ route('school.payments.checkout') }}" class="flex-1 sm:flex-initial" id="bulk-payment-form">
+                        @csrf
+                        <template x-for="id in selectedIds" :key="id">
+                            <input type="hidden" name="student_ids[]" :value="id">
+                        </template>
+                        <button type="submit"
+                                class="w-full inline-flex items-center justify-center gap-2
+                                       px-6 py-2.5 bg-gradient-to-r from-indigo-650 to-purple-600 hover:from-indigo-600 hover:to-purple-550
+                                       text-white text-xs font-bold rounded-xl
+                                       transition-all shadow-lg shadow-indigo-600/30 cursor-pointer active:scale-95 duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Pay Selected &mdash;
+                            ₹<span x-text="selectedFee.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>

@@ -141,13 +141,26 @@
             </div>
 
             {{-- ═══ 4. TOTAL PAID ═══ --}}
-            <div class="receipt-total" style="padding: 18px 40px 20px; border-top:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box;">
-                <p style="font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#6b7280; margin:0;">
-                    Grand Total Amount Paid (INR)
-                </p>
-                <p style="font-size:26px; font-weight:900; font-family:monospace; color:#34d399; margin:0; letter-spacing:-0.5px;">
-                    ₹{{ number_format($payment->amount, 2) }}
-                </p>
+            <div class="receipt-total" style="padding: 18px 40px 20px; border-top:1px solid #1e293b; width:100%; box-sizing:border-box;">
+                @php
+                    $receiptBaseAmount = $payment->base_amount > 0 ? $payment->base_amount : max(0, $payment->amount - $payment->fine_amount);
+                @endphp
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:#9ca3af;">
+                    <span>Base Registration Amount:</span>
+                    <span style="font-family:monospace; font-weight:600; color:#e5e7eb;">₹{{ number_format($receiptBaseAmount, 2) }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:12px; color:#fbbf24;">
+                    <span>Late Registration Fine Amount:</span>
+                    <span style="font-family:monospace; font-weight:700;">₹{{ number_format($payment->fine_amount, 2) }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #374151; pt-12px; padding-top:10px;">
+                    <p style="font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#6b7280; margin:0;">
+                        Grand Total Amount Paid (INR)
+                    </p>
+                    <p style="font-size:24px; font-weight:900; font-family:monospace; color:#34d399; margin:0; letter-spacing:-0.5px;">
+                        ₹{{ number_format($payment->amount, 2) }}
+                    </p>
+                </div>
             </div>
 
             {{-- ═══ 5. FOOTER ═══ --}}

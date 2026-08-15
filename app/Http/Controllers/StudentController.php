@@ -241,8 +241,9 @@ class StudentController extends Controller
             ->pluck('id')
             ->all();
         $unpaidTotal = count($allUnpaidIds);
+        $isRegistrationClosed = Examination::isRegistrationClosed();
 
-        return view('school-admin.students.index', compact('students', 'examinations', 'allUnpaidIds', 'unpaidTotal'));
+        return view('school-admin.students.index', compact('students', 'examinations', 'allUnpaidIds', 'unpaidTotal', 'isRegistrationClosed'));
     }
 
     /**
