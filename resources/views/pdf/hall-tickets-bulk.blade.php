@@ -529,7 +529,7 @@
                                 <td class="value-cell" style="font-weight: bold;">{{ strtoupper($student->class->name ?? 'N/A') }}</td>
                             </tr>
                             @php
-                                $examDate = \Carbon\Carbon::parse('2026-07-30');
+                                $examDate = \Carbon\Carbon::parse('2026-08-30');
                                 $examTime = '10:00 AM to 12:30 PM';
                             @endphp
                             <tr>

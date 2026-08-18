@@ -21,10 +21,10 @@ class DatabaseSeeder extends Seeder
 
         // 2. Create Super Admin User
         $superAdmin = User::updateOrCreate(
-            ['email' => 'anfasanukaloor@gmail.com'],
+            ['email' => 'tester@gmail.com'],
             [
                 'name' => 'Board Super Admin',
-                'password' => bcrypt('App@Kalo9400#'),
+                'password' => bcrypt('Test@123#'),
                 'school_id' => null,
             ]
         );

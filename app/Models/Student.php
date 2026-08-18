@@ -100,7 +100,7 @@ class Student extends Model
     public function payments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Payment::class, 'payment_student', 'student_id', 'payment_id')
-            ->withPivot('amount')
+            ->withPivot('amount', 'base_amount', 'fine_amount')
             ->withTimestamps();
     }
 
@@ -245,7 +245,7 @@ class Student extends Model
     }
 
     /**
-     * Get the student's registration fee based on CategoryMaster fee.
+     * Get the student's registration base fee based on CategoryMaster fee.
      * Fallback to ClassMaster fee if Category fee is 0.00.
      */
     public function getRegistrationFeeAttribute()
@@ -254,6 +254,23 @@ class Student extends Model
             return (float) $this->category->registration_fee;
         }
         return $this->class ? (float) $this->class->registration_fee : 0.0;
+    }
+
+    /**
+     * Get fine amount applicable for this student (₹50 if fine active for school, ₹0 otherwise).
+     */
+    public function getFineAmountAttribute(): float
+    {
+        $school = $this->school;
+        return $school ? $school->getFinePerStudentAmount() : 0.0;
+    }
+
+    /**
+     * Get total payable fee for this student (Base Fee + Fine Amount).
+     */
+    public function getTotalFeeAttribute(): float
+    {
+        return (float) $this->registration_fee + (float) $this->fine_amount;
     }
 
     /**

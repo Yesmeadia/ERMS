@@ -32,6 +32,9 @@ class PaymentController extends Controller
         $totalPaidAmount = 0.00;
         $totalOutstandingAmount = 0.00;
 
+        $finePerStudent = $school->getFinePerStudentAmount();
+        $isFineApplicable = $school->isFineApplicable();
+
         foreach ($classes as $class) {
             // Count candidates in this school and this class
             $studentsQuery = Student::where('school_id', $school->id)
@@ -41,7 +44,8 @@ class PaymentController extends Controller
             $paidCount = (clone $studentsQuery)->where('payment_status', 'Paid')->count();
             $unpaidCount = $totalCount - $paidCount;
 
-            $fee = $class->registration_fee;
+            $baseFee = $class->registration_fee;
+            $fee = $baseFee + $finePerStudent;
             $paidAmount = $paidCount * $fee;
             $unpaidAmount = $unpaidCount * $fee;
 
@@ -49,6 +53,8 @@ class PaymentController extends Controller
                 $balanceSheet[] = [
                     'class_name' => $class->name,
                     'fee' => $fee,
+                    'base_fee' => $baseFee,
+                    'fine_fee' => $finePerStudent,
                     'total_count' => $totalCount,
                     'paid_count' => $paidCount,
                     'unpaid_count' => $unpaidCount,
@@ -72,6 +78,8 @@ class PaymentController extends Controller
             ->take(3)
             ->get();
 
+        $isRegistrationClosed = \App\Models\Examination::isRegistrationClosed();
+
         return view('school-admin.payments.index', compact(
             'balanceSheet',
             'payments',
@@ -79,7 +87,10 @@ class PaymentController extends Controller
             'totalPaidCount',
             'totalOutstandingCount',
             'totalPaidAmount',
-            'totalOutstandingAmount'
+            'totalOutstandingAmount',
+            'finePerStudent',
+            'isFineApplicable',
+            'isRegistrationClosed'
         ));
     }
 
@@ -104,6 +115,10 @@ class PaymentController extends Controller
      */
     public function checkout(Request $request)
     {
+        if (\App\Models\Examination::isRegistrationClosed()) {
+            return redirect()->route('school.students.index')->with('error', 'Registration is closed for this examination session. Payments for drafted candidates are no longer accepted.');
+        }
+
         $studentIds = $request->input('student_ids');
 
         if (empty($studentIds) || !is_array($studentIds)) {
@@ -138,7 +153,7 @@ class PaymentController extends Controller
         $students = Student::where('school_id', $school->id)
             ->whereIn('id', $studentIds)
             ->where('payment_status', 'Unpaid')
-            ->with('class')
+            ->with(['class', 'category'])
             ->get();
 
         if ($students->isEmpty()) {
@@ -146,14 +161,23 @@ class PaymentController extends Controller
         }
 
         // Calculate fees
+        $finePerStudent = $school->getFinePerStudentAmount();
+        $isFineApplicable = $school->isFineApplicable();
+
+        $baseTotal = 0.00;
+        $fineTotal = 0.00;
         $totalAmount = 0.00;
         $classBreakdown = [];
 
         foreach ($students as $student) {
             $classId = $student->class_id;
             $className = $student->class->name;
-            $fee = $student->registration_fee;
+            $baseFee = $student->registration_fee;
+            $studentFine = $finePerStudent;
+            $fee = $baseFee + $studentFine;
 
+            $baseTotal += $baseFee;
+            $fineTotal += $studentFine;
             $totalAmount += $fee;
 
             if (!isset($classBreakdown[$classId])) {
@@ -161,6 +185,8 @@ class PaymentController extends Controller
                     'name' => $className,
                     'count' => 0,
                     'fee' => $fee,
+                    'base_fee' => $baseFee,
+                    'fine_fee' => $studentFine,
                     'total' => 0.00,
                 ];
             }
@@ -168,7 +194,15 @@ class PaymentController extends Controller
             $classBreakdown[$classId]['total'] += $fee;
         }
 
-        return view('school-admin.payments.checkout', compact('students', 'totalAmount', 'classBreakdown'));
+        return view('school-admin.payments.checkout', compact(
+            'students',
+            'baseTotal',
+            'fineTotal',
+            'totalAmount',
+            'finePerStudent',
+            'isFineApplicable',
+            'classBreakdown'
+        ));
     }
 
     /**
@@ -176,6 +210,10 @@ class PaymentController extends Controller
      */
     public function initiate(Request $request)
     {
+        if (\App\Models\Examination::isRegistrationClosed()) {
+            return redirect()->route('school.students.index')->with('error', 'Registration is closed for this examination session. Payments for drafted candidates are no longer accepted.');
+        }
+
         $studentIds = $request->input('student_ids');
 
         if (empty($studentIds) || !is_array($studentIds)) {
@@ -299,10 +337,15 @@ class PaymentController extends Controller
                     }
 
                     // CWE-602: Always calculate total payable amount server-side based on secure DB records
-                    $totalAmount = 0.00;
+                    $finePerStudent = $school->getFinePerStudentAmount();
+                    $baseAmount = 0.00;
+                    $fineAmount = 0.00;
+
                     foreach ($students as $student) {
-                        $totalAmount += $student->registration_fee;
+                        $baseAmount += $student->registration_fee;
+                        $fineAmount += $finePerStudent;
                     }
+                    $totalAmount = $baseAmount + $fineAmount;
 
                     // Build a unique order ID
                     $cfOrderId = 'ERMS_' . strtoupper(bin2hex(random_bytes(8)));
@@ -348,6 +391,8 @@ class PaymentController extends Controller
                         'school_id' => $school->id,
                         'cashfree_order_id' => $cfOrderId,
                         'amount' => $totalAmount,
+                        'base_amount' => $baseAmount,
+                        'fine_amount' => $fineAmount,
                         'payment_method' => 'Cashfree',
                         'status' => 'Pending',
                         'paid_at' => null,
@@ -355,7 +400,15 @@ class PaymentController extends Controller
 
                     // Attach students to this payment record
                     foreach ($students as $student) {
-                        $payment->students()->attach($student->id, ['amount' => $student->registration_fee]);
+                        $stBase = $student->registration_fee;
+                        $stFine = $finePerStudent;
+                        $stTotal = $stBase + $stFine;
+
+                        $payment->students()->attach($student->id, [
+                            'amount' => $stTotal,
+                            'base_amount' => $stBase,
+                            'fine_amount' => $stFine,
+                        ]);
                     }
 
                     return [
@@ -380,29 +433,54 @@ class PaymentController extends Controller
         }
 
         // Reload the checkout view with Cashfree session details
+        $finePerStudent = $school->getFinePerStudentAmount();
+        $isFineApplicable = $school->isFineApplicable();
+
+        $baseTotal = 0.00;
+        $fineTotal = 0.00;
         $classBreakdown = [];
+
         foreach ($students as $student) {
             $classId = $student->class_id;
             $className = $student->class->name;
-            $fee = $student->registration_fee;
+            $baseFee = $student->registration_fee;
+            $studentFine = $finePerStudent;
+            $fee = $baseFee + $studentFine;
+
+            $baseTotal += $baseFee;
+            $fineTotal += $studentFine;
 
             if (!isset($classBreakdown[$classId])) {
-                $classBreakdown[$classId] = ['name' => $className, 'count' => 0, 'fee' => $fee, 'total' => 0.00];
+                $classBreakdown[$classId] = [
+                    'name' => $className,
+                    'count' => 0,
+                    'fee' => $fee,
+                    'base_fee' => $baseFee,
+                    'fine_fee' => $studentFine,
+                    'total' => 0.00,
+                ];
             }
             $classBreakdown[$classId]['count']++;
             $classBreakdown[$classId]['total'] += $fee;
         }
 
-        return view('school-admin.payments.checkout', compact('students', 'totalAmount', 'classBreakdown'))
-            ->with([
-                'cashfreeOrderId' => $cfOrderId,
-                'paymentSessionId' => $paymentSessionId,
-                'cashfreeEnv' => config('services.cashfree.env', 'sandbox'),
-                'paymentDbId' => $paymentDbId,
-                'schoolName' => $school->name,
-                'adminEmail' => Auth::user()->email,
-                'adminName' => Auth::user()->name,
-            ]);
+        return view('school-admin.payments.checkout', compact(
+            'students',
+            'baseTotal',
+            'fineTotal',
+            'totalAmount',
+            'finePerStudent',
+            'isFineApplicable',
+            'classBreakdown'
+        ))->with([
+            'cashfreeOrderId' => $cfOrderId,
+            'paymentSessionId' => $paymentSessionId,
+            'cashfreeEnv' => config('services.cashfree.env', 'sandbox'),
+            'paymentDbId' => $paymentDbId,
+            'schoolName' => $school->name,
+            'adminEmail' => Auth::user()->email,
+            'adminName' => Auth::user()->name,
+        ]);
     }
 
     /**
@@ -741,17 +819,31 @@ class PaymentController extends Controller
 
         // Metrics
         $totalCollected = Payment::where('status', 'Paid')->sum('amount');
+        $totalBaseCollected = Payment::where('status', 'Paid')->sum('base_amount');
+        $totalFineCollected = Payment::where('status', 'Paid')->sum('fine_amount');
+
+        // Fallback for past payments where base_amount was 0 but amount > 0
+        if ($totalBaseCollected == 0 && $totalCollected > 0) {
+            $totalBaseCollected = $totalCollected - $totalFineCollected;
+        }
 
         // Outstanding calculations (Draft and unpaid students across active classes/categories)
-        $unpaidBreakdown = DB::table('students')
-            ->join('classes', 'students.class_id', '=', 'classes.id')
-            ->leftJoin('categories', 'students.category_id', '=', 'categories.id')
-            ->where('students.payment_status', 'Unpaid')
-            ->whereNull('students.deleted_at')
-            ->select(DB::raw('SUM(CASE WHEN categories.registration_fee > 0 THEN categories.registration_fee ELSE classes.registration_fee END) as outstanding'))
-            ->first();
+        $unpaidStudents = Student::with(['school', 'category', 'class'])
+            ->where('payment_status', 'Unpaid')
+            ->whereNull('deleted_at')
+            ->get();
 
-        $totalOutstanding = $unpaidBreakdown->outstanding ?? 0.00;
+        $totalOutstandingBase = 0.00;
+        $totalOutstandingFine = 0.00;
+
+        foreach ($unpaidStudents as $st) {
+            $base = $st->registration_fee;
+            $fine = $st->fine_amount;
+            $totalOutstandingBase += $base;
+            $totalOutstandingFine += $fine;
+        }
+
+        $totalOutstanding = $totalOutstandingBase + $totalOutstandingFine;
 
         $paymentsCount = Payment::count();
         $activeSchoolsPaid = School::whereHas('payments')->count();
@@ -762,7 +854,11 @@ class PaymentController extends Controller
             'payments',
             'schools',
             'totalCollected',
+            'totalBaseCollected',
+            'totalFineCollected',
             'totalOutstanding',
+            'totalOutstandingBase',
+            'totalOutstandingFine',
             'paymentsCount',
             'activeSchoolsPaid'
         ));
@@ -808,7 +904,7 @@ class PaymentController extends Controller
             "Expires" => "0"
         ];
 
-        $columns = ['Date', 'School Name', 'School Code', 'Transaction ID', 'Method', 'Candidates Count', 'Amount Paid (INR)', 'Status'];
+        $columns = ['Date', 'School Name', 'School Code', 'Transaction ID', 'Method', 'Candidates Count', 'Base Amount (INR)', 'Fine Amount (INR)', 'Total Amount (INR)', 'Status'];
 
         $callback = function () use ($payments, $columns) {
             $file = fopen('php://output', 'w');
@@ -826,6 +922,7 @@ class PaymentController extends Controller
             };
 
             foreach ($payments as $payment) {
+                $baseFee = $payment->base_amount > 0 ? $payment->base_amount : ($payment->amount - $payment->fine_amount);
                 fputcsv($file, [
                     $payment->created_at->format('Y-m-d H:i:s'),
                     $sanitizeCsvField($payment->school->name),
@@ -833,7 +930,9 @@ class PaymentController extends Controller
                     $sanitizeCsvField($payment->transaction_id),
                     $sanitizeCsvField($payment->payment_method),
                     $payment->students_count ?? $payment->students()->count(),
-                    $payment->amount,
+                    number_format($baseFee, 2, '.', ''),
+                    number_format($payment->fine_amount, 2, '.', ''),
+                    number_format($payment->amount, 2, '.', ''),
                     $sanitizeCsvField($payment->status),
                 ]);
             }

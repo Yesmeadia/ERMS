@@ -296,4 +296,30 @@ class SchoolController extends Controller
 
         return back()->with('success', "School Admin password reset successfully.");
     }
+
+    /**
+     * Toggle fine status for a school (Enable / Waive Fine).
+     */
+    public function toggleFine(Request $request, School $school)
+    {
+        $school->is_fine_enabled = !$school->is_fine_enabled;
+        $school->save();
+
+        $statusText = $school->is_fine_enabled ? 'enabled' : 'disabled (waived)';
+
+        activity()
+            ->performedOn($school)
+            ->causedBy(auth()->user())
+            ->log("Toggled fine status for school: {$school->name} to {$statusText}");
+
+        if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+                'success' => true,
+                'is_fine_enabled' => (bool)$school->is_fine_enabled,
+                'message' => "Fine amount for {$school->name} has been {$statusText}.",
+            ]);
+        }
+
+        return redirect()->route('admin.schools.index')->with('success', "Fine amount for {$school->name} has been {$statusText}.");
+    }
 }

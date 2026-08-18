@@ -15,6 +15,8 @@ class Payment extends Model
         'school_id',
         'transaction_id',
         'amount',
+        'base_amount',
+        'fine_amount',
         'payment_method',
         'status',
         'paid_at',
@@ -27,6 +29,8 @@ class Payment extends Model
     protected $casts = [
         'paid_at' => 'datetime',
         'amount' => 'decimal:2',
+        'base_amount' => 'decimal:2',
+        'fine_amount' => 'decimal:2',
     ];
 
     /**
@@ -43,7 +47,7 @@ class Payment extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'payment_student', 'payment_id', 'student_id')
-            ->withPivot('amount')
+            ->withPivot('amount', 'base_amount', 'fine_amount')
             ->withTimestamps();
     }
 }

@@ -26,48 +26,53 @@
         $gaugeTotal = $totalCollected + $totalOutstanding;
         $gaugePct = $gaugeTotal > 0 ? round(($totalCollected / $gaugeTotal) * 100, 1) : 0;
     @endphp
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        {{-- Card 1 --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
+        {{-- Card 1: Total Collected --}}
         <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden group">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Fees Collected</p>
-            <h3 class="text-3xl font-extrabold text-emerald-400 mt-2">₹{{ number_format($totalCollected, 2) }}</h3>
-            <p class="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">Net board collections</p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Collected</p>
+            <h3 class="text-2xl font-extrabold text-emerald-400 mt-1.5">₹{{ number_format($totalCollected, 2) }}</h3>
+            <p class="text-[10px] text-slate-500 mt-3 font-semibold uppercase tracking-wider">Gross revenue</p>
         </div>
 
-        {{-- Card 2 --}}
+        {{-- Card 2: Base Fees Collected --}}
         <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden group">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Outstanding Balance</p>
-            <h3 class="text-3xl font-extrabold text-rose-400 mt-2">₹{{ number_format($totalOutstanding, 2) }}</h3>
-            <p class="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">Outstanding from unpaid drafts
-            </p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Base Fees Collected</p>
+            <h3 class="text-2xl font-extrabold text-indigo-300 mt-1.5">₹{{ number_format($totalBaseCollected, 2) }}</h3>
+            <p class="text-[10px] text-slate-500 mt-3 font-semibold uppercase tracking-wider">Base registration fees</p>
         </div>
 
-        {{-- Card 3 --}}
+        {{-- Card 3: Fine Amount Collected --}}
         <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden group">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Transaction Volume</p>
-            <h3 class="text-3xl font-extrabold text-indigo-400 mt-2">{{ $paymentsCount }}</h3>
-            <p class="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">Completed transactions</p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Fine Amount Collected</p>
+            <h3 class="text-2xl font-extrabold text-amber-400 mt-1.5">₹{{ number_format($totalFineCollected, 2) }}</h3>
+            <p class="text-[10px] text-slate-500 mt-3 font-semibold uppercase tracking-wider">Late fine penalties</p>
         </div>
 
-        {{-- Card 4 --}}
+        {{-- Card 4: Total Outstanding --}}
         <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden group">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Contributing Schools</p>
-            <h3 class="text-3xl font-extrabold text-white mt-2">{{ $activeSchoolsPaid }}</h3>
-            <p class="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-wider">Schools with completed
-                payments</p>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-rose-400">Total Outstanding</p>
+            <h3 class="text-2xl font-extrabold text-rose-400 mt-1.5">₹{{ number_format($totalOutstanding, 2) }}</h3>
+            <p class="text-[10px] text-slate-500 mt-3 font-semibold uppercase tracking-wider">Base: ₹{{ number_format($totalOutstandingBase, 0) }} · Fine: ₹{{ number_format($totalOutstandingFine, 0) }}</p>
         </div>
 
-        {{-- Speedometer card — last --}}
+        {{-- Card 5: Active Schools --}}
+        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden group">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Schools Paid / Volume</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1.5">{{ $activeSchoolsPaid }} <span class="text-xs text-slate-400 font-normal">({{ $paymentsCount }} txns)</span></h3>
+            <p class="text-[10px] text-slate-500 mt-3 font-semibold uppercase tracking-wider">Contributing schools</p>
+        </div>
+
+        {{-- Speedometer card --}}
         <div
-            class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden">
-            <div class="relative" style="width:180px;height:98px">
-                <canvas id="speedometerCanvas" width="180" height="98" style="width:180px;height:98px"></canvas>
+            class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden">
+            <div class="relative" style="width:160px;height:85px">
+                <canvas id="speedometerCanvas" width="160" height="85" style="width:160px;height:85px"></canvas>
             </div>
-            <div class="flex items-center gap-3 mt-2">
-                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400"><span
-                        class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>Collected</span>
-                <span class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-400"><span
-                        class="w-2 h-2 rounded-full bg-rose-400 inline-block"></span>Outstanding</span>
+            <div class="flex items-center gap-2 mt-1">
+                <span class="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-400"><span
+                        class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>Collected</span>
+                <span class="inline-flex items-center gap-1 text-[8px] font-bold text-rose-400"><span
+                        class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block"></span>Outstanding</span>
             </div>
         </div>
     </div>
@@ -130,17 +135,24 @@
                         </th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaction ID
                         </th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">
+                        <th class="px-4 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">
                             Candidates</th>
+                        <th class="px-4 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
+                            Base Fee</th>
+                        <th class="px-4 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right text-amber-400">
+                            Fine Amount</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                            Amount (INR)</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">
+                            Total Paid</th>
+                        <th class="px-4 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">
                             Status</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
-                            Breakdown</th>
+                            Actions</th>
                     </tr>
                 </thead>
                 @forelse($payments as $payment)
+                    @php
+                        $computedBaseFee = $payment->base_amount > 0 ? $payment->base_amount : max(0, $payment->amount - $payment->fine_amount);
+                    @endphp
                     <tbody class="divide-y divide-slate-800/40 border-b border-slate-800/40" x-data="{ expanded: false }">
                         <tr class="hover:bg-slate-800/10 transition-colors">
                             <td class="px-6 py-4 text-slate-300">
@@ -151,14 +163,18 @@
                                     {{ $payment->school->code }}
                                 </p>
                             </td>
-                            <td class="px-6 py-4 text-indigo-400 font-mono font-bold text-xs">{{ $payment->transaction_id }}
+                            <td class="px-6 py-4 text-indigo-400 font-mono font-bold text-xs">{{ $payment->transaction_id ?? $payment->cashfree_order_id ?? 'N/A' }}
                             </td>
-                            <td class="px-6 py-4 text-center font-mono font-semibold text-slate-300">
+                            <td class="px-4 py-4 text-center font-mono font-semibold text-slate-300">
                                 {{ $payment->students_count ?? $payment->students->count() }}
                             </td>
-                            <td class="px-6 py-4 text-right font-bold text-slate-200 font-mono">
+                            <td class="px-4 py-4 text-right font-medium text-slate-300 font-mono">
+                                ₹{{ number_format($computedBaseFee, 2) }}</td>
+                            <td class="px-4 py-4 text-right font-bold text-amber-400 font-mono">
+                                ₹{{ number_format($payment->fine_amount, 2) }}</td>
+                            <td class="px-6 py-4 text-right font-bold text-slate-100 font-mono">
                                 ₹{{ number_format($payment->amount, 2) }}</td>
-                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
                                 @if($payment->status === 'Paid')
                                     <span
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -206,7 +222,7 @@
 
                         {{-- Expanded Row for Candidates breakdown --}}
                         <tr x-show="expanded" style="display: none;" class="bg-slate-950/40 font-normal">
-                            <td colspan="7" class="px-8 py-4 border-l-4 border-indigo-500">
+                            <td colspan="9" class="px-8 py-4 border-l-4 border-indigo-500">
                                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Candidates included
                                     in Transaction ({{ $payment->students->count() }}):</h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-2">
@@ -218,8 +234,7 @@
                                             <div class="min-w-0 flex-1">
                                                 <p class="font-semibold text-slate-200 truncate">{{ $student->name }}</p>
                                                 <p class="text-[9px] text-slate-500 font-mono truncate">Class:
-                                                    {{ $student->class->name ?? '—' }} · Fee:
-                                                    ₹{{ number_format($student->pivot->amount ?? 0, 0) }}
+                                                    {{ $student->class->name ?? '—' }} · Base: ₹{{ number_format($student->pivot->base_amount ?? $student->registration_fee, 0) }} · Fine: ₹{{ number_format($student->pivot->fine_amount ?? 0, 0) }}
                                                 </p>
                                             </div>
                                         </div>
@@ -234,7 +249,7 @@
                 @empty
                     <tbody class="divide-y divide-slate-800/40">
                         <tr>
-                            <td colspan="7" class="px-6 py-16 text-center text-slate-500">No payment transactions found.</td>
+                            <td colspan="9" class="px-6 py-16 text-center text-slate-500">No payment transactions found.</td>
                         </tr>
                     </tbody>
                 @endforelse

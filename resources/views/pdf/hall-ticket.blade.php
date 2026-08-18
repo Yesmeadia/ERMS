@@ -501,7 +501,8 @@
                         </tr>
                         <tr>
                             <td class="label-cell">Centre of Examination</td>
-                            <td class="value-cell" style="font-weight: bold;">{{ strtoupper($student->centre->name ?? 'N/A') }}</td>
+                            <td class="value-cell" style="font-weight: bold;">
+                                {{ strtoupper($student->centre->name ?? 'N/A') }}</td>
                         </tr>
                         <tr>
                             <td class="label-cell">Name of Candidate</td>
@@ -520,7 +521,7 @@
                             </td>
                         </tr>
                         @php
-                            $examDate = \Carbon\Carbon::parse('2026-07-30');
+                            $examDate = \Carbon\Carbon::parse('2026-08-30');
                             $examTime = '10:00 AM to 12:30 PM';
                         @endphp
                         <tr>
