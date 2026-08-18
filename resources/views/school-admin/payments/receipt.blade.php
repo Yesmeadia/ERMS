@@ -164,19 +164,39 @@
             </div>
 
             {{-- ═══ 5. FOOTER ═══ --}}
-            <div class="receipt-footer" style="padding: 20px 40px 28px; border-top:1px solid #1e293b; display:flex; justify-content:space-between; align-items:flex-end; gap:20px; width:100%; box-sizing:border-box;">
-                <div style="text-align:left;">
-                    <p style="font-size:10px; color:#6b7280; max-width:420px; line-height:1.6; margin:0;">
-                        This is an official system-generated registration fee receipt. The candidates listed above are verified and registered with the examination board.
-                    </p>
-                    <p style="font-size:9px; color:#4b5563; font-family:monospace; margin:4px 0 0 0;">
-                        Generated on {{ now()->format('d M Y, h:i A') }}
-                    </p>
+            <div class="receipt-footer" style="padding: 22px 40px 24px; border-top:1px solid #1e293b; width:100%; box-sizing:border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:16px;">
+                    <div style="text-align:left; flex:1;">
+                        <p style="font-size:10px; color:#6b7280; max-width:440px; line-height:1.6; margin:0;">
+                            This is an official system-generated registration fee receipt. The candidates listed above are verified and registered with the examination board.
+                        </p>
+                        <p style="font-size:9px; color:#4b5563; font-family:monospace; margin:4px 0 0 0;">
+                            Generated on {{ now()->format('d M Y, h:i A') }}
+                        </p>
+                    </div>
+                    <div style="text-align:right; flex-shrink:0;">
+                        <p style="font-size:9.5px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#9ca3af; margin:0 0 4px 0;">
+                            YES GENIUS TALENT SEARCH SEASON-4
+                        </p>
+                        <p class="receipt-contact" style="font-size:10px; color:#6b7280; margin:0; line-height:1.6;">
+                            Support: <a href="mailto:hello@cyberduce.com" style="color:#818cf8; text-decoration:none; font-weight:500;">hello@cyberduce.com</a>
+                        </p>
+                        <p class="receipt-contact" style="font-size:10px; color:#6b7280; margin:2px 0 0 0; line-height:1.6;">
+                            Web: <a href="{{ request()->getSchemeAndHttpHost() }}" target="_blank" style="color:#818cf8; text-decoration:none; font-weight:500;">{{ request()->getSchemeAndHttpHost() }}</a>
+                        </p>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                    <p style="font-size:9px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#4b5563; margin:0;">
-                        YES GENIUS TALENT SEARCH SEASON-4
-                    </p>
+
+                {{-- Copyright sub-footer --}}
+                <div class="receipt-copyright-row" style="border-top:1px dashed #1e293b; padding-top:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:9.5px; color:#4b5563;">
+                    <div>
+                        &copy; {{ date('Y') }} <span style="font-weight:600; color:#6b7280;">YASIN EDUCATION SERVICES INDIA FOUNDATION</span>. All rights reserved.
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span><a href="{{ request()->getSchemeAndHttpHost() }}" style="color:#6b7280; text-decoration:none;">{{ parse_url(request()->getSchemeAndHttpHost(), PHP_URL_HOST) ?? request()->getHost() }}</a></span>
+                        <span>&bull;</span>
+                        <span><a href="mailto:hello@cyberduce.com" style="color:#6b7280; text-decoration:none;">hello@cyberduce.com</a></span>
+                    </div>
                 </div>
             </div>
 
@@ -321,9 +341,25 @@
 
             .receipt-footer {
                 border-top: 1px solid #d1d5db !important;
-                padding: 14px 24px 20px !important;
+                padding: 14px 24px 16px !important;
                 page-break-inside: avoid;
                 break-inside: avoid;
+            }
+
+            .receipt-footer p,
+            .receipt-footer span,
+            .receipt-footer div {
+                color: #374151 !important;
+            }
+
+            .receipt-footer a {
+                color: #111827 !important;
+                text-decoration: none !important;
+            }
+
+            .receipt-copyright-row {
+                border-top: 1px solid #e5e7eb !important;
+                color: #6b7280 !important;
             }
 
             .receipt-label {
