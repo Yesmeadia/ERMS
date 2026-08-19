@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\School;
 use App\Models\Examination;
+use App\Models\HallTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -26,6 +28,10 @@ class HallTicketController extends Controller
 
         if ($request->filled('examination_id')) {
             $query->where('examination_id', $request->examination_id);
+        }
+
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
         }
 
         if ($request->filled('centre_id')) {
@@ -69,6 +75,10 @@ class HallTicketController extends Controller
             ->whereIn('status', ['Approved', 'Hall Ticket Issued'])
             ->with(['class', 'category', 'examination', 'centre']);
 
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
         if ($request->filled('centre_id')) {
             $query->where('centre_id', $request->centre_id);
         }
@@ -107,35 +117,47 @@ class HallTicketController extends Controller
             return back()->with('error', 'Please assign an Examination Centre for this candidate before generating a hall ticket.');
         }
 
-        // Generate number if not already exists.
-        // Uses cryptographically random bytes instead of sequential IDs to prevent
-        // enumeration attacks on the public verification portal (CWE-330).
-        if (!$student->hall_ticket_number) {
-            do {
-                $candidate = strtoupper(bin2hex(random_bytes(6)));
-            } while (\App\Models\Student::where('hall_ticket_number', $candidate)->exists());
-            $student->hall_ticket_number = $candidate;
+        try {
+            DB::transaction(function () use ($student) {
+                $locked = Student::lockForUpdate()->findOrFail($student->id);
+
+                // Generate number if not already exists.
+                // Uses cryptographically random bytes instead of sequential IDs to prevent
+                // enumeration attacks on the public verification portal (CWE-330).
+                if (!$locked->hall_ticket_number) {
+                    do {
+                        $candidate = strtoupper(bin2hex(random_bytes(6)));
+                    } while (Student::withTrashed()->where('hall_ticket_number', $candidate)->exists());
+                    $locked->hall_ticket_number = $candidate;
+                }
+
+                // Generate registration number if not already exists
+                if (!$locked->registration_number) {
+                    $locked->registration_number = $locked->issueRegistrationNumber();
+                }
+
+                $locked->status = 'Hall Ticket Issued';
+                $locked->hall_ticket_issued_at = now();
+                $locked->save();
+
+                // Create/Update HallTicket entry with secure qr_token
+                HallTicket::updateOrCreate(
+                    ['student_id' => $locked->id],
+                    [
+                        'hallticket_no' => $locked->hall_ticket_number,
+                        'qr_token' => $locked->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
+                        'issue_date' => now(),
+                        'status' => 'Issued',
+                    ]
+                );
+
+                $student->hall_ticket_number = $locked->hall_ticket_number;
+                $student->registration_number = $locked->registration_number;
+                $student->status = $locked->status;
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        // Generate registration number if not already exists
-        if (!$student->registration_number) {
-            $student->registration_number = $student->issueRegistrationNumber();
-        }
-
-        $student->status = 'Hall Ticket Issued';
-        $student->hall_ticket_issued_at = now();
-        $student->save();
-
-        // Create/Update HallTicket entry with secure qr_token
-        \App\Models\HallTicket::updateOrCreate(
-            ['student_id' => $student->id],
-            [
-                'hallticket_no' => $student->hall_ticket_number,
-                'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
-                'issue_date' => now(),
-                'status' => 'Issued',
-            ]
-        );
 
         activity()
             ->performedOn($student)
@@ -158,6 +180,9 @@ class HallTicketController extends Controller
             ->where('examination_id', $request->examination_id)
             ->where('status', 'Approved');
 
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
         if ($request->filled('centre_id')) {
             $query->where('centre_id', $request->centre_id);
         }
@@ -179,13 +204,19 @@ class HallTicketController extends Controller
         }
 
         // ── Step 1: Pre-fetch existing hall-ticket numbers to avoid per-student DB checks ──
-        $existingHtNos = \App\Models\Student::whereNotNull('hall_ticket_number')
+        $existingHtNos = Student::withTrashed()
+            ->whereNotNull('hall_ticket_number')
             ->pluck('hall_ticket_number')
             ->flip(); // O(1) lookup: ['AABBCC' => 0, ...]
 
         // ── Step 2: Generate all unique tokens in memory ────────────────────────────────
         $tokens = [];
         foreach ($students as $student) {
+            if ($student->hall_ticket_number) {
+                $tokens[$student->id] = $student->hall_ticket_number;
+                continue;
+            }
+
             do {
                 $candidate = strtoupper(bin2hex(random_bytes(6)));
             } while (isset($existingHtNos[$candidate]) || in_array($candidate, $tokens, true));
@@ -193,50 +224,71 @@ class HallTicketController extends Controller
             $tokens[$student->id] = $candidate;
         }
 
-        // ── Step 3: Resolve registration numbers in one transaction per category range ──
-        //    We call issueRegistrationNumber() only for students who need one, which
-        //    itself opens a single locked transaction per category bucket.
-        $regNumbers = [];
-        foreach ($students->where('registration_number', null) as $student) {
-            $regNumbers[$student->id] = $student->issueRegistrationNumber();
-        }
-
-        // ── Step 4: Batch-update students (one UPDATE per student, all in one TX) ───────
         $now = now();
         $count = 0;
 
-        \DB::transaction(function () use ($students, $tokens, $regNumbers, $now, &$count) {
-            foreach ($students as $student) {
-                \DB::table('students')->where('id', $student->id)->update([
-                    'hall_ticket_number' => $tokens[$student->id],
-                    'registration_number' => $regNumbers[$student->id] ?? $student->registration_number,
-                    'status' => 'Hall Ticket Issued',
-                    'hall_ticket_issued_at' => $now,
-                    'updated_at' => $now,
-                ]);
-                $count++;
-            }
-        });
+        try {
+            // ── Step 3 & 4: Resolve registration numbers & batch-update in single TX ─────────
+            DB::transaction(function () use ($students, $tokens, $now, &$count) {
+                // Group students needing registration number by category/class range
+                $studentsNeedingReg = $students->filter(fn($s) => empty($s->registration_number));
 
-        // ── Step 5: Bulk-upsert HallTicket records ──────────────────────────────────────
-        $hallTicketRows = $students->map(function ($student) use ($tokens, $now) {
-            return [
-                'student_id' => $student->id,
-                'hallticket_no' => $tokens[$student->id],
-                // Re-use existing qr_token if already generated — prevents invalidating old QR codes
-                'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
-                'issue_date' => $now,
-                'status' => 'Issued',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        })->toArray();
+                $groupedByRange = [];
+                foreach ($studentsNeedingReg as $student) {
+                    [$start, $end] = $student->getRegistrationNumberRange();
+                    $key = "{$start}_{$end}";
+                    $groupedByRange[$key]['start'] = $start;
+                    $groupedByRange[$key]['end'] = $end;
+                    $groupedByRange[$key]['students'][] = $student;
+                }
 
-        \App\Models\HallTicket::upsert(
-            $hallTicketRows,
-            ['student_id'],                                      // unique key
-            ['hallticket_no', 'qr_token', 'issue_date', 'status', 'updated_at'] // columns to update
-        );
+                $regNumbers = [];
+                foreach ($groupedByRange as $group) {
+                    $start = $group['start'];
+                    $end = $group['end'];
+                    $neededCount = count($group['students']);
+
+                    $allocatedList = Student::allocateRegistrationNumbers($start, $end, $neededCount);
+
+                    foreach ($group['students'] as $idx => $student) {
+                        $regNumbers[$student->id] = $allocatedList[$idx];
+                    }
+                }
+
+                foreach ($students as $student) {
+                    $regNo = $regNumbers[$student->id] ?? $student->registration_number;
+                    $htNo = $tokens[$student->id];
+
+                    DB::table('students')->where('id', $student->id)->update([
+                        'hall_ticket_number' => $htNo,
+                        'registration_number' => $regNo,
+                        'status' => 'Hall Ticket Issued',
+                        'hall_ticket_issued_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+
+                    // Update in-memory student properties
+                    $student->hall_ticket_number = $htNo;
+                    $student->registration_number = $regNo;
+                    $student->status = 'Hall Ticket Issued';
+                    $student->hall_ticket_issued_at = $now;
+
+                    HallTicket::updateOrCreate(
+                        ['student_id' => $student->id],
+                        [
+                            'hallticket_no' => $htNo,
+                            'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
+                            'issue_date' => $now,
+                            'status' => 'Issued',
+                        ]
+                    );
+
+                    $count++;
+                }
+            });
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         activity()->log("Bulk generated {$count} hall tickets for School ID: {$request->school_id}, Exam ID: {$request->examination_id}");
 
@@ -351,6 +403,10 @@ class HallTicketController extends Controller
         $query = Student::where('school_id', $request->school_id)
             ->where('examination_id', $request->examination_id)
             ->where('status', 'Hall Ticket Issued');
+
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
 
         if ($request->filled('centre_id')) {
             $query->where('centre_id', $request->centre_id);
