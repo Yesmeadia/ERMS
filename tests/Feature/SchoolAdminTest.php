@@ -13,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class SchoolAdminTest extends TestCase
@@ -684,9 +685,10 @@ class SchoolAdminTest extends TestCase
         $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
         $catGalaxy = CategoryMaster::create(['name' => 'Galaxy HS', 'code' => 'GHS', 'status' => true]);
 
-        // 1. Test Class 3rd (Rainbow 3) -> Random 3xxxx
+        // 1. Test Class 3rd (Rainbow 3) -> Starts at 30001
         $student3 = Student::create([
             'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
             'class_id' => $class3->id,
             'category_id' => $catRainbow3->id,
             'examination_id' => $this->examination->id,
@@ -711,6 +713,7 @@ class SchoolAdminTest extends TestCase
         // 2. Test Class 4th (Rainbow 4) -> Sequential starts at 40001
         $student4 = Student::create([
             'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
             'class_id' => $class4->id,
             'category_id' => $catRainbow4->id,
             'examination_id' => $this->examination->id,
@@ -732,6 +735,7 @@ class SchoolAdminTest extends TestCase
         // Another 4th standard student -> should get 40002
         $student4_2 = Student::create([
             'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
             'class_id' => $class4->id,
             'category_id' => $catRainbow4->id,
             'examination_id' => $this->examination->id,
@@ -753,6 +757,7 @@ class SchoolAdminTest extends TestCase
         // 3. Test Class 5th (Rainbow 5) -> Sequential starts at 50001
         $student5 = Student::create([
             'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
             'class_id' => $class5->id,
             'category_id' => $catRainbow5->id,
             'examination_id' => $this->examination->id,
@@ -774,6 +779,7 @@ class SchoolAdminTest extends TestCase
         // 4. Test Planet Category -> Sequential starts at 60001
         $student6 = Student::create([
             'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
             'class_id' => $class6->id,
             'category_id' => $catPlanet->id,
             'examination_id' => $this->examination->id,
@@ -795,6 +801,7 @@ class SchoolAdminTest extends TestCase
         // 5. Test Galaxy Category -> Sequential starts at 90001
         $studentGalaxy = Student::create([
             'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
             'class_id' => $class10->id,
             'category_id' => $catGalaxy->id,
             'examination_id' => $this->examination->id,
@@ -812,5 +819,575 @@ class SchoolAdminTest extends TestCase
 
         $studentGalaxy->refresh();
         $this->assertEquals('90001', $studentGalaxy->registration_number);
+    }
+
+    /**
+     * Test bulk hall ticket generation assigns unique sequential registration numbers without duplicate key errors.
+     */
+    public function test_bulk_hall_ticket_generation_assigns_unique_sequential_registration_numbers(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Bulk',
+            'email' => 'superadmin_bulk@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Create 5 approved students in Planet category with no registration numbers
+        $studentIds = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $student = Student::create([
+                'school_id' => $this->school->id,
+                'centre_id' => $this->school->id,
+                'class_id' => $class6->id,
+                'category_id' => $catPlanet->id,
+                'examination_id' => $this->examination->id,
+                'name' => "Bulk Student {$i}",
+                'gender' => 'Male',
+                'dob' => '2005-01-01',
+                'father_name' => 'Father',
+                'mother_name' => 'Mother',
+                'mobile_number' => "987654321{$i}",
+                'status' => 'Approved',
+            ]);
+            $studentIds[] = $student->id;
+        }
+
+        // Post bulk generation request
+        $response = $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-bulk'), [
+                'school_id' => $this->school->id,
+                'examination_id' => $this->examination->id,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $updatedStudents = Student::whereIn('id', $studentIds)->orderBy('id')->get();
+        $regNumbers = [];
+
+        foreach ($updatedStudents as $student) {
+            $this->assertEquals('Hall Ticket Issued', $student->status);
+            $this->assertNotNull($student->hall_ticket_number);
+            $this->assertNotNull($student->registration_number);
+            $this->assertMatchesRegularExpression('/^6\d{4}$/', $student->registration_number);
+            $regNumbers[] = $student->registration_number;
+        }
+
+        // Ensure all 5 generated registration numbers are distinct and sequential
+        $this->assertCount(5, array_unique($regNumbers));
+        $this->assertEquals(['60001', '60002', '60003', '60004', '60005'], $regNumbers);
+    }
+
+    /**
+     * Test existing active registration number cannot be reused.
+     */
+    public function test_existing_active_registration_number_cannot_be_reused(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Active Check',
+            'email' => 'superadmin_active@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Active student with 60001
+        Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Active Student 60001',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999991',
+            'registration_number' => '60001',
+            'status' => 'Hall Ticket Issued',
+        ]);
+
+        // 3 new approved students
+        $studentIds = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $student = Student::create([
+                'school_id' => $this->school->id,
+                'centre_id' => $this->school->id,
+                'class_id' => $class6->id,
+                'category_id' => $catPlanet->id,
+                'examination_id' => $this->examination->id,
+                'name' => "New Student {$i}",
+                'gender' => 'Male',
+                'dob' => '2005-01-01',
+                'father_name' => 'Father',
+                'mother_name' => 'Mother',
+                'mobile_number' => "999999999{$i}",
+                'status' => 'Approved',
+            ]);
+            $studentIds[] = $student->id;
+        }
+
+        $response = $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-bulk'), [
+                'school_id' => $this->school->id,
+                'examination_id' => $this->examination->id,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $updatedStudents = Student::whereIn('id', $studentIds)->orderBy('id')->get();
+        $regNumbers = $updatedStudents->pluck('registration_number')->toArray();
+
+        $this->assertEquals(['60002', '60003', '60004'], $regNumbers);
+    }
+
+    /**
+     * Test soft-deleted registration number CAN be reused by a new active student.
+     */
+    public function test_soft_deleted_registration_number_can_be_reused(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Soft Delete Check',
+            'email' => 'superadmin_softdel@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Student with 60001 who is then soft deleted
+        $student1 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Deleted Student',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999991',
+            'registration_number' => '60001',
+            'status' => 'Hall Ticket Issued',
+        ]);
+        $student1->delete();
+
+        // New approved student
+        $newStudent = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'New Active Student',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999992',
+            'status' => 'Approved',
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-single', $newStudent));
+
+        $response->assertRedirect();
+        $newStudent->refresh();
+
+        // The new student receives 60001 because soft deleted students do not reserve numbers
+        $this->assertEquals('60001', $newStudent->registration_number);
+        $this->assertEquals('Hall Ticket Issued', $newStudent->status);
+    }
+
+    /**
+     * Test mixed registration ranges in bulk generation.
+     */
+    public function test_mixed_registration_ranges_in_bulk_generation(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Mixed Bulk',
+            'email' => 'superadmin_mixed@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $class5 = ClassMaster::create(['name' => 'Class 5th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+        $catRainbow5 = CategoryMaster::create(['name' => 'Rainbow 5', 'code' => 'R5', 'status' => true]);
+
+        // 2 Planet students
+        $p1 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Planet 1',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999911',
+            'status' => 'Approved',
+        ]);
+        $p2 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Planet 2',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999912',
+            'status' => 'Approved',
+        ]);
+
+        // 2 Rainbow 5 students
+        $r1 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class5->id,
+            'category_id' => $catRainbow5->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Rainbow 1',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999921',
+            'status' => 'Approved',
+        ]);
+        $r2 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class5->id,
+            'category_id' => $catRainbow5->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Rainbow 2',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999922',
+            'status' => 'Approved',
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-bulk'), [
+                'school_id' => $this->school->id,
+                'examination_id' => $this->examination->id,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $p1->refresh();
+        $p2->refresh();
+        $r1->refresh();
+        $r2->refresh();
+
+        $this->assertEquals('60001', $p1->registration_number);
+        $this->assertEquals('60002', $p2->registration_number);
+        $this->assertEquals('50001', $r1->registration_number);
+        $this->assertEquals('50002', $r2->registration_number);
+    }
+
+    /**
+     * Test range exhaustion handling.
+     */
+    public function test_range_exhaustion_handled_gracefully(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Exhaustion',
+            'email' => 'superadmin_exhaust@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Initialize sequence at maximum
+        DB::table('registration_number_sequences')->updateOrInsert(
+            ['range_start' => 60001, 'range_end' => 69999],
+            ['next_number' => 70000, 'updated_at' => now()]
+        );
+
+        $student = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Exhaust Student',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999933',
+            'status' => 'Approved',
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-single', $student));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+
+        $student->refresh();
+        $this->assertNull($student->registration_number);
+        $this->assertEquals('Approved', $student->status);
+    }
+
+    /**
+     * Test already issued student preserves existing registration number.
+     */
+    public function test_already_issued_student_preserves_registration_number(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Preserve',
+            'email' => 'superadmin_preserve@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        $student = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Already Issued Student',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999944',
+            'registration_number' => '60055',
+            'hall_ticket_number' => 'ORIGINALHT12',
+            'status' => 'Hall Ticket Issued',
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-single', $student));
+
+        $response->assertRedirect();
+
+        $student->refresh();
+        $this->assertEquals('60055', $student->registration_number);
+        $this->assertEquals('ORIGINALHT12', $student->hall_ticket_number);
+    }
+
+    /**
+     * Test active number cannot be reused in single generation.
+     */
+    public function test_active_number_cannot_be_reused_in_single_generation(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Single Active',
+            'email' => 'superadmin_single_active@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Student 1 gets 60001
+        $student1 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Student 1',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999951',
+            'status' => 'Approved',
+        ]);
+        $this->actingAs($superAdmin)->post(route('admin.hall-tickets.generate-single', $student1));
+        $student1->refresh();
+        $this->assertEquals('60001', $student1->registration_number);
+
+        // Student 2 must get 60002
+        $student2 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Student 2',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999952',
+            'status' => 'Approved',
+        ]);
+        $this->actingAs($superAdmin)->post(route('admin.hall-tickets.generate-single', $student2));
+        $student2->refresh();
+        $this->assertEquals('60002', $student2->registration_number);
+    }
+
+    /**
+     * Test duplicate protection with active student having 60094.
+     */
+    public function test_duplicate_protection_with_active_student_60094(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Dup Check',
+            'email' => 'superadmin_dup@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Active student with 60094
+        Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Student 60094',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999961',
+            'registration_number' => '60094',
+            'status' => 'Hall Ticket Issued',
+        ]);
+
+        // 2 new approved students
+        $new1 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'New Planet 1',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999962',
+            'status' => 'Approved',
+        ]);
+        $new2 = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'New Planet 2',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999963',
+            'status' => 'Approved',
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->post(route('admin.hall-tickets.generate-bulk'), [
+                'school_id' => $this->school->id,
+                'examination_id' => $this->examination->id,
+            ]);
+
+        $new1->refresh();
+        $new2->refresh();
+
+        $this->assertEquals('60095', $new1->registration_number);
+        $this->assertEquals('60096', $new2->registration_number);
+        $this->assertNotEquals('60094', $new1->registration_number);
+        $this->assertNotEquals('60094', $new2->registration_number);
+    }
+
+    /**
+     * Test soft deleted student with 60094 allows reuse of 60094 without unique key error.
+     */
+    public function test_soft_deleted_duplicate_protection_allows_reuse_60094(): void
+    {
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin = User::create([
+            'name' => 'Super Admin Soft Dup Check',
+            'email' => 'superadmin_softdup@erms.com',
+            'password' => bcrypt('password'),
+        ]);
+        $superAdmin->assignRole($superAdminRole);
+
+        $class6 = ClassMaster::create(['name' => 'Class 6th', 'status' => true]);
+        $catPlanet = CategoryMaster::create(['name' => 'Planet', 'code' => 'PL', 'status' => true]);
+
+        // Student with 60094 who is soft deleted
+        $studentA = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'Student A Soft Deleted',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999971',
+            'registration_number' => '60094',
+            'status' => 'Hall Ticket Issued',
+        ]);
+        $studentA->delete();
+
+        // New student
+        $newStudent = Student::create([
+            'school_id' => $this->school->id,
+            'centre_id' => $this->school->id,
+            'class_id' => $class6->id,
+            'category_id' => $catPlanet->id,
+            'examination_id' => $this->examination->id,
+            'name' => 'New Student After Delete',
+            'gender' => 'Male',
+            'dob' => '2005-01-01',
+            'father_name' => 'Father',
+            'mother_name' => 'Mother',
+            'mobile_number' => '9999999972',
+            'status' => 'Approved',
+        ]);
+
+        $this->actingAs($superAdmin)->post(route('admin.hall-tickets.generate-single', $newStudent));
+        $newStudent->refresh();
+
+        $this->assertEquals('60001', $newStudent->registration_number);
+        $this->assertEquals('Hall Ticket Issued', $newStudent->status);
     }
 }

@@ -21,12 +21,12 @@
                        class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Exam Centre</label>
-                <select name="centre_id" class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                    <option value="">All Exam Centres</option>
-                    @foreach($centres as $centre)
-                        <option value="{{ $centre->id }}" @selected(request('centre_id') == $centre->id)>{{ $centre->name }}</option>
-                    @endforeach
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Gender</label>
+                <select name="gender" class="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    <option value="">All Genders</option>
+                    <option value="Male" @selected(request('gender') === 'Male')>Male</option>
+                    <option value="Female" @selected(request('gender') === 'Female')>Female</option>
+                    <option value="Other" @selected(request('gender') === 'Other')>Other</option>
                 </select>
             </div>
             <div>
@@ -40,7 +40,7 @@
             </div>
             <div class="sm:col-span-3 flex gap-2 justify-end mt-2">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-                @if(request()->hasAny(['search', 'centre_id', 'category_id']))
+                @if(request()->hasAny(['search', 'gender', 'category_id']))
                     <a href="{{ route('school.hall-tickets.index') }}" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-all">Clear</a>
                 @endif
             </div>
