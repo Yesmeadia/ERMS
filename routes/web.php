@@ -112,6 +112,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/mfa/disable', [AuthController::class, 'disableMfa'])->name('mfa.disable');
 
         // Staff Management
+        Route::post('/staff/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('staff.toggle-status');
+        Route::post('/staff/{staff}/reset-password', [StaffController::class, 'sendResetLink'])->name('staff.reset-password');
         Route::resource('staff', StaffController::class);
 
         // Announcement Management (Broadcasts)

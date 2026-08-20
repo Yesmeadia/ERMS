@@ -305,7 +305,7 @@ class HallTicketController extends Controller
                         [
                             'hallticket_no' => $htNo,
                             'qr_token' => $student->hallTicket?->qr_token ?? bin2hex(random_bytes(32)),
-                            'issue_date' => now,
+                            'issue_date' => $now,
                             'status' => 'Issued',
                         ]
                     );

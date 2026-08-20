@@ -18,12 +18,17 @@
     </div>
 
     {{-- Filters --}}
-    <form method="GET" class="flex flex-wrap gap-3 mb-6">
+    <form method="GET" class="flex flex-wrap items-center gap-3 mb-6">
         <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or email…"
             class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64">
+        <select name="status" class="bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="">All Statuses</option>
+            <option value="active" @selected(request('status') === 'active')>Active Only</option>
+            <option value="banned" @selected(request('status') === 'banned')>Banned Only</option>
+        </select>
         <button type="submit"
             class="bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-        @if(request()->has('search'))
+        @if(request()->has('search') || request()->has('status'))
             <a href="{{ route('admin.staff.index') }}"
                 class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-4 py-2.5 rounded-xl transition-all">Clear</a>
         @endif
@@ -38,6 +43,7 @@
                         Details</th>
                     <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned
                         School</th>
+                    <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                     <th
                         class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden sm:table-cell">
                         Created At</th>
@@ -47,7 +53,10 @@
             </thead>
             <tbody class="divide-y divide-slate-800/60">
                 @forelse($staffMembers as $staff)
-                    <tr class="hover:bg-slate-800/20 transition-colors">
+                    @php
+                        $isActive = $staff->is_active ?? true;
+                    @endphp
+                    <tr class="hover:bg-slate-800/20 transition-colors {{ !$isActive ? 'bg-rose-950/10' : '' }}">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 @if($staff->profile_image)
@@ -55,7 +64,7 @@
                                         class="w-9 h-9 rounded-xl object-cover border border-slate-700/60 shrink-0">
                                 @else
                                     <div
-                                        class="w-9 h-9 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                                        class="w-9 h-9 rounded-xl {{ $isActive ? 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400' : 'bg-rose-600/10 border-rose-500/20 text-rose-400' }} border flex items-center justify-center font-bold text-xs uppercase shrink-0">
                                         {{ mb_substr($staff->name, 0, 2) }}
                                     </div>
                                 @endif
@@ -76,9 +85,45 @@
                                 </span>
                             @endif
                         </td>
+                        <td class="px-6 py-4">
+                            @if($isActive)
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    Active
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                                    Banned
+                                </span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 text-slate-400 hidden sm:table-cell">{{ $staff->created_at->format('d M Y') }}</td>
                         <td class="px-6 py-4">
-                            <div class="flex items-center justify-end gap-2">
+                            <div class="flex items-center justify-end gap-1.5">
+                                {{-- Ban / Activate Toggle Button --}}
+                                <form method="POST" action="{{ route('admin.staff.toggle-status', $staff->id) }}"
+                                      onsubmit="return confirm('{{ $isActive ? 'Are you sure you want to ban/deactivate ' . addslashes($staff->name) . '? They will be logged out and unable to access the system.' : 'Activate ' . addslashes($staff->name) . ' account?' }}')">
+                                    @csrf
+                                    @if($isActive)
+                                        <button type="submit"
+                                            class="p-2 rounded-lg text-slate-400 hover:bg-amber-500/10 hover:text-amber-400 transition-all cursor-pointer"
+                                            title="Ban / Deactivate Account">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                            </svg>
+                                        </button>
+                                    @else
+                                        <button type="submit"
+                                            class="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 transition-all cursor-pointer"
+                                            title="Activate Account">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    @endif
+                                </form>
+
                                 <a href="{{ route('admin.staff.edit', $staff->id) }}"
                                     class="p-2 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition-all"
                                     title="Edit">
@@ -106,7 +151,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-16 text-center text-slate-500">
+                        <td colspan="5" class="px-6 py-16 text-center text-slate-500">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1"
                                 stroke="currentColor" class="w-12 h-12 mx-auto mb-3 text-slate-700">
                                 <path stroke-linecap="round" stroke-linejoin="round"
