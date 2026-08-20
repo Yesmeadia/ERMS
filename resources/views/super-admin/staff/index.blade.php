@@ -42,7 +42,7 @@
                     <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Staff
                         Details</th>
                     <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Assigned
-                        School</th>
+                        Examination Center</th>
                     <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                     <th
                         class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider hidden sm:table-cell">
@@ -77,11 +77,11 @@
                         <td class="px-6 py-4">
                             @if($staff->school)
                                 <span class="text-slate-300 font-medium">{{ $staff->school->name }}</span>
-                                <p class="text-xs text-slate-500 mt-0.5">Code: {{ $staff->school->code }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Center Code: {{ $staff->school->code }}</p>
                             @else
                                 <span
                                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700/60">
-                                    Board Invigilator (Unassigned)
+                                    Board Invigilator (All Centers)
                                 </span>
                             @endif
                         </td>

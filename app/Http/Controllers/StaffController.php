@@ -40,8 +40,8 @@ class StaffController extends Controller
 
     public function create()
     {
-        $schools = School::where('status', true)->get();
-        return view('super-admin.staff.create', compact('schools'));
+        $examinationCentres = School::where('is_centre', true)->where('status', true)->orderBy('name')->get();
+        return view('super-admin.staff.create', compact('examinationCentres'));
     }
 
     public function store(Request $request)
@@ -93,8 +93,8 @@ class StaffController extends Controller
             abort(404);
         }
 
-        $schools = School::where('status', true)->get();
-        return view('super-admin.staff.edit', compact('staff', 'schools'));
+        $examinationCentres = School::where('is_centre', true)->where('status', true)->orderBy('name')->get();
+        return view('super-admin.staff.edit', compact('staff', 'examinationCentres'));
     }
 
     public function update(Request $request, $id)

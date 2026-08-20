@@ -125,11 +125,11 @@ class AttendanceController extends Controller
         // 2.1 Data-level authorization check (CWE-285)
         $user = Auth::user();
         if ($user->hasRole('invigilator')) {
-            if (!$user->school_id || $student->school_id !== $user->school_id) {
+            if ($user->school_id && $student->school_id !== $user->school_id && $student->centre_id !== $user->school_id) {
                 $this->logAction($studentId, 'scan_unauthorized', $request);
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Unauthorized. You are only authorized to mark attendance for students from your assigned school.'
+                    'message' => 'Unauthorized. You are only authorized to mark attendance for students at your assigned examination center.'
                 ], 403);
             }
         }
@@ -226,10 +226,10 @@ class AttendanceController extends Controller
 
         // Data-level authorization check (CWE-285)
         if ($user->hasRole('invigilator')) {
-            if (!$user->school_id || $student->school_id !== $user->school_id) {
+            if ($user->school_id && $student->school_id !== $user->school_id && $student->centre_id !== $user->school_id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Unauthorized. You are only authorized to mark attendance for students from your assigned school.'
+                    'message' => 'Unauthorized. You are only authorized to mark attendance for students at your assigned examination center.'
                 ], 403);
             }
         }

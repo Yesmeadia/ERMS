@@ -13,7 +13,7 @@
                 Back to Staff List
             </a>
             <h2 class="text-xl font-bold text-white">Edit Staff: {{ $staff->name }}</h2>
-            <p class="text-sm text-slate-400">Modify credentials or assigned school</p>
+            <p class="text-sm text-slate-400">Modify credentials or assigned examination center</p>
         </div>
 
         {{-- Password Reset Quick Action Card --}}
@@ -70,19 +70,19 @@
                 </div>
 
                 <div>
-                    <label for="school_id" class="block text-sm font-medium text-slate-300 mb-2">Assigned School
-                        (Optional)</label>
+                    <label for="school_id" class="block text-sm font-medium text-slate-300 mb-2">Assigned Examination Center
+                    </label>
                     <select name="school_id" id="school_id"
                         class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none">
-                        <option value="">-- Board Invigilator (Unassigned to any specific school) --</option>
-                        @foreach($schools as $school)
-                            <option value="{{ $school->id }}" @selected(old('school_id', $staff->school_id) == $school->id)>
-                                {{ $school->name }} ({{ $school->code }})
+                        <option value="">-- Board Invigilator (Unassigned to any specific center) --</option>
+                        @foreach($examinationCentres as $centre)
+                            <option value="{{ $centre->id }}" @selected(old('school_id', $staff->school_id) == $centre->id)>
+                                {{ $centre->name }} ({{ $centre->code }})
                             </option>
                         @endforeach
                     </select>
                     <p class="text-xs text-slate-500 mt-1.5">Unassigned staff operate as board-level invigilators and can
-                        scan tickets across all centers.</p>
+                        scan tickets across all examination centers.</p>
                     @error('school_id')
                         <p class="text-xs text-rose-400 mt-1.5">{{ $message }}</p>
                     @enderror

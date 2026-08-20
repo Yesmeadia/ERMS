@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="md:col-span-2 bg-slate-950/40 border border-slate-800/80 rounded-xl p-5">
-                    <span class="text-[10px] text-slate-500 uppercase font-semibold block mb-2">Assigned School / Center</span>
+                    <span class="text-[10px] text-slate-500 uppercase font-semibold block mb-2">Assigned Examination Center</span>
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -60,7 +60,7 @@
                         <div>
                             @if($user->school)
                                 <p class="text-sm font-semibold text-slate-200">{{ $user->school->name }}</p>
-                                <p class="text-xs text-slate-500 mt-0.5">School Code: {{ $user->school->code }} | State: {{ $user->school->state }} | Zone: {{ $user->school->zone }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Center Code: {{ $user->school->code }} | State: {{ $user->school->state }} | Zone: {{ $user->school->zone }}</p>
                             @else
                                 <p class="text-sm font-semibold text-slate-200">Board Invigilator (Unassigned)</p>
                                 <p class="text-xs text-slate-500 mt-0.5">Authorized to scan and verify hall tickets across all examination centers</p>
