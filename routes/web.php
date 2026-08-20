@@ -162,7 +162,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/hall-tickets/{student}/generate', [HallTicketController::class, 'generateSingle'])->name('hall-tickets.generate-single');
         Route::post('/hall-tickets/generate-bulk', [HallTicketController::class, 'generateBulk'])->name('hall-tickets.generate-bulk');
         Route::get('/hall-tickets/{student}/print', [HallTicketController::class, 'printSingle'])->name('hall-tickets.print-single');
-        Route::get('/hall-tickets/print-bulk', [HallTicketController::class, 'printBulk'])->name('hall-tickets.print-bulk');
+        Route::match(['get', 'post'], '/hall-tickets/print-bulk', [HallTicketController::class, 'printBulk'])->name('hall-tickets.print-bulk');
+        Route::get('/hall-tickets/batches/{batch}', [HallTicketController::class, 'showAdminBatch'])->name('hall-tickets.batches.show');
+        Route::get('/hall-tickets/batches/{batch}/status', [HallTicketController::class, 'batchStatus'])->name('hall-tickets.batches.status');
+        Route::post('/hall-tickets/batches/{batch}/retry', [HallTicketController::class, 'retryBatch'])->name('hall-tickets.batches.retry');
+        Route::get('/hall-tickets/parts/{part}/download', [HallTicketController::class, 'downloadPart'])->name('hall-tickets.parts.download');
 
         // Exam Centres Management
         Route::prefix('exam-centres')->name('exam-centres.')->group(function () {
@@ -217,7 +221,11 @@ Route::middleware('auth')->group(function () {
         // Hall Ticket Download
         Route::get('/hall-tickets', [HallTicketController::class, 'schoolIndex'])->name('hall-tickets.index');
         Route::get('/hall-tickets/{student}/download', [HallTicketController::class, 'downloadSingle'])->name('hall-tickets.download-single');
-        Route::get('/hall-tickets/download-bulk', [HallTicketController::class, 'downloadBulk'])->name('hall-tickets.download-bulk');
+        Route::match(['get', 'post'], '/hall-tickets/download-bulk', [HallTicketController::class, 'downloadBulk'])->name('hall-tickets.download-bulk');
+        Route::get('/hall-tickets/batches/{batch}', [HallTicketController::class, 'showSchoolBatch'])->name('hall-tickets.batches.show');
+        Route::get('/hall-tickets/batches/{batch}/status', [HallTicketController::class, 'batchStatus'])->name('hall-tickets.batches.status');
+        Route::post('/hall-tickets/batches/{batch}/retry', [HallTicketController::class, 'retryBatch'])->name('hall-tickets.batches.retry');
+        Route::get('/hall-tickets/parts/{part}/download', [HallTicketController::class, 'downloadPart'])->name('hall-tickets.parts.download');
 
         // Reports
         Route::get('/reports', [ReportController::class, 'schoolIndex'])->name('reports.index');

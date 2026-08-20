@@ -65,11 +65,11 @@
                 <span class="text-xs font-semibold text-slate-400 self-center mr-2">Bulk Actions:</span>
                 <button type="submit" formaction="{{ route('admin.hall-tickets.generate-bulk') }}" formmethod="POST"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-emerald-600/10">
-                    Bulk Generate Hall Tickets
+                    Bulk Issue HT Numbers
                 </button>
-                <button type="submit" formaction="{{ route('admin.hall-tickets.print-bulk') }}" formmethod="GET" formtarget="_blank"
+                <button type="submit" formaction="{{ route('admin.hall-tickets.print-bulk') }}" formmethod="POST"
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-purple-600/10">
-                    Print Bulk Hall Tickets (PDF)
+                    Generate Bulk Hall Tickets (PDF)
                 </button>
             </div>
             <div class="flex gap-2">
@@ -78,6 +78,22 @@
             </div>
         </div>
     </form>
+
+    @if(isset($recentBatches) && $recentBatches->isNotEmpty())
+        <div class="mt-4 pt-4 border-t border-slate-800/60">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Recent Asynchronous Generation Batches:</span>
+            <div class="flex flex-wrap gap-2">
+                @foreach($recentBatches as $b)
+                    <a href="{{ route('admin.hall-tickets.batches.show', $b) }}" 
+                       class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs transition-all">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $b->status === 'completed' ? 'bg-emerald-400' : ($b->status === 'processing' ? 'bg-indigo-400 animate-ping' : ($b->status === 'failed' ? 'bg-rose-400' : 'bg-amber-400')) }}"></span>
+                        <span class="font-medium text-slate-200">#{{ $b->id }} {{ $b->school->name ?? 'School' }}</span>
+                        <span class="text-slate-400 font-mono text-[10px]">({{ $b->completed_students }}/{{ $b->total_students }})</span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>
 
 {{-- Students Table --}}

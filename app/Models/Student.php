@@ -125,7 +125,7 @@ class Student extends Model
      */
     public function getPhotoUrlAttribute(): string
     {
-        if ($this->photograph) {
+        if ($this->photograph && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->photograph)) {
             return asset('storage/' . $this->photograph);
         }
         

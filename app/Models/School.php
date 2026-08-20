@@ -56,6 +56,14 @@ class School extends Model
     }
 
     /**
+     * Get the hall ticket batches for this school.
+     */
+    public function hallTicketBatches(): HasMany
+    {
+        return $this->hasMany(HallTicketBatch::class, 'school_id');
+    }
+
+    /**
      * Check if registration fine (₹50/student) is applicable for this school.
      */
     public function isFineApplicable(): bool

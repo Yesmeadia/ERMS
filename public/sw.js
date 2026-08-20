@@ -89,6 +89,8 @@ self.addEventListener('fetch', (event) => {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
                     return response;
+                }).catch(() => {
+                    return new Response('', { status: 404, statusText: 'Not Found' });
                 });
             })
         );
