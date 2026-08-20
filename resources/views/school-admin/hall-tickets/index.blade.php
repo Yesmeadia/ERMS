@@ -62,12 +62,29 @@
                 Generate and download all issued hall tickets for an examination session. Automatically split into PDF parts of up to 100 students each.
             </p>
 
-            @if(isset($recentBatch))
-                <div class="mb-3 p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="text-slate-300 font-medium">Batch #{{ $recentBatch->id }} ({{ $recentBatch->total_students }} Candidates)</span>
-                        <a href="{{ route('school.hall-tickets.batches.show', $recentBatch) }}" class="text-indigo-400 hover:text-indigo-300 font-semibold underline text-[11px]">View Progress &rarr;</a>
-                    </div>
+            @if(isset($recentBatches) && $recentBatches->isNotEmpty())
+                <div class="mb-3 space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recent Generation Batches ({{ $recentBatches->count() }}):</span>
+                    @foreach($recentBatches as $b)
+                        @php
+                            $isComp = in_array($b->status, ['completed', 'completed_with_errors']);
+                            $isProc = $b->status === 'processing';
+                            $isFail = $b->status === 'failed';
+                        @endphp
+                        <div class="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-xs flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-2 h-2 rounded-full {{ $isComp ? 'bg-emerald-400' : ($isProc ? 'bg-indigo-400 animate-ping' : ($isFail ? 'bg-rose-400' : 'bg-amber-400')) }} shrink-0"></span>
+                                <div class="min-w-0">
+                                    <p class="text-slate-300 font-semibold truncate">Batch #{{ $b->id }} ({{ $b->total_students }} Candidates)</p>
+                                    <p class="text-[10px] text-slate-500 truncate">{{ $b->examination->name ?? '' }} &middot; {{ $b->created_at->diffForHumans(null, true, true) }}</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('school.hall-tickets.batches.show', $b) }}" class="text-indigo-400 hover:text-indigo-300 font-semibold text-[11px] shrink-0 inline-flex items-center gap-1">
+                                <span>{{ $isComp ? 'Download' : 'View' }}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                            </a>
+                        </div>
+                    @endforeach
                 </div>
             @endif
         </div>

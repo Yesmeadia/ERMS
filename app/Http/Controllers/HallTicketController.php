@@ -75,10 +75,10 @@ class HallTicketController extends Controller
         $examinations = Examination::all();
         $categories = \App\Models\CategoryMaster::where('status', true)->get();
 
-        // Recent batches for super admin quick access
-        $recentBatches = HallTicketBatch::with(['school', 'examination'])
+        // Recent batches for super admin quick access & monitoring
+        $recentBatches = HallTicketBatch::with(['school', 'examination', 'requester', 'parts'])
             ->latest()
-            ->take(5)
+            ->take(50)
             ->get();
 
         return view('super-admin.hall-tickets.index', compact('students', 'schools', 'centres', 'examinations', 'categories', 'recentBatches'));
@@ -121,13 +121,16 @@ class HallTicketController extends Controller
         $examinations = Examination::all();
         $categories = \App\Models\CategoryMaster::where('status', true)->get();
 
-        // Active/Recent batch for this school
-        $recentBatch = HallTicketBatch::where('school_id', $school->id)
+        // Active & Recent batches for this school
+        $recentBatches = HallTicketBatch::where('school_id', $school->id)
             ->with(['examination', 'parts'])
             ->latest()
-            ->first();
+            ->take(15)
+            ->get();
 
-        return view('school-admin.hall-tickets.index', compact('students', 'centres', 'examinations', 'categories', 'recentBatch'));
+        $recentBatch = $recentBatches->first();
+
+        return view('school-admin.hall-tickets.index', compact('students', 'centres', 'examinations', 'categories', 'recentBatch', 'recentBatches'));
     }
 
     /**
