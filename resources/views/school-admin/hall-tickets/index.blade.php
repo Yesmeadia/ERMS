@@ -50,12 +50,48 @@
     {{-- Bulk Download Card --}}
     <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 flex flex-col justify-between">
         <div>
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Bulk Download</h3>
-            <p class="text-xs text-slate-400 leading-relaxed mb-4">Export all issued hall tickets for a specific examination session into a single PDF document.</p>
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Bulk Download</h3>
+                @if(isset($recentBatch) && ($recentBatch->status === 'processing' || $recentBatch->status === 'pending'))
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span> Active Batch
+                    </span>
+                @endif
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed mb-3">
+                Generate and download all issued hall tickets for an examination session. Automatically split into PDF parts of up to 100 students each.
+            </p>
+
+            @if(isset($recentBatches) && $recentBatches->isNotEmpty())
+                <div class="mb-3 space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recent Generation Batches ({{ $recentBatches->count() }}):</span>
+                    @foreach($recentBatches as $b)
+                        @php
+                            $isComp = in_array($b->status, ['completed', 'completed_with_errors']);
+                            $isProc = $b->status === 'processing';
+                            $isFail = $b->status === 'failed';
+                        @endphp
+                        <div class="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 text-xs flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-2 h-2 rounded-full {{ $isComp ? 'bg-emerald-400' : ($isProc ? 'bg-indigo-400 animate-ping' : ($isFail ? 'bg-rose-400' : 'bg-amber-400')) }} shrink-0"></span>
+                                <div class="min-w-0">
+                                    <p class="text-slate-300 font-semibold truncate">Batch #{{ $b->id }} ({{ $b->total_students }} Candidates)</p>
+                                    <p class="text-[10px] text-slate-500 truncate">{{ $b->examination->name ?? '' }} &middot; {{ $b->created_at->diffForHumans(null, true, true) }}</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('school.hall-tickets.batches.show', $b) }}" class="text-indigo-400 hover:text-indigo-300 font-semibold text-[11px] shrink-0 inline-flex items-center gap-1">
+                                <span>{{ $isComp ? 'Download' : 'View' }}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         <div>
-            <form method="GET" action="{{ route('school.hall-tickets.download-bulk') }}" class="space-y-3">
+            <form method="POST" action="{{ route('school.hall-tickets.download-bulk') }}" class="space-y-3">
+                @csrf
                 <select name="examination_id" required class="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                     <option value="">Select Examination</option>
                     @foreach($examinations as $exam)
@@ -64,7 +100,7 @@
                 </select>
                 <button type="submit" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                    Download Bulk PDF
+                    Generate / Download Bulk PDFs
                 </button>
             </form>
         </div>

@@ -112,6 +112,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/mfa/disable', [AuthController::class, 'disableMfa'])->name('mfa.disable');
 
         // Staff Management
+        Route::post('/staff/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('staff.toggle-status');
+        Route::post('/staff/{staff}/reset-password', [StaffController::class, 'sendResetLink'])->name('staff.reset-password');
         Route::resource('staff', StaffController::class);
 
         // Announcement Management (Broadcasts)
@@ -162,9 +164,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/hall-tickets/{student}/generate', [HallTicketController::class, 'generateSingle'])->name('hall-tickets.generate-single');
         Route::post('/hall-tickets/generate-bulk', [HallTicketController::class, 'generateBulk'])->name('hall-tickets.generate-bulk');
         Route::get('/hall-tickets/{student}/print', [HallTicketController::class, 'printSingle'])->name('hall-tickets.print-single');
-        Route::get('/hall-tickets/print-bulk', [HallTicketController::class, 'printBulk'])->name('hall-tickets.print-bulk');
+        Route::match(['get', 'post'], '/hall-tickets/print-bulk', [HallTicketController::class, 'printBulk'])->name('hall-tickets.print-bulk');
+        Route::get('/hall-tickets/batches/{batch}', [HallTicketController::class, 'showAdminBatch'])->name('hall-tickets.batches.show');
+        Route::get('/hall-tickets/batches/{batch}/status', [HallTicketController::class, 'batchStatus'])->name('hall-tickets.batches.status');
+        Route::post('/hall-tickets/batches/{batch}/retry', [HallTicketController::class, 'retryBatch'])->name('hall-tickets.batches.retry');
+        Route::get('/hall-tickets/parts/{part}/download', [HallTicketController::class, 'downloadPart'])->name('hall-tickets.parts.download');
 
-        // Exam Centres Management
+        // Exam Centres Management (Super Admin Actions)
         Route::prefix('exam-centres')->name('exam-centres.')->group(function () {
             Route::get('/', [ExamCentreController::class, 'index'])->name('index');
             Route::post('/{school}/toggle', [ExamCentreController::class, 'toggle'])->name('toggle');
@@ -217,7 +223,11 @@ Route::middleware('auth')->group(function () {
         // Hall Ticket Download
         Route::get('/hall-tickets', [HallTicketController::class, 'schoolIndex'])->name('hall-tickets.index');
         Route::get('/hall-tickets/{student}/download', [HallTicketController::class, 'downloadSingle'])->name('hall-tickets.download-single');
-        Route::get('/hall-tickets/download-bulk', [HallTicketController::class, 'downloadBulk'])->name('hall-tickets.download-bulk');
+        Route::match(['get', 'post'], '/hall-tickets/download-bulk', [HallTicketController::class, 'downloadBulk'])->name('hall-tickets.download-bulk');
+        Route::get('/hall-tickets/batches/{batch}', [HallTicketController::class, 'showSchoolBatch'])->name('hall-tickets.batches.show');
+        Route::get('/hall-tickets/batches/{batch}/status', [HallTicketController::class, 'batchStatus'])->name('hall-tickets.batches.status');
+        Route::post('/hall-tickets/batches/{batch}/retry', [HallTicketController::class, 'retryBatch'])->name('hall-tickets.batches.retry');
+        Route::get('/hall-tickets/parts/{part}/download', [HallTicketController::class, 'downloadPart'])->name('hall-tickets.parts.download');
 
         // Reports
         Route::get('/reports', [ReportController::class, 'schoolIndex'])->name('reports.index');
@@ -237,6 +247,11 @@ Route::middleware('auth')->group(function () {
         // Results
         Route::get('/results', [ResultController::class, 'schoolIndex'])->name('results.index');
         Route::get('/results/{student}/marksheet', [ResultController::class, 'schoolMarksheet'])->name('results.marksheet');
+
+        // Exam Centre Venue Management & Seat Planner (if school is a designated centre)
+        Route::get('/exam-centre', [ExamCentreController::class, 'schoolShow'])->name('exam-centre.show');
+        Route::get('/exam-centre/students-pdf', [ExamCentreController::class, 'schoolStudentsPdf'])->name('exam-centre.students-pdf');
+        Route::get('/exam-centre/seat-planner-pdf', [ExamCentreController::class, 'schoolSeatPlannerPdf'])->name('exam-centre.seat-planner-pdf');
 
         // Announcement Dismissal & Polling
         Route::get('/announcements/check-unread', [AnnouncementController::class, 'checkUnread'])->name('announcements.check-unread');
@@ -259,6 +274,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/attendance/verify-scan', [AttendanceController::class, 'verifyScan'])->name('attendance.verify-scan');
         Route::post('/attendance/mark-present', [AttendanceController::class, 'markPresent'])->name('attendance.mark-present');
         Route::get('/attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
-        Route::get('/attendance/count', [AttendanceController::class, 'scanCount'])->name('attendance.count'); // F1: Lightweight counter API
+        Route::get('/attendance/count', [AttendanceController::class, 'scanCount'])->name('attendance.count');
+    });
+
+    // ============================================
+    // EXAM CENTRE VENUE & SEAT PLANNER (Super Admin & School Admin)
+    // ============================================
+    Route::middleware('role:super-admin|school-admin')->group(function () {
+        Route::get('/admin/exam-centres/{school}', [ExamCentreController::class, 'show'])->name('admin.exam-centres.show');
+        Route::get('/admin/exam-centres/{school}/students-pdf', [ExamCentreController::class, 'downloadStudentsPdf'])->name('admin.exam-centres.students-pdf');
+        Route::get('/admin/exam-centres/{school}/seat-planner-pdf', [ExamCentreController::class, 'downloadSeatPlannerPdf'])->name('admin.exam-centres.seat-planner-pdf');
     });
 });

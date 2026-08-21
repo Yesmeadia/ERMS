@@ -48,11 +48,27 @@ class School extends Model
     }
 
     /**
+     * Get the students assigned to this school as an exam centre venue.
+     */
+    public function assignedStudents(): HasMany
+    {
+        return $this->hasMany(Student::class, 'centre_id');
+    }
+
+    /**
      * Get the payments made by this school.
      */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'school_id');
+    }
+
+    /**
+     * Get the hall ticket batches for this school.
+     */
+    public function hallTicketBatches(): HasMany
+    {
+        return $this->hasMany(HallTicketBatch::class, 'school_id');
     }
 
     /**

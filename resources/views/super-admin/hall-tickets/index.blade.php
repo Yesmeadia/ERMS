@@ -65,11 +65,11 @@
                 <span class="text-xs font-semibold text-slate-400 self-center mr-2">Bulk Actions:</span>
                 <button type="submit" formaction="{{ route('admin.hall-tickets.generate-bulk') }}" formmethod="POST"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-emerald-600/10">
-                    Bulk Generate Hall Tickets
+                    Bulk Issue HT Numbers
                 </button>
-                <button type="submit" formaction="{{ route('admin.hall-tickets.print-bulk') }}" formmethod="GET" formtarget="_blank"
+                <button type="submit" formaction="{{ route('admin.hall-tickets.print-bulk') }}" formmethod="POST"
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-purple-600/10">
-                    Print Bulk Hall Tickets (PDF)
+                    Generate Bulk Hall Tickets (PDF)
                 </button>
             </div>
             <div class="flex gap-2">
@@ -79,6 +79,66 @@
         </div>
     </form>
 </div>
+
+@if(isset($recentBatches) && $recentBatches->isNotEmpty())
+    {{-- Dedicated Recent Generation Batches Card --}}
+    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 mb-6 shadow-sm" x-data="{ expanded: true }">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200">Recent Generation Batches</h3>
+                    <p class="text-xs text-slate-400">Background PDF compilation tasks & download links</p>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700/60">
+                    {{ $recentBatches->count() }} Total
+                </span>
+                @php
+                    $activeCount = $recentBatches->whereIn('status', ['pending', 'processing'])->count();
+                @endphp
+                @if($activeCount > 0)
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        {{ $activeCount }} Processing
+                    </span>
+                @endif
+            </div>
+
+            <button type="button" @click="expanded = !expanded" class="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 cursor-pointer">
+                <span x-text="expanded ? 'Hide Batches' : 'Show All (' + {{ $recentBatches->count() }} + ')'"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 transition-transform duration-200" :class="{ 'rotate-180': expanded }">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+        </div>
+
+        <div x-show="expanded" x-transition class="mt-4 pt-4 border-t border-slate-800/60">
+            <div class="flex flex-wrap gap-2">
+                @foreach($recentBatches as $b)
+                    @php
+                        $isCompleted = in_array($b->status, ['completed', 'completed_with_errors']);
+                        $isProcessing = $b->status === 'processing';
+                        $isFailed = $b->status === 'failed';
+                        $pct = $b->progress_percentage;
+                    @endphp
+                    <a href="{{ route('admin.hall-tickets.batches.show', $b) }}"
+                       class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-indigo-500/40 text-xs transition-all group">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ $isCompleted ? 'bg-emerald-400' : ($isProcessing ? 'bg-indigo-400 animate-ping' : ($isFailed ? 'bg-rose-400' : 'bg-amber-400')) }}"></span>
+                        <span class="font-medium text-slate-200 group-hover:text-indigo-200 transition-colors">#{{ $b->id }} {{ $b->school->name ?? 'All Schools' }}</span>
+                        <span class="text-slate-500 font-mono text-[10px]">({{ $b->completed_students }}/{{ $b->total_students }})</span>
+                        @if($isProcessing)
+                            <span class="text-indigo-400 text-[10px] font-semibold">{{ $pct }}%</span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </div>
+@endif
 
 {{-- Students Table --}}
 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden">

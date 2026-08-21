@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use App\Mail\InvigilatorCreatedMail;
 
 class StaffController extends Controller
@@ -22,6 +23,16 @@ class StaffController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where(function($q) {
+                    $q->where('is_active', true)->orWhereNull('is_active');
+                });
+            } elseif ($request->status === 'banned') {
+                $query->where('is_active', false);
+            }
+        }
+
         $staffMembers = $query->latest()->paginate(10);
 
         return view('super-admin.staff.index', compact('staffMembers'));
@@ -29,8 +40,8 @@ class StaffController extends Controller
 
     public function create()
     {
-        $schools = School::where('status', true)->get();
-        return view('super-admin.staff.create', compact('schools'));
+        $examinationCentres = School::where('is_centre', true)->where('status', true)->orderBy('name')->get();
+        return view('super-admin.staff.create', compact('examinationCentres'));
     }
 
     public function store(Request $request)
@@ -38,7 +49,6 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'school_id' => ['nullable', 'exists:schools,id'],
             'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
         ]);
@@ -46,8 +56,8 @@ class StaffController extends Controller
         $userData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => bcrypt($validated['password']),
-            'school_id' => $validated['school_id'],
+            'password' => bcrypt(Str::random(32)),
+            'school_id' => $validated['school_id'] ?? null,
         ];
 
         if ($request->hasFile('profile_image')) {
@@ -83,8 +93,8 @@ class StaffController extends Controller
             abort(404);
         }
 
-        $schools = School::where('status', true)->get();
-        return view('super-admin.staff.edit', compact('staff', 'schools'));
+        $examinationCentres = School::where('is_centre', true)->where('status', true)->orderBy('name')->get();
+        return view('super-admin.staff.edit', compact('staff', 'examinationCentres'));
     }
 
     public function update(Request $request, $id)
@@ -142,5 +152,55 @@ class StaffController extends Controller
         $staff->delete();
 
         return redirect()->route('admin.staff.index')->with('success', 'Staff account deleted successfully.');
+    }
+
+    /**
+     * Toggle the active/banned status of a staff member.
+     */
+    public function toggleStatus($id)
+    {
+        $staff = User::findOrFail($id);
+
+        if (!$staff->hasRole('invigilator')) {
+            abort(404);
+        }
+
+        $staff->is_active = !($staff->is_active ?? true);
+        $staff->save();
+
+        $statusStr = $staff->is_active ? 'Activated' : 'Banned / Deactivated';
+
+        activity()
+            ->performedOn($staff)
+            ->log("{$statusStr} staff account: {$staff->email}");
+
+        return back()->with('success', "Staff account is now {$statusStr}.");
+    }
+
+    /**
+     * Send password reset invitation link to the staff member.
+     */
+    public function sendResetLink($id)
+    {
+        $staff = User::findOrFail($id);
+
+        if (!$staff->hasRole('invigilator')) {
+            abort(404);
+        }
+
+        $token = \Illuminate\Support\Facades\Password::broker()->createToken($staff);
+
+        try {
+            Mail::to($staff->email)->send(new InvigilatorCreatedMail($staff, $token));
+        } catch (\Exception $e) {
+            report($e);
+            return back()->with('error', 'Failed to send password reset email: ' . $e->getMessage());
+        }
+
+        activity()
+            ->performedOn($staff)
+            ->log("Sent password reset link to staff user: {$staff->email}");
+
+        return back()->with('success', "Password reset link has been emailed to {$staff->email}.");
     }
 }

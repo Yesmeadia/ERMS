@@ -43,6 +43,14 @@ class Examination extends Model
     }
 
     /**
+     * Get the hall ticket batches for this examination session.
+     */
+    public function hallTicketBatches(): HasMany
+    {
+        return $this->hasMany(HallTicketBatch::class, 'examination_id');
+    }
+
+    /**
      * Get the active examination session.
      */
     public static function getActiveExam()

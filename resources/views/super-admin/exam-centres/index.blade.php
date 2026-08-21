@@ -170,6 +170,7 @@
                                     <th class="py-3 px-4 font-semibold uppercase">Exam Centre Venue</th>
                                     <th class="py-3 px-4 font-semibold text-center uppercase">Code</th>
                                     <th class="py-3 px-4 font-semibold text-center uppercase">Zone / State</th>
+                                    <th class="py-3 px-4 font-semibold text-center uppercase">Assigned</th>
                                     <th class="py-3 px-4 font-semibold text-right uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -177,7 +178,12 @@
                                 @forelse($centres as $centre)
                                     <tr class="hover:bg-slate-800/20 transition-colors">
                                         <td class="py-3.5 px-4 font-bold text-slate-200">
-                                            {{ $centre->name }}
+                                            <a href="{{ route('admin.exam-centres.show', $centre) }}" class="hover:text-indigo-400 transition-colors inline-flex items-center gap-1.5 group">
+                                                <span>{{ $centre->name }}</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition-colors">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                                </svg>
+                                            </a>
                                             <p class="text-[10px] text-slate-550 font-normal mt-0.5">{{ $centre->address }}</p>
                                         </td>
                                         <td class="py-3.5 px-4 text-center font-mono text-indigo-400 font-bold uppercase">
@@ -186,13 +192,26 @@
                                         <td class="py-3.5 px-4 text-center">
                                             {{ $centre->zone }}, {{ $centre->state }}
                                         </td>
+                                        <td class="py-3.5 px-4 text-center">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold font-mono {{ ($centre->assigned_students_count ?? 0) > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-500 border border-slate-700/50' }}">
+                                                {{ $centre->assigned_students_count ?? 0 }}
+                                            </span>
+                                        </td>
                                         <td class="py-3.5 px-4">
-                                            <div class="flex items-center justify-end">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <a href="{{ route('admin.exam-centres.show', $centre) }}"
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600/15 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-sm"
+                                                    title="View Centre Students & Seat Planner">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                                    </svg>
+                                                    <span>Students & Planner</span>
+                                                </a>
                                                 <form method="POST" action="{{ route('admin.exam-centres.toggle', $centre) }}"
                                                     onsubmit="return confirm('Are you sure you want to revoke Exam Centre status? This will preserve existing students but they won\'t assign to this school in new bulk allocations.')">
                                                     @csrf
                                                     <button type="submit"
-                                                        class="p-2 bg-slate-800 hover:bg-rose-500/10 hover:text-rose-400 text-slate-400 rounded-lg border border-slate-750 transition-all cursor-pointer"
+                                                        class="p-1.5 bg-slate-800 hover:bg-rose-500/10 hover:text-rose-400 text-slate-400 rounded-lg border border-slate-750 transition-all cursor-pointer"
                                                         title="Revoke Centre Designation">
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                             stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -206,7 +225,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="py-8 px-4 text-center text-slate-550 italic">No designated
+                                        <td colspan="5" class="py-8 px-4 text-center text-slate-550 italic">No designated
                                             Examination Centres found. Use the directory list above to designate schools.</td>
                                     </tr>
                                 @endforelse
