@@ -164,7 +164,7 @@
     }
 
     /* Responsive nav */
-    @media (max-width: 680px) {
+    @media (max-width: 768px) {
         .nav-links { display: none; }
         .nav .nav-cta { display: none; }
 
@@ -181,6 +181,7 @@
             cursor: pointer;
             transition: all 0.18s;
             flex-shrink: 0;
+            pointer-events: auto;
         }
 
         .nav-hamburger.is-open {
@@ -192,17 +193,19 @@
         .mobile-drawer {
             display: block;
             position: fixed;
-            top: 84px;
+            top: 82px;
             left: 12px;
             right: 12px;
-            background: rgba(10, 14, 26, 0.96);
+            background: rgba(10, 14, 26, 0.98);
             backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.09);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 18px;
             padding: 16px;
-            z-index: 190;
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(99, 102, 241, 0.15);
             animation: drawerIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+            pointer-events: auto;
         }
 
         @keyframes drawerIn {
@@ -219,26 +222,36 @@
             font-weight: 600;
             text-decoration: none;
             transition: all 0.18s;
+            cursor: pointer;
+            pointer-events: auto;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .mobile-drawer a:hover {
-            background: rgba(255, 255, 255, 0.05);
+        .mobile-drawer a:hover,
+        .mobile-drawer a:active,
+        .mobile-drawer a.active {
+            background: rgba(255, 255, 255, 0.08);
             color: #fff;
         }
 
         .mobile-drawer .nav-cta {
             display: block;
             text-align: center;
-            margin-top: 8px;
+            margin-top: 10px;
+            padding: 12px 18px;
+            pointer-events: auto;
+            cursor: pointer;
         }
     }
 
     @media (max-width: 440px) {
         .nav { height: 56px; padding: 0 14px; }
+        .mobile-drawer { top: 76px; }
     }
 </style>
 
-<div class="header-wrap" style="padding-top:14px;">
+<div class="header-wrap" style="padding-top:14px;" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
     <nav class="nav">
         <a href="/" class="nav-brand">
             @if(file_exists(public_path('icon.png')))
@@ -288,7 +301,7 @@
                     Sign In
                 </a>
             @endauth
-            <button class="nav-hamburger" :class="{ 'is-open': menuOpen }" @click="menuOpen = !menuOpen"
+            <button class="nav-hamburger" :class="{ 'is-open': menuOpen }" @click.stop="menuOpen = !menuOpen"
                 aria-label="Menu">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                     stroke="currentColor" style="width:18px;height:18px;" x-show="!menuOpen">
@@ -296,7 +309,7 @@
                         d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                    stroke="currentColor" style="width:18px;height:18px;" x-show="menuOpen">
+                    stroke="currentColor" style="width:18px;height:18px;" x-show="menuOpen" x-cloak>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -304,20 +317,20 @@
     </nav>
 
     <!-- Mobile Drawer -->
-    <div class="mobile-drawer" x-show="menuOpen" @click.away="menuOpen = false" x-cloak>
+    <div class="mobile-drawer" x-show="menuOpen" @click.outside="menuOpen = false" x-cloak>
         @if(!$isHome)
-            <a href="/" @click="menuOpen=false">← Home</a>
+            <a href="/" @click="menuOpen = false">← Home</a>
         @endif
-        <a href="{{ $isHome ? '#about' : '/#about' }}" @click="menuOpen=false">About</a>
-        <a href="{{ $isHome ? '#winners' : '/#winners' }}" @click="menuOpen=false">Winners</a>
-        <a href="{{ route('gallery') }}" @click="menuOpen=false">Gallery</a>
-        <a href="{{ $isHome ? '#utilities' : '/#utilities' }}" @click="menuOpen=false">Hall Ticket Verify</a>
-        <a href="{{ route('results.check-form') }}" @click="menuOpen=false">Results Portal</a>
-        <a href="{{ $isHome ? '#portals' : '/#portals' }}" @click="menuOpen=false">Portals</a>
+        <a href="{{ $isHome ? '#about' : '/#about' }}" @click="menuOpen = false">About</a>
+        <a href="{{ $isHome ? '#winners' : '/#winners' }}" @click="menuOpen = false">Winners</a>
+        <a href="{{ route('gallery') }}" class="{{ $isGallery ? 'active' : '' }}" @click="menuOpen = false">Gallery</a>
+        <a href="{{ $isHome ? '#utilities' : '/#utilities' }}" @click="menuOpen = false">Hall Ticket Verify</a>
+        <a href="{{ route('results.check-form') }}" @click="menuOpen = false">Results Portal</a>
+        <a href="{{ $isHome ? '#portals' : '/#portals' }}" @click="menuOpen = false">Portals</a>
         @auth
-            <a href="{{ $dashUrl }}" class="nav-cta" style="margin-top:8px;">Dashboard →</a>
+            <a href="{{ $dashUrl }}" class="nav-cta">Dashboard →</a>
         @else
-            <a href="{{ route('login') }}" class="nav-cta" style="margin-top:8px;">Sign In →</a>
+            <a href="{{ route('login') }}" class="nav-cta">Sign In →</a>
         @endauth
     </div>
 </div>
