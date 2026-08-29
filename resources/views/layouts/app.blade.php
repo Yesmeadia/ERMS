@@ -644,7 +644,7 @@
     </div>
     @stack('scripts')
     @include('components.password-strength-policy')
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker Registration & Form Confirmation -->
     <script @nonce>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
@@ -657,6 +657,14 @@
                     });
             });
         }
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            var confirmMsg = form.getAttribute('data-confirm');
+            if (confirmMsg && !confirm(confirmMsg)) {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
 

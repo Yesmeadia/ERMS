@@ -51,6 +51,14 @@ class Examination extends Model
     }
 
     /**
+     * Get the result export batches for this examination session.
+     */
+    public function resultBatches(): HasMany
+    {
+        return $this->hasMany(ResultBatch::class, 'examination_id');
+    }
+
+    /**
      * Get the active examination session.
      */
     public static function getActiveExam()
@@ -71,6 +79,14 @@ class Examination extends Model
         }
 
         return $activeExam->status === 'Registration Started';
+    }
+
+    /**
+     * Check if results have been published for this examination.
+     */
+    public function isResultPublished(): bool
+    {
+        return strtolower(trim((string) $this->status)) === 'result published';
     }
 
     /**

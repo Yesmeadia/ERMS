@@ -73,6 +73,8 @@ class HallTicketPdfService
 
         $pdf->setPaper('a4', 'portrait');
         $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isFontSubsettingEnabled', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
 
         return $pdf;
     }
@@ -90,6 +92,8 @@ class HallTicketPdfService
         $pdf = Pdf::loadView('pdf.hall-tickets-bulk', compact('studentsData'));
         $pdf->setPaper('a4', 'portrait');
         $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isFontSubsettingEnabled', true);
+        $pdf->setOption('isHtml5ParserEnabled', true);
 
         return $pdf;
     }

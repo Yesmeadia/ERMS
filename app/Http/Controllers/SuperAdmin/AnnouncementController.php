@@ -139,17 +139,25 @@ class AnnouncementController extends Controller
             }
 
             foreach ($userIds as $uid) {
-                DB::table('announcement_user')->updateOrInsert(
-                    [
-                        'announcement_id' => $announcementId,
-                        'user_id' => $uid,
-                    ],
-                    [
-                        'read_at' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-                );
+                try {
+                    DB::table('announcement_user')->upsert(
+                        [
+                            'announcement_id' => $announcementId,
+                            'user_id' => $uid,
+                            'read_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ],
+                        ['announcement_id', 'user_id'],
+                        ['read_at', 'updated_at']
+                    );
+                } catch (\Throwable $e) {
+                    // Fallback to update if record already exists
+                    DB::table('announcement_user')
+                        ->where('announcement_id', $announcementId)
+                        ->where('user_id', $uid)
+                        ->update(['read_at' => now(), 'updated_at' => now()]);
+                }
             }
 
             return response()->json([

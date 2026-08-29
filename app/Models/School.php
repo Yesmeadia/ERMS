@@ -72,6 +72,14 @@ class School extends Model
     }
 
     /**
+     * Get the result export batches for this school.
+     */
+    public function resultBatches(): HasMany
+    {
+        return $this->hasMany(ResultBatch::class, 'school_id');
+    }
+
+    /**
      * Check if registration fine (₹50/student) is applicable for this school.
      */
     public function isFineApplicable(): bool

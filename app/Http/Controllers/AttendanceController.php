@@ -66,8 +66,8 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
 
-        // Get count of present and logs for today
-        $today = now()->toDateString();
+        // Get count of present and logs for exam day (2026-08-30)
+        $today = '2026-08-30';
         
         $totalScans = Attendance::where('marked_by', $user->id)
             ->whereDate('attendance_date', $today)
@@ -152,8 +152,8 @@ class AttendanceController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Attendance marking is only allowed when the examination is ongoing.'], 422);
         }
 
-        // 5. Verify Duplicate Attendance
-        $today = now()->toDateString();
+        // 5. Verify Duplicate Attendance (for exam date 2026-08-30)
+        $today = '2026-08-30';
         $alreadyMarked = Attendance::where('student_id', $studentId)
             ->where('exam_id', $examId)
             ->where('attendance_date', $today)
@@ -211,7 +211,7 @@ class AttendanceController extends Controller
         $studentId = $request->student_id;
         $examId = $request->exam_id;
         $user = Auth::user();
-        $today = now()->toDateString();
+        $today = '2026-08-30';
 
         $student = Student::findOrFail($studentId);
         $exam = Examination::findOrFail($examId);
@@ -298,7 +298,7 @@ class AttendanceController extends Controller
     public function scanCount()
     {
         $count = Attendance::where('marked_by', Auth::id())
-            ->whereDate('attendance_date', now()->toDateString())
+            ->whereDate('attendance_date', '2026-08-30')
             ->count();
 
         return response()->json(['count' => $count]);
@@ -334,7 +334,7 @@ class AttendanceController extends Controller
             $examinationId = $activeExam ? $activeExam->id : $examinations->first()->id;
         }
 
-        $date = $request->get('date', now()->toDateString());
+        $date = $request->get('date', '2026-08-30');
         $schoolId = $request->get('school_id');
         $classId = $request->get('class_id');
         $search = $request->get('search');
@@ -419,7 +419,7 @@ class AttendanceController extends Controller
             $examinationId = $activeExam ? $activeExam->id : $examinations->first()->id;
         }
 
-        $date = $request->get('date', now()->toDateString());
+        $date = $request->get('date', '2026-08-30');
         $classId = $request->get('class_id');
         $search = $request->get('search');
 

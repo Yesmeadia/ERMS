@@ -7,6 +7,10 @@
 
     RewriteEngine On
 
+    # Prevent Hostinger LiteSpeed from timing out on large PDF exports
+    RewriteRule .* - [E=noconntimeout:1]
+    RewriteRule .* - [E=noabort:1]
+
     # Force HTTPS safely (compatible with Hostinger reverse-proxy and Cloudflare Flexible/Full SSL)
     RewriteCond %{HTTPS} off
     RewriteCond %{HTTP:X-Forwarded-Proto} !https
