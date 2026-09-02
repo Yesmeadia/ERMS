@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Services\TOTPService;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
 
@@ -117,6 +118,9 @@ class AuthController extends Controller
             Cache::forget($attemptKey . '_locked_at');
             $user->failed_login_attempts = 0;
             $user->lockout_until = null;
+            if (Schema::hasColumn('users', 'last_login_at')) {
+                $user->last_login_at = now();
+            }
             $user->save();
 
             // Store current password hash in session
@@ -399,6 +403,11 @@ class AuthController extends Controller
             $request->session()->forget('auth.mfa_pending');
             $request->session()->forget('auth.mfa_user_id');
             $request->session()->forget('auth.mfa_remember');
+
+            if (Schema::hasColumn('users', 'last_login_at')) {
+                $user->last_login_at = now();
+                $user->save();
+            }
 
             activity()
                 ->causedBy($user)

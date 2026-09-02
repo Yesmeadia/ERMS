@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\School;
+use App\Models\Examination;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Mail\InvigilatorCreatedMail;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StaffController extends Controller
 {
@@ -33,9 +36,82 @@ class StaffController extends Controller
             }
         }
 
+        if ($request->filled('login_status') && Schema::hasColumn('users', 'last_login_at')) {
+            if ($request->login_status === 'logged_in') {
+                $query->whereNotNull('last_login_at');
+            } elseif ($request->login_status === 'not_logged_in') {
+                $query->whereNull('last_login_at');
+            }
+        }
+
         $staffMembers = $query->latest()->paginate(10);
 
         return view('super-admin.staff.index', compact('staffMembers'));
+    }
+
+    /**
+     * Export the filtered/all invigilators list as PDF.
+     */
+    public function exportPdf(Request $request)
+    {
+        $query = User::role('invigilator')->with('school');
+
+        if ($request->filled('search')) {
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where(function($q) {
+                    $q->where('is_active', true)->orWhereNull('is_active');
+                });
+            } elseif ($request->status === 'banned') {
+                $query->where('is_active', false);
+            }
+        }
+
+        if ($request->filled('login_status') && Schema::hasColumn('users', 'last_login_at')) {
+            if ($request->login_status === 'logged_in') {
+                $query->whereNotNull('last_login_at');
+            } elseif ($request->login_status === 'not_logged_in') {
+                $query->whereNull('last_login_at');
+            }
+        }
+
+        $invigilators = $query->orderBy('name', 'asc')->get();
+
+        $summary = [
+            'total' => $invigilators->count(),
+            'logged_in' => $invigilators->whereNotNull('last_login_at')->count(),
+            'not_logged_in' => $invigilators->whereNull('last_login_at')->count(),
+            'active' => $invigilators->filter(fn($u) => $u->is_active ?? true)->count(),
+            'banned' => $invigilators->filter(fn($u) => !($u->is_active ?? true))->count(),
+        ];
+
+        $examination = $request->filled('examination_id')
+            ? Examination::find($request->examination_id)
+            : Examination::getActiveExam();
+
+        $pdf = Pdf::loadView('pdf.staff-invigilators', [
+            'invigilators' => $invigilators,
+            'examination' => $examination,
+            'summary' => $summary,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+                'login_status' => $request->login_status,
+            ],
+            'generatedAt' => now()->format('d M Y, h:i A'),
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'Invigilators_List_' . now()->format('Ymd_His') . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function create()

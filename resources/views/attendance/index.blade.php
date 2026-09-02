@@ -15,7 +15,7 @@
 
 {{-- Search & Filters --}}
 <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 mb-6">
-    <form method="GET" action="{{ url()->current() }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+    <form method="GET" action="{{ url()->current() }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
         <div>
             <label class="block text-xs font-medium text-slate-400 mb-1.5 font-semibold">Exam Session</label>
             <select name="examination_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
@@ -40,6 +40,16 @@
                 @endforeach
             </select>
         </div>
+
+        <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5 font-semibold">Exam Centre</label>
+            <select name="centre_id" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
+                <option value="">All Exam Centres</option>
+                @foreach($centres as $centre)
+                    <option value="{{ $centre->id }}" @selected(($centreId ?? '') == $centre->id)>{{ $centre->name }}</option>
+                @endforeach
+            </select>
+        </div>
         @endif
 
         <div>
@@ -57,7 +67,7 @@
             <input type="text" name="search" value="{{ $search }}" placeholder="Name, Reg or HT number..." class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
         </div>
 
-        <div class="lg:col-span-5 flex justify-end gap-3 mt-2">
+        <div class="col-span-full flex justify-end gap-3 mt-2">
             <a href="{{ url()->current() }}" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors">Clear Filters</a>
             <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors cursor-pointer">Apply Filter</button>
         </div>
@@ -124,7 +134,7 @@
 
     {{-- Progress Bar --}}
     @if($summary['total'] > 0)
-    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl px-5 py-4 mb-4">
+    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl px-5 py-4 mb-6">
         <div class="flex items-center justify-between mb-2">
             <p class="text-xs font-semibold text-slate-400">Overall Attendance Progress</p>
             <span class="text-xs text-slate-500">{{ $summary['present'] }} of {{ $summary['total'] }} present</span>
@@ -136,56 +146,133 @@
     </div>
     @endif
 
-    {{-- Class-wise Breakdown --}}
-    @if($classBreakdown->count() > 0)
-    <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden">
-        <div class="px-5 py-3.5 border-b border-slate-800/60">
-            <h3 class="text-sm font-semibold text-slate-200">Class-wise Breakdown</h3>
+    {{-- Breakdown Tables (Exam Centre-wise & Class-wise) --}}
+    <div class="grid grid-cols-1 @if(auth()->user()->hasRole('super-admin') && isset($centreBreakdown) && $centreBreakdown->count() > 0) lg:grid-cols-2 @endif gap-6">
+        @if(auth()->user()->hasRole('super-admin') && isset($centreBreakdown) && $centreBreakdown->count() > 0)
+        {{-- Exam Centre-wise Breakdown --}}
+        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden shadow-lg flex flex-col">
+            <div class="px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between bg-slate-900/40">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50"></div>
+                    <h3 class="text-sm font-semibold text-slate-200">Exam Centre-wise Breakdown</h3>
+                </div>
+                <span class="text-xs text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/50">{{ $centreBreakdown->count() }} centre(s)</span>
+            </div>
+            <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="sticky top-0 bg-slate-900 border-b border-slate-800/60 z-10">
+                        <tr>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Exam Centre</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Total</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-emerald-400 uppercase tracking-wider text-center">Present</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-rose-400 uppercase tracking-wider text-center">Absent</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Att. %</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/40">
+                        @foreach($centreBreakdown as $centreName => $data)
+                        @php $pct = $data['total'] > 0 ? round(($data['present'] / $data['total']) * 100) : 0; @endphp
+                        <tr class="hover:bg-slate-800/20 transition-colors">
+                            <td class="px-5 py-3 font-medium text-slate-200">
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-cyan-400 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                    </svg>
+                                    <span class="truncate max-w-[170px]" title="{{ $centreName }}">{{ $centreName }}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3 text-center text-slate-300 font-semibold">{{ $data['total'] }}</td>
+                            <td class="px-5 py-3 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    {{ $data['present'] }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                    {{ $data['absent'] }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-center font-bold {{ $pct >= 75 ? 'text-emerald-400' : ($pct >= 50 ? 'text-amber-400' : 'text-rose-400') }}">
+                                {{ $pct }}%
+                            </td>
+                            <td class="px-5 py-3 w-32">
+                                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full {{ $pct >= 75 ? 'bg-cyan-400' : ($pct >= 50 ? 'bg-amber-400' : 'bg-rose-400') }}"
+                                         style="width: {{ $pct }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
-                <thead>
-                    <tr class="border-b border-slate-800/40">
-                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Class</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Total</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-emerald-400 uppercase tracking-wider text-center">Present</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-rose-400 uppercase tracking-wider text-center">Absent</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Attendance %</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Progress</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/40">
-                    @foreach($classBreakdown as $className => $data)
-                    @php $pct = $data['total'] > 0 ? round(($data['present'] / $data['total']) * 100) : 0; @endphp
-                    <tr class="hover:bg-slate-800/20 transition-colors">
-                        <td class="px-5 py-3 font-medium text-slate-200">{{ $className }}</td>
-                        <td class="px-5 py-3 text-center text-slate-300">{{ $data['total'] }}</td>
-                        <td class="px-5 py-3 text-center">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                {{ $data['present'] }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 text-center">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                                {{ $data['absent'] }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 text-center font-bold {{ $pct >= 75 ? 'text-emerald-400' : ($pct >= 50 ? 'text-amber-400' : 'text-rose-400') }}">
-                            {{ $pct }}%
-                        </td>
-                        <td class="px-5 py-3 w-40">
-                            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full {{ $pct >= 75 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-amber-500' : 'bg-rose-500') }}"
-                                     style="width: {{ $pct }}%"></div>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        @endif
+
+        {{-- Class-wise Breakdown --}}
+        @if(isset($classBreakdown) && $classBreakdown->count() > 0)
+        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden shadow-lg flex flex-col">
+            <div class="px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between bg-slate-900/40">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-sm shadow-indigo-400/50"></div>
+                    <h3 class="text-sm font-semibold text-slate-200">Class-wise Breakdown</h3>
+                </div>
+                <span class="text-xs text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/50">{{ $classBreakdown->count() }} class(es)</span>
+            </div>
+            <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="sticky top-0 bg-slate-900 border-b border-slate-800/60 z-10">
+                        <tr>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Class</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Total</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-emerald-400 uppercase tracking-wider text-center">Present</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-rose-400 uppercase tracking-wider text-center">Absent</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Att. %</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/40">
+                        @foreach($classBreakdown as $className => $data)
+                        @php $pct = $data['total'] > 0 ? round(($data['present'] / $data['total']) * 100) : 0; @endphp
+                        <tr class="hover:bg-slate-800/20 transition-colors">
+                            <td class="px-5 py-3 font-medium text-slate-200">
+                                <div class="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-indigo-400 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+                                    </svg>
+                                    <span class="truncate max-w-[170px]">{{ $className }}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3 text-center text-slate-300 font-semibold">{{ $data['total'] }}</td>
+                            <td class="px-5 py-3 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    {{ $data['present'] }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-center">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                    {{ $data['absent'] }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-center font-bold {{ $pct >= 75 ? 'text-emerald-400' : ($pct >= 50 ? 'text-amber-400' : 'text-rose-400') }}">
+                                {{ $pct }}%
+                            </td>
+                            <td class="px-5 py-3 w-32">
+                                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full {{ $pct >= 75 ? 'bg-indigo-400' : ($pct >= 50 ? 'bg-amber-400' : 'bg-rose-400') }}"
+                                         style="width: {{ $pct }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
+        @endif
     </div>
-    @endif
 </div>
 
 {{-- Results Table --}}
@@ -203,6 +290,7 @@
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Candidate Info</th>
                     @if(auth()->user()->hasRole('super-admin'))
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">School</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Exam Centre</th>
                     @endif
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Class & Category</th>
                     <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Marked Time</th>
@@ -231,6 +319,15 @@
                     </td>
                     @if(auth()->user()->hasRole('super-admin'))
                         <td class="px-6 py-4 text-slate-300">{{ $student->school->name ?? 'N/A' }}</td>
+                        <td class="px-6 py-4 text-slate-300">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-slate-800/70 border border-slate-700/50 text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-cyan-400 shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                </svg>
+                                {{ $student->centre->name ?? 'Not Assigned' }}
+                            </span>
+                        </td>
                     @endif
                     <td class="px-6 py-4 text-slate-300">
                         <p class="font-medium text-xs">{{ $student->class->name ?? 'N/A' }}</p>
@@ -262,7 +359,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-16 text-center">
+                    <td colspan="8" class="px-6 py-16 text-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mx-auto text-slate-700 mb-3">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                         </svg>

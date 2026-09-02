@@ -326,6 +326,7 @@ class AttendanceController extends Controller
     {
         $examinations = Examination::all();
         $schools = School::where('status', true)->get();
+        $centres = School::where('is_centre', true)->orderBy('name')->get();
         $classes = ClassMaster::where('status', true)->get();
 
         $examinationId = $request->get('examination_id');
@@ -336,10 +337,11 @@ class AttendanceController extends Controller
 
         $date = $request->get('date', '2026-08-30');
         $schoolId = $request->get('school_id');
+        $centreId = $request->get('centre_id');
         $classId = $request->get('class_id');
         $search = $request->get('search');
 
-        $baseQuery = function() use ($date, $examinationId, $schoolId, $classId, $search) {
+        $baseQuery = function() use ($date, $examinationId, $schoolId, $centreId, $classId, $search) {
             $q = Student::where('students.status', 'Hall Ticket Issued')
                 ->leftJoin('attendance', function($join) use ($date, $examinationId) {
                     $join->on('students.id', '=', 'attendance.student_id')
@@ -355,6 +357,7 @@ class AttendanceController extends Controller
                 );
             if ($examinationId) $q->where('students.examination_id', $examinationId);
             if ($schoolId)      $q->where('students.school_id', $schoolId);
+            if ($centreId)      $q->where('students.centre_id', $centreId);
             if ($classId)       $q->where('students.class_id', $classId);
             if ($search) {
                 $q->where(function($s) use ($search) {
@@ -367,7 +370,7 @@ class AttendanceController extends Controller
         };
 
         // Aggregate summary
-        $allRows = $baseQuery()->get();
+        $allRows = $baseQuery()->with(['school', 'centre', 'class'])->get();
         $total   = $allRows->count();
         $present = $allRows->where('attendance_status', 'Present')->count();
         $absent  = $total - $present;
@@ -383,20 +386,32 @@ class AttendanceController extends Controller
                               + $grp->whereNull('attendance_status')->count(),
             ]);
 
-        $students = $baseQuery()->with(['school', 'class', 'category'])->paginate(20)->withQueryString();
+        // Exam Centre-wise breakdown
+        $centreBreakdown = $allRows->groupBy(fn($s) => optional($s->centre)->name ?? 'Not Assigned')
+            ->map(fn($grp) => [
+                'total'   => $grp->count(),
+                'present' => $grp->where('attendance_status', 'Present')->count(),
+                'absent'  => $grp->where('attendance_status', 'Absent')->count()
+                              + $grp->whereNull('attendance_status')->count(),
+            ]);
+
+        $students = $baseQuery()->with(['school', 'centre', 'class', 'category'])->paginate(20)->withQueryString();
 
         return view('attendance.index', compact(
             'students',
             'examinations',
             'schools',
+            'centres',
             'classes',
             'examinationId',
             'date',
             'schoolId',
+            'centreId',
             'classId',
             'search',
             'summary',
-            'classBreakdown'
+            'classBreakdown',
+            'centreBreakdown'
         ));
     }
 
@@ -467,6 +482,8 @@ class AttendanceController extends Controller
                               + $grp->whereNull('attendance_status')->count(),
             ]);
 
+        $centreBreakdown = collect();
+
         $students = $baseQuery()->with(['class', 'category'])->paginate(20)->withQueryString();
 
         return view('attendance.index', compact(
@@ -478,7 +495,8 @@ class AttendanceController extends Controller
             'classId',
             'search',
             'summary',
-            'classBreakdown'
+            'classBreakdown',
+            'centreBreakdown'
         ));
     }
 
