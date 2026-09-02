@@ -310,10 +310,17 @@ class ReportController extends Controller
             case 'attendance':
                 $headings = ['Reg. Number', 'HT Number', 'Student Name', 'School', 'Category', 'Exam Session', 'Date', 'Time', 'Marked By', 'Status'];
 
+                $reportDate = request('date', '2026-08-30');
+
                 $query = Student::join('schools', 'students.school_id', '=', 'schools.id')
                     ->join('categories', 'students.category_id', '=', 'categories.id')
                     ->join('examinations', 'students.examination_id', '=', 'examinations.id')
-                    ->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
+                    ->leftJoin('attendance', function ($join) use ($reportDate) {
+                        $join->on('students.id', '=', 'attendance.student_id');
+                        if ($reportDate) {
+                            $join->whereDate('attendance.attendance_date', $reportDate);
+                        }
+                    })
                     ->leftJoin('users', 'attendance.marked_by', '=', 'users.id')
                     ->where('students.status', 'Hall Ticket Issued');
 
@@ -327,9 +334,6 @@ class ReportController extends Controller
                     }
                     if ($request->filled('category_id')) {
                         $query->where('students.category_id', $request->category_id);
-                    }
-                    if ($request->filled('date')) {
-                        $query->whereDate('attendance.attendance_date', $request->date);
                     }
                 }
 
@@ -384,7 +388,10 @@ class ReportController extends Controller
                         $join->where('students.examination_id', '=', $examinationId);
                     }
                 })
-                    ->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
+                    ->leftJoin('attendance', function ($join) {
+                        $join->on('students.id', '=', 'attendance.student_id')
+                            ->whereDate('attendance.attendance_date', '=', '2026-08-30');
+                    })
                     ->select(
                         'categories.name as category_name',
                         DB::raw('count(distinct students.id) as total_issued'),
@@ -428,7 +435,10 @@ class ReportController extends Controller
                 $headings = ['Gender', 'Total Tickets Issued', 'Present Today', 'Absent Today', 'Attendance Rate'];
 
                 $query = Student::where('students.status', 'Hall Ticket Issued')
-                    ->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
+                    ->leftJoin('attendance', function ($join) {
+                        $join->on('students.id', '=', 'attendance.student_id')
+                            ->whereDate('attendance.attendance_date', '=', '2026-08-30');
+                    })
                     ->select(
                         'students.gender',
                         DB::raw('count(distinct students.id) as total_issued'),
@@ -722,16 +732,20 @@ class ReportController extends Controller
         switch ($type) {
             case 'attendance':
                 $headings = ['Reg. Number', 'HT Number', 'Student Name', 'Category', 'Exam Session', 'Date', 'Time', 'Marked By', 'Status'];
-                $query->leftJoin('attendance', 'students.id', '=', 'attendance.student_id')
+                $reportDate = request('date', '2026-08-30');
+
+                $query->leftJoin('attendance', function ($join) use ($reportDate) {
+                        $join->on('students.id', '=', 'attendance.student_id');
+                        if ($reportDate) {
+                            $join->whereDate('attendance.attendance_date', $reportDate);
+                        }
+                    })
                     ->leftJoin('users', 'attendance.marked_by', '=', 'users.id')
                     ->where('students.status', 'Hall Ticket Issued');
 
                 if ($request = request()) {
                     if ($request->filled('category_id')) {
                         $query->where('students.category_id', $request->category_id);
-                    }
-                    if ($request->filled('date')) {
-                        $query->whereDate('attendance.attendance_date', $request->date);
                     }
                 }
 

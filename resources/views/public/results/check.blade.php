@@ -1,5 +1,8 @@
 @extends('layouts.auth')
 
+@section('page_title', 'Check Exam Results')
+@section('page_description', 'Retrieve and download your official examination statement of marks and score card.')
+
 @section('content')
 <div>
     <!-- Title and Subtitle -->

@@ -5,13 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\School;
 use App\Models\ClassMaster;
+use App\Models\CategoryMaster;
 use App\Models\Examination;
 use App\Models\StudentResult;
+use App\Models\ResultBatch;
+use App\Models\ResultPdfPart;
+use App\Services\ResultReportService;
+use App\Exports\ResultTemplateExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ResultController extends Controller
 {
+    protected ResultReportService $reportService;
+
+    public function __construct(ResultReportService $reportService)
+    {
+        $this->reportService = $reportService;
+    }
     /**
      * Display a listing of candidates with their result statuses (Super Admin).
      */
@@ -24,14 +39,31 @@ class ResultController extends Controller
             $query->where('examination_id', $request->examination_id);
         }
 
+        // Filter by Zone
+        if ($request->filled('zone')) {
+            $query->whereHas('school', function ($q) use ($request) {
+                $q->where('zone', $request->zone);
+            });
+        }
+
         // Filter by School
         if ($request->filled('school_id')) {
             $query->where('school_id', $request->school_id);
         }
 
+        // Filter by Category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
         // Filter by Class
         if ($request->filled('class_id')) {
             $query->where('class_id', $request->class_id);
+        }
+
+        // Filter by Gender
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
         }
 
         // Filter by Result Status
@@ -40,6 +72,16 @@ class ResultController extends Controller
                 $query->has('result');
             } elseif ($request->result_status === 'pending') {
                 $query->doesntHave('result');
+            } elseif (in_array($request->result_status, ['Pass', 'Fail', 'Withheld'])) {
+                $query->whereHas('result', fn($q) => $q->where('status', $request->result_status));
+            } elseif ($request->result_status === 'Absent') {
+                $query->where(function ($q) {
+                    $q->whereHas('result', fn($rq) => $rq->where('status', 'Absent'))
+                        ->orWhere(function ($sq) {
+                            $sq->doesntHave('result')
+                                ->whereDoesntHave('attendances', fn($aq) => $aq->where('attendance_date', '2026-08-30')->where('status', 'Present'));
+                        });
+                });
             }
         }
 
@@ -58,10 +100,18 @@ class ResultController extends Controller
 
         $students = $query->latest()->paginate(20);
         $examinations = Examination::all();
-        $schools = School::all();
+        $schools = School::orderBy('name')->get();
         $classes = ClassMaster::all();
+        $categories = CategoryMaster::all();
+        $zones = School::whereNotNull('zone')->where('zone', '!=', '')->distinct()->orderBy('zone')->pluck('zone');
 
-        return view('super-admin.results.index', compact('students', 'examinations', 'schools', 'classes'));
+        $recentBatches = ResultBatch::where('scope', 'admin')
+            ->with(['examination', 'parts'])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return view('super-admin.results.index', compact('students', 'examinations', 'schools', 'classes', 'categories', 'zones', 'recentBatches'));
     }
 
     /**
@@ -84,7 +134,7 @@ class ResultController extends Controller
         $validated = $request->validate([
             'student_id' => ['required', 'exists:students,id'],
             'marks_obtained' => ['required', 'integer', 'min:0'],
-            'max_marks' => ['required', 'integer', 'min:1', 'gt:marks_obtained'],
+            'max_marks' => ['required', 'integer', 'min:1', 'gte:marks_obtained'],
             'grade' => ['nullable', 'string', 'max:10'],
             'status' => ['required', 'in:Pass,Fail,Absent,Withheld'],
             'remarks' => ['nullable', 'string'],
@@ -133,17 +183,43 @@ class ResultController extends Controller
                 $grade = 'F';
         }
 
-        $result = StudentResult::create([
-            'student_id' => $student->id,
-            'examination_id' => $student->examination_id,
-            'marks_obtained' => $request->marks_obtained,
-            'max_marks' => $request->max_marks,
-            'percentage' => $percentage,
-            'grade' => $grade,
-            'status' => $request->status,
-            'subject_marks' => $subjectDetails,
-            'remarks' => $request->remarks,
-        ]);
+        $remarks = $request->remarks;
+        if (empty($remarks)) {
+            if ($request->status === 'Pass') {
+                $remarks = 'Qualified For Second Round Examination';
+            } elseif ($request->status === 'Fail') {
+                $remarks = 'Not Qualified For Second Round Examination';
+            }
+        }
+
+        $existingResult = StudentResult::withTrashed()->where('student_id', $student->id)->first();
+
+        if ($existingResult) {
+            $existingResult->restore();
+            $existingResult->update([
+                'examination_id' => $student->examination_id,
+                'marks_obtained' => $request->marks_obtained,
+                'max_marks' => $request->max_marks,
+                'percentage' => $percentage,
+                'grade' => $grade,
+                'status' => $request->status,
+                'subject_marks' => $subjectDetails,
+                'remarks' => $remarks,
+            ]);
+            $result = $existingResult;
+        } else {
+            $result = StudentResult::create([
+                'student_id' => $student->id,
+                'examination_id' => $student->examination_id,
+                'marks_obtained' => $request->marks_obtained,
+                'max_marks' => $request->max_marks,
+                'percentage' => $percentage,
+                'grade' => $grade,
+                'status' => $request->status,
+                'subject_marks' => $subjectDetails,
+                'remarks' => $remarks,
+            ]);
+        }
 
         activity()
             ->performedOn($result)
@@ -168,7 +244,7 @@ class ResultController extends Controller
     {
         $validated = $request->validate([
             'marks_obtained' => ['required', 'integer', 'min:0'],
-            'max_marks' => ['required', 'integer', 'min:1', 'gt:marks_obtained'],
+            'max_marks' => ['required', 'integer', 'min:1', 'gte:marks_obtained'],
             'grade' => ['nullable', 'string', 'max:10'],
             'status' => ['required', 'in:Pass,Fail,Absent,Withheld'],
             'remarks' => ['nullable', 'string'],
@@ -215,6 +291,15 @@ class ResultController extends Controller
                 $grade = 'F';
         }
 
+        $remarks = $request->remarks;
+        if (empty($remarks)) {
+            if ($request->status === 'Pass') {
+                $remarks = 'Qualified For Second Round Examination';
+            } elseif ($request->status === 'Fail') {
+                $remarks = 'Not Qualified For Second Round Examination';
+            }
+        }
+
         $result->update([
             'marks_obtained' => $request->marks_obtained,
             'max_marks' => $request->max_marks,
@@ -222,7 +307,7 @@ class ResultController extends Controller
             'grade' => $grade,
             'status' => $request->status,
             'subject_marks' => $subjectDetails,
-            'remarks' => $request->remarks,
+            'remarks' => $remarks,
         ]);
 
         activity()
@@ -237,89 +322,153 @@ class ResultController extends Controller
      */
     public function destroy(StudentResult $result)
     {
-        $studentName = $result->student->name;
+        $studentName = $result->student->name ?? 'Student';
 
         activity()
             ->performedOn($result)
             ->log("Deleted exam result for student: {$studentName}");
 
-        $result->delete();
+        $result->forceDelete();
 
         return redirect()->route('admin.results.index')->with('success', "Exam result for {$studentName} deleted successfully.");
     }
 
     /**
-     * Show CSV import form.
+     * Show Excel/CSV import form.
      */
-    public function showImportForm()
+    public function showImportForm(Request $request)
     {
         $examinations = Examination::all();
-        return view('super-admin.results.import', compact('examinations'));
+        $selectedExamId = $request->get('examination_id');
+        if (!$selectedExamId && $examinations->count() > 0) {
+            $activeExam = Examination::getActiveExam();
+            $selectedExamId = $activeExam ? $activeExam->id : $examinations->first()->id;
+        }
+
+        // Fetch sample candidates for dynamic preview
+        $previewCandidates = Student::where('examination_id', $selectedExamId)
+            ->whereIn('status', ['Hall Ticket Issued', 'Approved'])
+            ->with(['class', 'category', 'school'])
+            ->take(5)
+            ->get();
+
+        return view('super-admin.results.import', compact('examinations', 'selectedExamId', 'previewCandidates'));
     }
 
     /**
-     * Import results from CSV.
+     * Download sample Excel or CSV template for exam results bulk import.
+     */
+    public function downloadTemplate(Request $request)
+    {
+        $examinationId = $request->get('examination_id');
+        $format = strtolower($request->get('format', 'excel'));
+
+        if ($format === 'csv') {
+            return Excel::download(new ResultTemplateExport($examinationId), 'erms_exam_results_sample_template.csv', \Maatwebsite\Excel\Excel::CSV);
+        }
+
+        return Excel::download(new ResultTemplateExport($examinationId), 'erms_exam_results_sample_template.xlsx');
+    }
+
+    /**
+     * Import results from Excel (.xlsx, .xls) or CSV (.csv).
      */
     public function import(Request $request)
     {
         $request->validate([
             'examination_id' => ['required', 'exists:examinations,id'],
-            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+            'result_file' => ['nullable', 'file', 'mimes:xlsx,xls,csv,txt', 'max:5120'],
+            'csv_file' => ['nullable', 'file', 'mimes:xlsx,xls,csv,txt', 'max:5120'],
         ]);
 
+        $file = $request->file('result_file') ?? $request->file('csv_file');
+        if (!$file) {
+            return back()->with('error', 'Please select a valid Excel (.xlsx, .xls) or CSV (.csv) file to upload.');
+        }
+
         $exam = Examination::findOrFail($request->examination_id);
-        $file = $request->file('csv_file');
 
-        $handle = fopen($file->getRealPath(), 'r');
-        if (!$handle) {
-            return back()->with('error', 'Unable to open uploaded file.');
+        try {
+            $data = Excel::toArray([], $file);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to parse uploaded spreadsheet: ' . $e->getMessage());
         }
 
-        // Parse header row
-        $header = fgetcsv($handle);
-        if (!$header) {
-            fclose($handle);
-            return back()->with('error', 'CSV file is empty.');
+        if (empty($data) || empty($data[0])) {
+            return back()->with('error', 'The uploaded file is empty or has no readable data sheets.');
         }
 
-        // Clean headers
+        $sheet = $data[0];
+        $rawHeader = array_shift($sheet);
+
+        if (empty($rawHeader)) {
+            return back()->with('error', 'Uploaded spreadsheet does not contain a header row.');
+        }
+
+        // Clean headers: remove spaces, underscores, dashes and lowercase
         $header = array_map(function ($h) {
-            return trim(strtolower(str_replace([' ', '_'], '', $h)));
-        }, $header);
+            return trim(strtolower(str_replace([' ', '_', '-'], '', (string) $h)));
+        }, $rawHeader);
 
-        // Find positions
-        $regIdx = array_search('registrationnumber', $header);
-        if ($regIdx === false)
-            $regIdx = array_search('registrationno', $header);
-        if ($regIdx === false)
-            $regIdx = array_search('regno', $header);
+        // Find column indices
+        $regIdx = false;
+        foreach (['registrationnumber', 'registrationno', 'regno', 'regnumber', 'reg'] as $col) {
+            $idx = array_search($col, $header);
+            if ($idx !== false) {
+                $regIdx = $idx;
+                break;
+            }
+        }
 
-        $htIdx = array_search('hallticketnumber', $header);
-        if ($htIdx === false)
-            $htIdx = array_search('hallticketno', $header);
-        if ($htIdx === false)
-            $htIdx = array_search('htnumber', $header);
+        $htIdx = false;
+        foreach (['hallticketnumber', 'hallticketno', 'htnumber', 'htno', 'hallticket', 'ht'] as $col) {
+            $idx = array_search($col, $header);
+            if ($idx !== false) {
+                $htIdx = $idx;
+                break;
+            }
+        }
 
-        $obtainedIdx = array_search('marksobtained', $header);
-        if ($obtainedIdx === false)
-            $obtainedIdx = array_search('marks', $header);
-        if ($obtainedIdx === false)
-            $obtainedIdx = array_search('score', $header);
+        $obtainedIdx = false;
+        foreach (['marksobtained', 'marks', 'score', 'obtainedmarks', 'securedmarks', 'obtained'] as $col) {
+            $idx = array_search($col, $header);
+            if ($idx !== false) {
+                $obtainedIdx = $idx;
+                break;
+            }
+        }
 
-        $maxIdx = array_search('maxmarks', $header);
-        if ($maxIdx === false)
-            $maxIdx = array_search('max', $header);
-        if ($maxIdx === false)
-            $maxIdx = array_search('totalmarks', $header);
+        $maxIdx = false;
+        foreach (['maxmarks', 'max', 'totalmarks', 'maximummarks', 'total'] as $col) {
+            $idx = array_search($col, $header);
+            if ($idx !== false) {
+                $maxIdx = $idx;
+                break;
+            }
+        }
 
         $gradeIdx = array_search('grade', $header);
-        $statusIdx = array_search('status', $header);
-        $remarksIdx = array_search('remarks', $header);
+        $statusIdx = false;
+        foreach (['status', 'resultstatus', 'result'] as $col) {
+            $idx = array_search($col, $header);
+            if ($idx !== false) {
+                $statusIdx = $idx;
+                break;
+            }
+        }
+
+        $remarksIdx = false;
+        foreach (['remarks', 'remark', 'comments', 'comment'] as $col) {
+            $idx = array_search($col, $header);
+            if ($idx !== false) {
+                $remarksIdx = $idx;
+                break;
+            }
+        }
 
         // Must match either Reg No or Hall Ticket, along with marks & max marks
         if (($regIdx === false && $htIdx === false) || $obtainedIdx === false || $maxIdx === false) {
-            fclose($handle);
-            return back()->with('error', 'CSV must contain columns: "Registration Number" (or "Hall Ticket Number"), "Marks Obtained" and "Max Marks".');
+            return back()->with('error', 'Spreadsheet must contain columns: "Registration Number" (or "Hall Ticket Number"), "Marks Obtained" and "Max Marks". Please use the downloadable sample template.');
         }
 
         $rowNumber = 1;
@@ -327,17 +476,25 @@ class ResultController extends Controller
         $updatedCount = 0;
         $errors = [];
 
-        while (($row = fgetcsv($handle)) !== false) {
+        foreach ($sheet as $row) {
             $rowNumber++;
 
             // Skip empty rows
-            if (empty($row) || count($row) < 3)
+            $hasContent = false;
+            foreach ($row as $cell) {
+                if ($cell !== null && trim((string) $cell) !== '') {
+                    $hasContent = true;
+                    break;
+                }
+            }
+            if (!$hasContent) {
                 continue;
+            }
 
-            $regVal = $regIdx !== false ? trim($row[$regIdx]) : '';
-            $htVal = $htIdx !== false ? trim($row[$htIdx]) : '';
-            $obtainedVal = trim($row[$obtainedIdx]);
-            $maxVal = trim($row[$maxIdx]);
+            $regVal = ($regIdx !== false && isset($row[$regIdx])) ? trim((string) $row[$regIdx]) : '';
+            $htVal = ($htIdx !== false && isset($row[$htIdx])) ? trim((string) $row[$htIdx]) : '';
+            $obtainedVal = ($obtainedIdx !== false && isset($row[$obtainedIdx])) ? trim((string) $row[$obtainedIdx]) : '';
+            $maxVal = ($maxIdx !== false && isset($row[$maxIdx])) ? trim((string) $row[$maxIdx]) : '';
 
             if (empty($regVal) && empty($htVal)) {
                 $errors[] = "Row {$rowNumber}: Missing student identification (both Registration and Hall Ticket Number are empty).";
@@ -345,7 +502,7 @@ class ResultController extends Controller
             }
 
             if (!is_numeric($obtainedVal) || !is_numeric($maxVal)) {
-                $errors[] = "Row {$rowNumber}: Marks must be numeric values.";
+                $errors[] = "Row {$rowNumber}: Marks must be numeric values (Obtained: '{$obtainedVal}', Max: '{$maxVal}').";
                 continue;
             }
 
@@ -359,26 +516,29 @@ class ResultController extends Controller
             // Find Student
             $student = Student::where('examination_id', $exam->id)
                 ->where(function ($q) use ($regVal, $htVal) {
-                    if (!empty($regVal))
+                    if (!empty($regVal)) {
                         $q->where('registration_number', $regVal);
-                    if (!empty($htVal))
+                    }
+                    if (!empty($htVal)) {
                         $q->orWhere('hall_ticket_number', $htVal);
+                    }
                 })->first();
 
             if (!$student) {
-                $errors[] = "Row {$rowNumber}: Student not found registered in this exam session (Reg: '{$regVal}' / HT: '{$htVal}').";
+                $identifier = !empty($regVal) ? "Reg: '{$regVal}'" : "HT: '{$htVal}'";
+                $errors[] = "Row {$rowNumber}: Student not found registered in exam session '{$exam->name}' ({$identifier}).";
                 continue;
             }
 
-            // Check if result already exists and handle overwrite option
-            $existingResult = StudentResult::where('student_id', $student->id)->first();
-            if ($existingResult && !$request->boolean('overwrite_existing')) {
-                $errors[] = "Row {$rowNumber}: Student (Reg: '{$student->registration_number}') already has a result record. Select 'Overwrite existing student results' option to overwrite.";
+            // Check if result already exists (including soft-deleted)
+            $existingResult = StudentResult::withTrashed()->where('student_id', $student->id)->first();
+            if ($existingResult && !$existingResult->trashed() && !$request->boolean('overwrite_existing')) {
+                $errors[] = "Row {$rowNumber}: Student '{$student->name}' (Reg: '{$student->registration_number}') already has a result record. Select 'Overwrite existing results' to update.";
                 continue;
             }
 
-            // Grade
-            $grade = $gradeIdx !== false ? trim($row[$gradeIdx]) : '';
+            // Grade auto calculation
+            $grade = ($gradeIdx !== false && isset($row[$gradeIdx])) ? trim((string) $row[$gradeIdx]) : '';
             $percentage = round(($obtained / $max) * 100, 2);
             if (empty($grade)) {
                 if ($percentage >= 90)
@@ -398,17 +558,23 @@ class ResultController extends Controller
             }
 
             // Status
-            $status = $statusIdx !== false ? trim($row[$statusIdx]) : '';
+            $status = ($statusIdx !== false && isset($row[$statusIdx])) ? trim((string) $row[$statusIdx]) : '';
             if (empty($status) || !in_array($status, ['Pass', 'Fail', 'Absent', 'Withheld'])) {
                 $status = ($percentage >= 35) ? 'Pass' : 'Fail';
             }
 
-            $remarks = $remarksIdx !== false ? trim($row[$remarksIdx]) : '';
+            $remarks = ($remarksIdx !== false && isset($row[$remarksIdx])) ? trim((string) $row[$remarksIdx]) : '';
+            if (empty($remarks)) {
+                if ($status === 'Pass') {
+                    $remarks = 'Qualified For Second Round Examination';
+                } elseif ($status === 'Fail') {
+                    $remarks = 'Not Qualified For Second Round Examination';
+                }
+            }
 
-            // Update or Create
-            StudentResult::updateOrCreate(
-                ['student_id' => $student->id],
-                [
+            if ($existingResult) {
+                $existingResult->restore();
+                $existingResult->update([
                     'examination_id' => $exam->id,
                     'marks_obtained' => $obtained,
                     'max_marks' => $max,
@@ -416,22 +582,27 @@ class ResultController extends Controller
                     'grade' => $grade,
                     'status' => $status,
                     'remarks' => $remarks
-                ]
-            );
-
-            if ($existingResult) {
+                ]);
                 $updatedCount++;
             } else {
+                StudentResult::create([
+                    'student_id' => $student->id,
+                    'examination_id' => $exam->id,
+                    'marks_obtained' => $obtained,
+                    'max_marks' => $max,
+                    'percentage' => $percentage,
+                    'grade' => $grade,
+                    'status' => $status,
+                    'remarks' => $remarks
+                ]);
                 $createdCount++;
             }
         }
 
-        fclose($handle);
-
         $successCount = $createdCount + $updatedCount;
         $msgDetails = "Processed {$successCount} results successfully ({$createdCount} created" . ($updatedCount > 0 ? ", {$updatedCount} updated" : "") . ").";
 
-        activity()->log("Bulk imported {$successCount} exam results for examination: {$exam->name} via CSV (Created: {$createdCount}, Updated: {$updatedCount})");
+        activity()->log("Bulk imported {$successCount} exam results for examination: {$exam->name} (Created: {$createdCount}, Updated: {$updatedCount})");
 
         if (!empty($errors)) {
             $msg = "{$msgDetails} However, encountered issues on some rows:";
@@ -440,7 +611,7 @@ class ResultController extends Controller
                 ->withErrors($errors);
         }
 
-        return redirect()->route('admin.results.index')->with('success', "{$msgDetails}");
+        return redirect()->route('admin.results.index')->with('success', $msgDetails);
     }
 
     /**
@@ -479,8 +650,18 @@ class ResultController extends Controller
             return back()->with('error', 'No candidate records match the entered details. Please check the Registration/Hall Ticket Number and Date of Birth.')->withInput();
         }
 
-        // 2. Check if results have been posted
+        // 2. Check if results have been posted or candidate was absent
         if (!$student->result) {
+            // Check if student was absent on exam day (30/08/2026)
+            $isAbsent = $student->attendances()
+                ->where('attendance_date', '2026-08-30')
+                ->where('status', 'Present')
+                ->count() === 0;
+
+            if ($isAbsent) {
+                return back()->with('error', 'Candidate was Absent for the examination. Result status: Absent.')->withInput();
+            }
+
             return back()->with('error', 'Exam results for this candidate have not been declared yet or are withheld.')->withInput();
         }
 
@@ -531,7 +712,182 @@ class ResultController extends Controller
     }
 
     /**
+     * Helper to safely get base64 encoded image for PDF exports.
+     */
+    /**
+     * Dispatch background Result PDF generation for Super Admin.
+     */
+    public function adminExportPdf(Request $request)
+    {
+        try {
+            $examinationId = $request->filled('examination_id') ? (int) $request->examination_id : null;
+            $batch = $this->reportService->createAndDispatchBatch(
+                'admin',
+                null,
+                $examinationId,
+                auth()->id() ?? 1,
+                $request->all()
+            );
+
+            return redirect()->route('admin.results.batches.show', $batch)
+                ->with('success', 'Result statement generation started in the background.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('admin.results.index')
+                ->withErrors($e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Super Admin PDF Export Dispatch Failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->route('admin.results.index')->with('error', 'Unable to initiate results export: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Super Admin Batch Progress View.
+     */
+    public function showAdminBatch(ResultBatch $batch)
+    {
+        Gate::authorize('view', $batch);
+
+        $batch->load(['school', 'examination', 'parts']);
+
+        $initialParts = $batch->parts->map(fn($p) => [
+            'id' => $p->id,
+            'part_number' => $p->part_number,
+            'total_students' => $p->total_students,
+            'completed_students' => $p->completed_students,
+            'status' => $p->status,
+            'file_size_formatted' => $p->file_size ? number_format($p->file_size / 1024, 1) . ' KB' : null,
+            'error_message' => $p->error_message,
+            'download_url' => ($p->status === 'completed' && !empty($p->pdf_path))
+                ? route('admin.results.parts.download', $p)
+                : null,
+        ]);
+
+        return view('super-admin.results.batch-progress', compact('batch', 'initialParts'));
+    }
+
+    /**
+     * School Admin Batch Progress View.
+     */
+    public function showSchoolBatch(ResultBatch $batch)
+    {
+        Gate::authorize('view', $batch);
+
+        $batch->load(['school', 'examination', 'parts']);
+
+        $initialParts = $batch->parts->map(fn($p) => [
+            'id' => $p->id,
+            'part_number' => $p->part_number,
+            'total_students' => $p->total_students,
+            'completed_students' => $p->completed_students,
+            'status' => $p->status,
+            'file_size_formatted' => $p->file_size ? number_format($p->file_size / 1024, 1) . ' KB' : null,
+            'error_message' => $p->error_message,
+            'download_url' => ($p->status === 'completed' && !empty($p->pdf_path))
+                ? route('school.results.parts.download', $p)
+                : null,
+        ]);
+
+        return view('school-admin.results.batch-progress', compact('batch', 'initialParts'));
+    }
+
+    /**
+     * Batch Status JSON Polling Endpoint.
+     */
+    public function batchStatus(ResultBatch $batch)
+    {
+        Gate::authorize('view', $batch);
+
+        $parts = $batch->parts()->get(['id', 'batch_id', 'part_number', 'total_students', 'completed_students', 'status', 'pdf_path', 'file_size', 'error_message']);
+        $isSuperAdmin = auth()->user()->hasRole('super-admin');
+
+        $partsData = $parts->map(function ($part) use ($isSuperAdmin) {
+            $downloadUrl = null;
+            if ($part->status === 'completed' && !empty($part->pdf_path)) {
+                $downloadUrl = $isSuperAdmin
+                    ? route('admin.results.parts.download', $part)
+                    : route('school.results.parts.download', $part);
+            }
+
+            return [
+                'id' => $part->id,
+                'part_number' => $part->part_number,
+                'total_students' => $part->total_students,
+                'completed_students' => $part->completed_students,
+                'status' => $part->status,
+                'file_size_formatted' => $part->file_size ? number_format($part->file_size / 1024, 1) . ' KB' : null,
+                'error_message' => $part->error_message,
+                'download_url' => $downloadUrl,
+            ];
+        });
+
+        return response()->json([
+            'batch_id' => $batch->id,
+            'batch_uuid' => $batch->batch_uuid,
+            'status' => $batch->status,
+            'total_students' => $batch->total_students,
+            'completed_students' => $batch->completed_students,
+            'failed_students' => $batch->failed_students,
+            'total_parts' => $batch->total_parts,
+            'completed_parts' => $batch->completed_parts,
+            'failed_parts' => $batch->failed_parts,
+            'progress' => $batch->progress_percentage,
+            'download_available' => $batch->completed_parts > 0,
+            'has_downloadable_parts' => $batch->completed_parts > 0,
+            'is_completed' => $batch->isCompleted(),
+            'parts' => $partsData,
+        ]);
+    }
+
+    /**
+     * Secure Download for an individual completed PDF Part.
+     */
+    public function downloadPart(ResultPdfPart $part)
+    {
+        Gate::authorize('download', $part);
+
+        $batch = $part->batch;
+        if (!$batch) {
+            abort(404, 'Associated result batch not found.');
+        }
+
+        if ($part->status !== 'completed' || empty($part->pdf_path)) {
+            return back()->with('error', 'This PDF part is not yet ready for download.');
+        }
+
+        $disk = Storage::disk(config('results.disk', 'local'));
+        if (!$disk->exists($part->pdf_path)) {
+            return back()->with('error', 'The requested PDF part file was not found or has expired.');
+        }
+
+        $prefix = ($batch->scope === 'admin') ? 'Consolidated_Results' : ($batch->school?->code ?? 'School_Results');
+        $downloadFilename = "{$prefix}_Part_{$part->part_number}_" . date('Ymd_His') . '.pdf';
+
+        return $disk->download($part->pdf_path, $downloadFilename, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $downloadFilename . '"',
+        ]);
+    }
+
+    /**
+     * Retry failed parts in a ResultBatch.
+     */
+    public function retryBatch(ResultBatch $batch)
+    {
+        Gate::authorize('retry', $batch);
+
+        try {
+            $this->reportService->retryFailedParts($batch);
+
+            return back()->with('success', 'Failed PDF parts have been queued for retry.');
+        } catch (\Throwable $e) {
+            Log::error("Failed to retry ResultBatch #{$batch->id}: " . $e->getMessage());
+            return back()->with('error', 'Could not retry failed parts: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Display a listing of results for students registered by the logged-in school.
+     * Only reveals result data and statistics when examination status is "result published".
      */
     public function schoolIndex(Request $request)
     {
@@ -541,8 +897,8 @@ class ResultController extends Controller
             return redirect()->route('school.dashboard')->with('error', 'School account profile not found.');
         }
 
-        // Query students registered BY THIS SCHOOL (school_id = school->id), NOT by exam centre
-        $query = Student::with(['class', 'category', 'examination', 'result'])
+        // Query students registered BY THIS SCHOOL (school_id = school->id)
+        $query = Student::with(['class', 'category', 'examination', 'result', 'attendances'])
             ->where('school_id', $school->id);
 
         // Filter by Examination
@@ -550,18 +906,45 @@ class ResultController extends Controller
             $query->where('examination_id', $request->examination_id);
         }
 
+        // Filter by Category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
         // Filter by Class
         if ($request->filled('class_id')) {
             $query->where('class_id', $request->class_id);
         }
 
+        // Filter by Gender
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
         // Filter by Result Status
         if ($request->filled('result_status')) {
             if ($request->result_status === 'pending') {
-                $query->doesntHave('result');
-            } else {
-                $query->whereHas('result', function ($q) use ($request) {
+                $query->where(function ($sq) {
+                    $sq->doesntHave('result')
+                        ->orWhereHas('examination', function ($eq) {
+                            $eq->whereRaw('LOWER(status) != ?', ['result published']);
+                        });
+                });
+            } elseif (in_array($request->result_status, ['Pass', 'Fail', 'Withheld'])) {
+                $query->whereHas('examination', function ($eq) {
+                    $eq->whereRaw('LOWER(status) = ?', ['result published']);
+                })->whereHas('result', function ($q) use ($request) {
                     $q->where('status', $request->result_status);
+                });
+            } elseif ($request->result_status === 'Absent') {
+                $query->whereHas('examination', function ($eq) {
+                    $eq->whereRaw('LOWER(status) = ?', ['result published']);
+                })->where(function ($q) {
+                    $q->whereHas('result', fn($rq) => $rq->where('status', 'Absent'))
+                        ->orWhere(function ($sq) {
+                            $sq->doesntHave('result')
+                                ->whereDoesntHave('attendances', fn($aq) => $aq->where('attendance_date', '2026-08-30')->where('status', 'Present'));
+                        });
                 });
             }
         }
@@ -579,24 +962,93 @@ class ResultController extends Controller
         $students = $query->latest()->paginate(20);
         $examinations = Examination::all();
         $classes = ClassMaster::all();
+        $categories = CategoryMaster::all();
 
-        // Stats summary for results declared for this school
-        $totalRegistered = Student::where('school_id', $school->id)->count();
-        $resultsDeclared = StudentResult::whereHas('student', fn($q) => $q->where('school_id', $school->id))->count();
-        $passedCount = StudentResult::whereHas('student', fn($q) => $q->where('school_id', $school->id))->where('status', 'Pass')->count();
-        $failedCount = StudentResult::whereHas('student', fn($q) => $q->where('school_id', $school->id))->where('status', 'Fail')->count();
+        // Selected exam check
+        $selectedExam = $request->filled('examination_id') ? Examination::find($request->examination_id) : null;
+        $isExamResultPublished = $selectedExam ? (strtolower(trim((string) $selectedExam->status)) === 'result published') : null;
+
+        // Stats summary for results declared ONLY for published examinations for this school
+        $totalRegistered = Student::where('school_id', $school->id)
+            ->when($request->filled('examination_id'), fn($q) => $q->where('examination_id', $request->examination_id))
+            ->count();
+
+        $resultsDeclaredQuery = StudentResult::whereHas('student', function ($q) use ($school, $request) {
+            $q->where('school_id', $school->id);
+            if ($request->filled('examination_id')) {
+                $q->where('examination_id', $request->examination_id);
+            }
+        })->whereHas('examination', function ($q) {
+            $q->whereRaw('LOWER(status) = ?', ['result published']);
+        });
+
+        $resultsDeclared = (clone $resultsDeclaredQuery)->count();
+        $passedCount = (clone $resultsDeclaredQuery)->where('status', 'Pass')->count();
+        $failedCount = (clone $resultsDeclaredQuery)->where('status', 'Fail')->count();
         $passPercentage = $resultsDeclared > 0 ? round(($passedCount / $resultsDeclared) * 100, 1) : 0;
+
+        $recentBatches = ResultBatch::where('scope', 'school')
+            ->where('school_id', $school->id)
+            ->with(['examination', 'parts'])
+            ->latest()
+            ->take(10)
+            ->get();
 
         return view('school-admin.results.index', compact(
             'students',
             'examinations',
             'classes',
+            'categories',
             'totalRegistered',
             'resultsDeclared',
             'passedCount',
             'failedCount',
-            'passPercentage'
+            'passPercentage',
+            'selectedExam',
+            'isExamResultPublished',
+            'recentBatches'
         ));
+    }
+
+    /**
+     * Dispatch background Result PDF generation for School Admin.
+     * Strictly scoped to own school and only for RESULT PUBLISHED examinations.
+     */
+    public function schoolExportPdf(Request $request)
+    {
+        try {
+            $school = auth()->user()->school;
+            if (!$school) {
+                return redirect()->route('school.dashboard')->with('error', 'School account profile not found.');
+            }
+
+            // If a specific exam was requested, check if it is result published
+            if ($request->filled('examination_id')) {
+                $exam = Examination::find($request->examination_id);
+                if (!$exam || !$exam->isResultPublished()) {
+                    return redirect()->route('school.results.index')
+                        ->with('error', 'Results for this examination session have not been published yet.');
+                }
+            }
+
+            $examinationId = $request->filled('examination_id') ? (int) $request->examination_id : null;
+            $batch = $this->reportService->createAndDispatchBatch(
+                'school',
+                $school->id,
+                $examinationId,
+                auth()->id(),
+                $request->all()
+            );
+
+            return redirect()->route('school.results.batches.show', $batch)
+                ->with('success', 'Institutional result statement generation started in the background.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('school.results.index')
+                ->withErrors($e->errors());
+        } catch (\Throwable $e) {
+            Log::error('School PDF Export Dispatch Failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->route('school.results.index')->with('error', 'Unable to initiate results export: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -610,11 +1062,18 @@ class ResultController extends Controller
             abort(403, 'Unauthorized access to candidate details from another institution.');
         }
 
-        if (!$student->result) {
-            return back()->with('error', 'Exam results for this student have not been declared yet.');
+        $student->load(['result', 'school', 'class', 'category', 'examination']);
+
+        if (!$student->examination || strtolower(trim((string) $student->examination->status)) !== 'result published') {
+            return redirect()->route('school.results.index')
+                ->with('error', 'Results for this examination session have not been published yet.');
         }
 
-        $student->load(['result', 'school', 'class', 'category', 'examination']);
+        if (!$student->result) {
+            return redirect()->route('school.results.index')
+                ->with('error', 'Exam results for this student have not been declared yet.');
+        }
+
         $result = $student->result;
 
         return view('public.results.show', compact('student', 'result'));

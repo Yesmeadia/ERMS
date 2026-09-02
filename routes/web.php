@@ -112,6 +112,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/mfa/disable', [AuthController::class, 'disableMfa'])->name('mfa.disable');
 
         // Staff Management
+        Route::get('/staff/export-pdf', [StaffController::class, 'exportPdf'])->name('staff.export-pdf');
         Route::post('/staff/{staff}/toggle-status', [StaffController::class, 'toggleStatus'])->name('staff.toggle-status');
         Route::post('/staff/{staff}/reset-password', [StaffController::class, 'sendResetLink'])->name('staff.reset-password');
         Route::resource('staff', StaffController::class);
@@ -193,14 +194,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/attendance/mark', [AttendanceController::class, 'adminAttendanceMark'])->name('attendance.mark');
 
         // Results Management
+        Route::get('/results/import/template', [ResultController::class, 'downloadTemplate'])->name('results.import.template');
+        Route::get('/results/import', [ResultController::class, 'showImportForm'])->name('results.import-form');
+        Route::post('/results/import', [ResultController::class, 'import'])->name('results.import');
+        Route::match(['get', 'post'], '/results/pdf', [ResultController::class, 'adminExportPdf'])->name('results.pdf');
+        Route::get('/results/batches/{batch}', [ResultController::class, 'showAdminBatch'])->name('results.batches.show');
+        Route::get('/results/batches/{batch}/status', [ResultController::class, 'batchStatus'])->name('results.batches.status');
+        Route::post('/results/batches/{batch}/retry', [ResultController::class, 'retryBatch'])->name('results.batches.retry');
+        Route::get('/results/parts/{part}/download', [ResultController::class, 'downloadPart'])->name('results.parts.download');
         Route::get('/results', [ResultController::class, 'adminIndex'])->name('results.index');
         Route::get('/results/create/{student}', [ResultController::class, 'create'])->name('results.create');
         Route::post('/results', [ResultController::class, 'store'])->name('results.store');
         Route::get('/results/{result}/edit', [ResultController::class, 'edit'])->name('results.edit');
         Route::put('/results/{result}', [ResultController::class, 'update'])->name('results.update');
         Route::delete('/results/{result}', [ResultController::class, 'destroy'])->name('results.destroy');
-        Route::get('/results/import', [ResultController::class, 'showImportForm'])->name('results.import-form');
-        Route::post('/results/import', [ResultController::class, 'import'])->name('results.import');
     });
 
     // ============================================
@@ -245,6 +252,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/attendance', [AttendanceController::class, 'schoolAttendanceIndex'])->name('attendance.index');
 
         // Results
+        Route::match(['get', 'post'], '/results/pdf', [ResultController::class, 'schoolExportPdf'])->name('results.pdf');
+        Route::get('/results/batches/{batch}', [ResultController::class, 'showSchoolBatch'])->name('results.batches.show');
+        Route::get('/results/batches/{batch}/status', [ResultController::class, 'batchStatus'])->name('results.batches.status');
+        Route::post('/results/batches/{batch}/retry', [ResultController::class, 'retryBatch'])->name('results.batches.retry');
+        Route::get('/results/parts/{part}/download', [ResultController::class, 'downloadPart'])->name('results.parts.download');
         Route::get('/results', [ResultController::class, 'schoolIndex'])->name('results.index');
         Route::get('/results/{student}/marksheet', [ResultController::class, 'schoolMarksheet'])->name('results.marksheet');
 

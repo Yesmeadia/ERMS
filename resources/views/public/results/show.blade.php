@@ -1,255 +1,979 @@
+@php
+    if (!function_exists('generateBarcodeSVG')) {
+        function generateBarcodeSVG($text)
+        {
+            $patterns = [
+                '0' => '101001101101',
+                '1' => '110100101011',
+                '2' => '101100101011',
+                '3' => '110110010101',
+                '4' => '101001101011',
+                '5' => '110100110101',
+                '6' => '101100110101',
+                '7' => '101001011011',
+                '8' => '110100101101',
+                '9' => '101100101101',
+                'A' => '110101001011',
+                'B' => '101101001011',
+                'C' => '110110100101',
+                'D' => '101011001011',
+                'E' => '110101100101',
+                'F' => '101101100101',
+                'G' => '101010011011',
+                'H' => '110101001101',
+                'I' => '101101001101',
+                'J' => '101011001101',
+                'K' => '110101010011',
+                'L' => '101101010011',
+                'M' => '110110101001',
+                'N' => '101011010011',
+                'O' => '110101101001',
+                'P' => '101101101001',
+                'Q' => '101010110011',
+                'R' => '110101011001',
+                'S' => '101101011001',
+                'T' => '101011011001',
+                'U' => '110010101011',
+                'V' => '100110101011',
+                'W' => '110011010101',
+                'X' => '100101101011',
+                'Y' => '110010110101',
+                'Z' => '100110110101',
+                '-' => '100101011011',
+                '.' => '110010101101',
+                ' ' => '100110101101',
+                '*' => '100101101101',
+                '$' => '100100100101',
+                '/' => '100100101001',
+                '+' => '100101001001',
+                '%' => '100100100101'
+            ];
+
+            $text = strtoupper((string) $text);
+            $sanitized = '';
+            for ($i = 0; $i < strlen($text); $i++) {
+                $char = $text[$i];
+                $sanitized .= isset($patterns[$char]) ? $char : ' ';
+            }
+
+            $formattedText = '*' . $sanitized . '*';
+            $charWidth = 12;
+            $gapWidth = 1;
+            $len = strlen($formattedText);
+            $totalUnits = $len * $charWidth + ($len - 1) * $gapWidth;
+
+            $barHeight = 28;
+            $scale = 1.2;
+            $svgWidth = $totalUnits * $scale;
+            $svgHeight = $barHeight + 10;
+
+            $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . $svgWidth . '" height="' . $svgHeight . '" viewBox="0 0 ' . $svgWidth . ' ' . $svgHeight . '">';
+            $svg .= '<rect width="100%" height="100%" fill="#ffffff" />';
+
+            $x = 0;
+            for ($i = 0; $i < $len; $i++) {
+                $char = $formattedText[$i];
+                if (!isset($patterns[$char]))
+                    continue;
+                $pattern = $patterns[$char];
+
+                for ($j = 0; $j < strlen($pattern); $j++) {
+                    if ($pattern[$j] == '1') {
+                        $svg .= '<rect x="' . ($x * $scale) . '" y="0" width="' . $scale . '" height="' . $barHeight . '" fill="#000000" />';
+                    }
+                    $x++;
+                }
+                if ($i < $len - 1)
+                    $x += $gapWidth;
+            }
+
+            $svg .= '<text x="' . ($svgWidth / 2) . '" y="' . ($barHeight + 8) . '" font-family="Metropolis, sans-serif" font-size="7" fill="#000000" text-anchor="middle" letter-spacing="1.5">' . $text . '</text>';
+            $svg .= '</svg>';
+
+            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+        }
+    }
+
+    // Category-wise banner color (matches Hall Ticket standard)
+    $categoryName = strtoupper(trim($student->category->name ?? ''));
+    if (str_starts_with($categoryName, 'RAINBOW')) {
+        $bannerColor = '#2e7d32'; // RAINBOW → Green
+    } elseif (str_starts_with($categoryName, 'PLANET')) {
+        $bannerColor = '#c62828'; // PLANET → Red
+    } elseif (str_starts_with($categoryName, 'GALAXY')) {
+        $bannerColor = '#1565c0'; // GALAXY → Blue
+    } else {
+        $bannerColor = '#3e6b27'; // Default Green
+    }
+
+    $barcodeText = $student->hall_ticket_number ?: $student->registration_number;
+    $barcodeSvg = generateBarcodeSVG($barcodeText);
+
+    $signPath = file_exists(public_path('Sign.png')) ? asset('Sign.png') : (file_exists(public_path('sign.png')) ? asset('sign.png') : null);
+
+    // Photo matching Hall Ticket resolution
+    $photoSrc = null;
+    if ($student->photograph && file_exists(public_path('storage/' . $student->photograph))) {
+        $photoSrc = asset('storage/' . $student->photograph);
+    } elseif ($student->photograph && file_exists(storage_path('app/public/' . $student->photograph))) {
+        $photoSrc = asset('storage/' . $student->photograph);
+    } elseif ($student->photo_url && !str_starts_with($student->photo_url, 'data:image/svg')) {
+        $photoSrc = $student->photo_url;
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-950 scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Official Statement of Marks - {{ $student->name }}</title>
+    <title>Official Statement of Marks - {{ $student->name }} | ERMS</title>
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Courier+Prime:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        .cert-border {
-            border: 8px double #334155;
+
+        /* Certificate / Statement Sheet (Full Desktop Dimensions) */
+        .marksheet-sheet {
+            background-color: #ffffff;
+            color: #000000;
+            width: 100%;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 20px 25px;
+            box-sizing: border-box;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
         }
+
+        /* Table styles identical to Hall Ticket */
+        .details-grid,
+        .scores-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .details-grid td,
+        .scores-grid td,
+        .scores-grid th {
+            border: 1px solid #000000;
+            padding: 7px 10px;
+            font-size: 12px;
+            color: #000000;
+            vertical-align: middle;
+        }
+
+        .label-cell {
+            font-weight: bold;
+            width: 32%;
+            background-color: #ffffff;
+        }
+
+        .value-cell {
+            width: 68%;
+        }
+
+        .reg-no-label {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 1px;
+            margin-top: -2px;
+            text-align: left;
+            max-width: 135px;
+            margin-left: auto;
+            color: #000000;
+        }
+
+        .reg-no-box {
+            border: 1px solid #000000;
+            padding: 0 1px;
+            text-align: center;
+            font-family: 'Outfit', monospace;
+            font-size: 22px;
+            font-weight: bold;
+            color: #d32f2f;
+            background-color: #ffffff;
+            margin-bottom: 4px;
+            margin-top: -1px;
+            height: 30px;
+            line-height: 30px;
+            width: 100%;
+            max-width: 135px;
+            margin-left: auto;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .photo-box {
+            border: 1px solid #000000;
+            width: 100%;
+            max-width: 135px;
+            height: 170px;
+            /* standard passport size: 35mm x 45mm */
+            background-color: #ffffff;
+            position: relative;
+            text-align: center;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-left: auto;
+        }
+
+        .photo-img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .photo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #94a3b8;
+            font-weight: bold;
+            border: 1px dashed #cbd5e1;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            background-color: #f8fafc;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* Banner matching Hall Ticket (Category-wise Background Color) */
+        .title-banner {
+            background-color:
+                {{ $bannerColor }}
+                !important;
+            text-align: center;
+            padding: 6px 0;
+            margin-bottom: 22px;
+            margin-left: -25px;
+            margin-right: -25px;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .title-banner h1 {
+            color: #ffffff !important;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            margin: 0;
+            text-transform: uppercase;
+            font-family: 'Outfit', Arial, Helvetica, sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Header Logo Section */
+        .header-logo-table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            width: auto;
+        }
+
+        .header-logo-left {
+            padding-right: 40px;
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .header-logo-right {
+            padding-left: 40px;
+            vertical-align: middle;
+            text-align: left;
+        }
+
+        .logo-img-left {
+            height: 52px;
+            max-width: 220px;
+            object-fit: contain;
+            display: inline-block;
+        }
+
+        .logo-img-right {
+            height: 98px;
+            max-width: 280px;
+            object-fit: contain;
+            display: inline-block;
+        }
+
+        /* Candidate & Scores Sections */
+        .candidate-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+
+        .details-col {
+            width: 76%;
+            vertical-align: top;
+            padding-right: 15px;
+        }
+
+        .photo-col {
+            width: 24%;
+            vertical-align: top;
+            text-align: right;
+        }
+
+        .scores-table-wrap {
+            margin-top: 8px;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+        }
+
+        .summary-left {
+            width: 50%;
+            vertical-align: middle;
+        }
+
+        .summary-right {
+            width: 50%;
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .barcode-sig-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            margin-bottom: 6px;
+        }
+
+        .barcode-col {
+            width: 50%;
+            vertical-align: middle;
+            text-align: left;
+        }
+
+        .signature-col {
+            width: 50%;
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .barcode-svg-img {
+            height: 38px;
+            width: auto;
+            max-width: 100%;
+            display: block;
+        }
+
+        .sign-img {
+            height: 56px;
+            width: auto;
+            max-height: 56px;
+            display: block;
+            margin: 0 auto 2px auto;
+        }
+
+        .controller-label {
+            font-weight: bold;
+            font-size: 12px;
+            color: #000000;
+            margin-top: 2px;
+        }
+
+        /* ─── MOBILE VIEW: PROPORTIONALLY SCALED SMALL SIZE (Same Design, Scaled Down) ─── */
+        @media (max-width: 640px) {
+            .marksheet-sheet {
+                padding: 12px 14px;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            }
+
+            .action-bar {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 8px !important;
+            }
+
+            .action-bar a,
+            .action-bar button {
+                width: 100% !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            /* Header Logos */
+            .header-logo-table {
+                margin-bottom: 8px;
+            }
+
+            .header-logo-left {
+                padding-right: 14px;
+            }
+
+            .header-logo-right {
+                padding-left: 14px;
+            }
+
+            .logo-img-left {
+                height: 32px;
+                max-width: 110px;
+            }
+
+            .logo-img-right {
+                height: 52px;
+                max-width: 140px;
+            }
+
+            /* Banner */
+            .title-banner {
+                margin-left: -14px;
+                margin-right: -14px;
+                margin-bottom: 10px;
+                padding: 3.5px 0;
+            }
+
+            .title-banner h1 {
+                font-size: 12.5px;
+                letter-spacing: 0.8px;
+            }
+
+            /* Candidate Layout (Maintains exact 2-column side-by-side design) */
+            .candidate-table {
+                display: table !important;
+                width: 100% !important;
+                margin-bottom: 6px;
+            }
+
+            .details-col {
+                display: table-cell !important;
+                width: 73% !important;
+                padding-right: 6px !important;
+                vertical-align: top !important;
+            }
+
+            .photo-col {
+                display: table-cell !important;
+                width: 27% !important;
+                text-align: right !important;
+                vertical-align: top !important;
+            }
+
+            .details-grid td {
+                padding: 3px 5px !important;
+                font-size: 9px !important;
+                line-height: 1.25 !important;
+            }
+
+            .label-cell {
+                width: 35% !important;
+                font-size: 8.5px !important;
+            }
+
+            .reg-no-label {
+                font-size: 8px !important;
+                margin-bottom: 1px !important;
+                max-width: 100% !important;
+            }
+
+            .reg-no-box {
+                font-size: 13px !important;
+                height: 19px !important;
+                line-height: 19px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-bottom: 2px !important;
+            }
+
+            .photo-box {
+                height: 105px !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+
+            .photo-img {
+                height: 105px !important;
+                max-height: 105px !important;
+            }
+
+            .photo-placeholder {
+                font-size: 7.5px !important;
+            }
+
+            /* Scores Grid */
+            .scores-table-wrap {
+                margin-top: 6px;
+                margin-bottom: 8px;
+            }
+
+            .scores-grid td,
+            .scores-grid th {
+                padding: 3px 5px !important;
+                font-size: 9px !important;
+                line-height: 1.2 !important;
+            }
+
+            /* Summary & Status */
+            .summary-table {
+                display: table !important;
+                width: 100% !important;
+                margin-bottom: 8px;
+            }
+
+            .summary-left {
+                display: table-cell !important;
+                width: 62% !important;
+                font-size: 9px !important;
+                line-height: 1.3 !important;
+            }
+
+            .summary-right {
+                display: table-cell !important;
+                width: 38% !important;
+                text-align: right !important;
+            }
+
+            .status-badge-box {
+                padding: 4px 12px !important;
+                font-size: 11px !important;
+                letter-spacing: 1px !important;
+                border-radius: 6px !important;
+            }
+
+            /* Barcode & Signature */
+            .barcode-sig-table {
+                display: table !important;
+                width: 100% !important;
+                margin-top: 6px;
+                margin-bottom: 4px;
+            }
+
+            .barcode-col {
+                display: table-cell !important;
+                width: 50% !important;
+                vertical-align: middle !important;
+            }
+
+            .signature-col {
+                display: table-cell !important;
+                width: 50% !important;
+                vertical-align: middle !important;
+                text-align: right !important;
+            }
+
+            .barcode-svg-img {
+                height: 24px !important;
+            }
+
+            .sign-img {
+                height: 32px !important;
+                max-height: 32px !important;
+            }
+
+            .controller-label {
+                font-size: 8.5px !important;
+            }
+
+            .footnote-table {
+                font-size: 7.5px !important;
+            }
+        }
+
+        /* ─── PRINT MEDIA STYLES (A4 Layout) ─── */
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
             body {
                 background: white !important;
                 color: black !important;
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            .no-print {
+
+            .no-print,
+            .footer,
+            footer {
                 display: none !important;
             }
-            .print-bg-slate-950 {
-                background-color: white !important;
-            }
-            .print-card {
-                background: white !important;
-                border: 2px solid #000000 !important;
+
+            .marksheet-sheet {
                 box-shadow: none !important;
-                color: black !important;
-                width: 100% !important;
+                border-radius: 0 !important;
+                padding: 15px 20px !important;
                 max-width: 100% !important;
-                margin: 0 !important;
-                padding: 1.5rem !important;
+                width: 100% !important;
             }
-            .cert-border {
-                border: 4px double #000000 !important;
+
+            .title-banner {
+                background-color:
+                    {{ $bannerColor }}
+                    !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                margin-left: -20px !important;
+                margin-right: -20px !important;
+                margin-bottom: 22px !important;
+                padding: 6px 0 !important;
             }
-            .print-text-white {
-                color: #000000 !important;
+
+            .title-banner h1 {
+                color: #ffffff !important;
+                font-size: 22px !important;
+                letter-spacing: 1.5px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
-            .print-text-dark {
-                color: #111827 !important;
+
+            .candidate-table {
+                display: table !important;
+                width: 100% !important;
             }
-            .print-text-muted {
-                color: #374151 !important;
+
+            .details-col {
+                display: table-cell !important;
+                width: 76% !important;
+                padding-right: 15px !important;
             }
-            .print-bg-light {
-                background-color: #f3f4f6 !important;
+
+            .photo-col {
+                display: table-cell !important;
+                width: 24% !important;
+                text-align: right !important;
             }
-            .print-bg-transparent {
-                background-color: transparent !important;
+
+            .summary-table {
+                display: table !important;
+                width: 100% !important;
             }
-            .print-border-slate {
-                border-color: #9ca3af !important;
+
+            .summary-left {
+                display: table-cell !important;
+                width: 50% !important;
+                text-align: left !important;
             }
-            .print-badge-pass {
-                border: 2px solid #10b981 !important;
-                color: #047857 !important;
-                background-color: #ecfdf5 !important;
-                box-shadow: none !important;
+
+            .summary-right {
+                display: table-cell !important;
+                width: 50% !important;
+                text-align: right !important;
             }
-            .print-badge-fail {
-                border: 2px solid #f43f5e !important;
-                color: #be123c !important;
-                background-color: #fff1f2 !important;
-                box-shadow: none !important;
-            }
-            .print-badge-amber {
-                border: 2px solid #f59e0b !important;
-                color: #b45309 !important;
-                background-color: #fef3c7 !important;
-                box-shadow: none !important;
-            }
+
             @page {
                 size: A4;
-                margin: 10mm;
+                margin: 8mm;
             }
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen py-10 px-4 flex flex-col justify-between relative overflow-x-hidden print-bg-slate-950">
-    <!-- Neon Orbs Decorators (Hidden on print) -->
-    <div class="absolute -top-40 -right-40 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none no-print"></div>
-    <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none no-print"></div>
 
-    <div class="max-w-4xl w-full mx-auto my-auto print-card">
-        <!-- Main Certificate Card -->
-        <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 md:p-10 shadow-2xl relative cert-border print-card">
-            
-            <!-- Certificate Header -->
-            <div class="text-center border-b border-slate-800/80 pb-6 mb-8 print-border-slate">
-                <div class="flex justify-center mb-4">
-                    <img src="{{ asset('icon.png') }}" alt="ERMS Logo" class="w-16 h-16 rounded-xl object-contain filter drop-shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-                </div>
-                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white print-text-dark">YES INDIA FOUNDATION</h1>
-                <p class="text-xs uppercase font-bold tracking-widest text-indigo-400 mt-1">Examination Board Portal</p>
-                <h2 class="text-sm font-semibold text-slate-300 mt-2 uppercase tracking-wide print-text-muted">Official Statement of Marks</h2>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+
+    <!-- Glowing Background Ambient Orbs (Hidden on print) -->
+    <div
+        class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none no-print">
+    </div>
+    <div
+        class="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none no-print">
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1 flex flex-col items-center justify-center">
+
+        <!-- Main Marksheet Sheet (Scaled Down on Mobile) -->
+        <div class="marksheet-sheet">
+
+            <!-- 1. Header Section: Logos -->
+            <table class="header-logo-table">
+                <tr>
+                    <td class="header-logo-left">
+                        @if(file_exists(public_path('logob.png')))
+                            <img src="{{ asset('logob.png') }}" class="logo-img-left">
+                        @elseif(file_exists(public_path('logo.png')))
+                            <img src="{{ asset('logo.png') }}" class="logo-img-left">
+                        @endif
+                    </td>
+                    <td class="header-logo-right">
+                        @if(file_exists(public_path('logo.png')))
+                            <img src="{{ asset('logo.png') }}" class="logo-img-right">
+                        @endif
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 2. Category Title Banner (Category-wise Background Color) -->
+            <div class="title-banner" style="background-color: {{ $bannerColor }} !important;">
+                <h1>Statement of Marks</h1>
             </div>
 
-            <!-- Candidate Details Section -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 items-start">
-                <!-- Info Grid -->
-                <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                    <div>
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Candidate Name</span>
-                        <strong class="text-slate-100 text-base print-text-dark">{{ $student->name }}</strong>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Registration Number</span>
-                        <strong class="text-slate-200 font-mono text-base print-text-dark">{{ $student->registration_number }}</strong>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Hall Ticket Number</span>
-                        <strong class="text-slate-200 font-mono text-base print-text-dark">{{ $student->hall_ticket_number ?? 'N/A' }}</strong>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Date of Birth (DOB)</span>
-                        <strong class="text-slate-200 text-base print-text-dark">{{ $student->dob->format('d M Y') }}</strong>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Class & Category</span>
-                        <strong class="text-slate-200 print-text-dark">{{ $student->class->name }} ({{ $student->category->name }})</strong>
-                    </div>
-                    <div>
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Examination Session</span>
-                        <strong class="text-slate-200 print-text-dark">{{ $student->examination->name }} ({{ $student->examination->academic_year }})</strong>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <span class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">School Name</span>
-                        <strong class="text-slate-200 print-text-dark leading-relaxed">{{ $student->school->name }}</strong>
-                    </div>
-                </div>
+            <!-- 3. Candidate Details & Photograph Layout (Exact Side-by-Side Design) -->
+            <table class="candidate-table">
+                <tr>
+                    <!-- Left: Details Grid -->
+                    <td class="details-col">
+                        <table class="details-grid">
+                            <tr>
+                                <td class="label-cell">Category</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    {{ strtoupper($student->category->name ?? 'N/A') }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Centre of Examination</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    {{ strtoupper($student->centre->name ?? $student->school->name ?? 'N/A') }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Name of Candidate</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    {{ strtoupper($student->name) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Parentage</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    {{ strtoupper($student->father_name ?? 'N/A') }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Class</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    {{ strtoupper($student->class->name ?? 'N/A') }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Date of Examination</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    30-08-2026
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Examination Session</td>
+                                <td class="value-cell" style="font-weight: bold;">
+                                    {{ strtoupper($student->examination->name ?? 'EXAMINATION') }}
+                                    ({{ $student->examination->academic_year ?? '2026-2027' }})
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
 
-                <!-- Photograph Container -->
-                <div class="flex justify-center md:justify-end md:col-span-1">
-                    <div class="w-28 h-32 rounded-xl overflow-hidden border border-slate-800 p-1.5 bg-slate-950/40 print-border-slate">
-                        <img src="{{ $student->photo_url }}" alt="Candidate Photo" class="w-full h-full object-cover rounded-lg">
-                    </div>
-                </div>
-            </div>
+                    <!-- Right: Reg No & Photo Box -->
+                    <td class="photo-col">
+                        <div class="reg-no-label">
+                            Reg. No
+                        </div>
+                        <div class="reg-no-box">
+                            {{ $student->registration_number }}
+                        </div>
+                        <div class="photo-box">
+                            @if($photoSrc)
+                                <img src="{{ $photoSrc }}" alt="Candidate Photo" class="photo-img">
+                            @else
+                                <div class="photo-placeholder">
+                                    AFFIX<br>PHOTO
+                                </div>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
-            <!-- Subject Scores Table -->
-            <div class="border border-slate-800/80 rounded-2xl overflow-hidden mb-8 print-border-slate">
-                <table class="w-full text-sm text-left">
+            <!-- 4. Result Scores Table (Matching Grid Design) -->
+            <div class="scores-table-wrap">
+                <table class="scores-grid">
                     <thead>
-                        <tr class="bg-slate-950/40 border-b border-slate-800/80 print-bg-light print-border-slate">
-                            <th class="px-5 py-3 font-semibold text-slate-400 uppercase tracking-wider print-text-dark">Subject Details</th>
-                            <th class="px-5 py-3 font-semibold text-slate-400 uppercase tracking-wider text-center print-text-dark w-36">Marks Obtained</th>
-                            <th class="px-5 py-3 font-semibold text-slate-400 uppercase tracking-wider text-center print-text-dark w-36">Max Marks</th>
+                        <tr style="background-color: #f8fafc; text-align: left;">
+                            <th style="font-weight: bold; width: 45%;">Assessment Details</th>
+                            <th style="font-weight: bold; text-align: center; width: 18%;">Marks Obtained</th>
+                            <th style="font-weight: bold; text-align: center; width: 18%;">Maximum Marks</th>
+                            <th style="font-weight: bold; text-align: center; width: 19%;">Grade / Status</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-850/60 print-border-slate">
-                        @if($result->subject_marks && count($result->subject_marks) > 0)
+                    <tbody>
+                        @if($result && $result->subject_marks && count($result->subject_marks) > 0)
                             @foreach($result->subject_marks as $subjectName => $data)
-                                <tr class="hover:bg-slate-900/10 transition-colors print-bg-transparent">
-                                    <td class="px-5 py-3 font-medium text-slate-200 print-text-dark">{{ $subjectName }}</td>
-                                    <td class="px-5 py-3 text-center text-slate-200 font-mono font-semibold print-text-dark">{{ $data['marks'] }}</td>
-                                    <td class="px-5 py-3 text-center text-slate-400 font-mono print-text-muted">{{ $data['max'] }}</td>
+                                <tr>
+                                    <td style="font-weight: bold;">{{ $subjectName }}</td>
+                                    <td style="text-align: center; font-family: monospace; font-weight: bold;">
+                                        {{ $data['marks'] }}</td>
+                                    <td style="text-align: center; font-family: monospace;">{{ $data['max'] }}</td>
+                                    <td style="text-align: center; font-weight: bold;">—</td>
                                 </tr>
                             @endforeach
-                        @else
-                            {{-- Fallback: If no subject-specific details are added, just show the aggregate line item --}}
-                            <tr class="hover:bg-slate-900/10 transition-colors print-bg-transparent">
-                                <td class="px-5 py-3 font-medium text-slate-200 print-text-dark">Aggregate Exam Marks</td>
-                                <td class="px-5 py-3 text-center text-slate-200 font-mono font-semibold print-text-dark">{{ $result->marks_obtained }}</td>
-                                <td class="px-5 py-3 text-center text-slate-400 font-mono print-text-muted">{{ $result->max_marks }}</td>
-                            </tr>
                         @endif
-                        
-                        <!-- Totals Row -->
-                        <tr class="bg-slate-950/20 border-t border-slate-800 font-bold print-bg-light print-border-slate">
-                            <td class="px-5 py-4 text-slate-200 print-text-dark uppercase tracking-wider text-xs">Total Aggregate Marks</td>
-                            <td class="px-5 py-4 text-center text-slate-100 font-mono text-base print-text-dark">{{ $result->marks_obtained }}</td>
-                            <td class="px-5 py-4 text-center text-slate-400 font-mono print-text-muted">{{ $result->max_marks }}</td>
+
+                        <tr style="background-color: #ffffff; font-weight: bold;">
+                            <td>Total Aggregate Marks</td>
+                            <td style="text-align: center; font-family: monospace; font-weight: bold; color: #000000;">
+                                {{ $result ? $result->marks_obtained : '0' }}
+                            </td>
+                            <td style="text-align: center; font-family: monospace;">
+                                {{ $result ? $result->max_marks : '500' }}
+                            </td>
+                            <td style="text-align: center;">
+                                <span style="font-weight: bold; color: #1e3a8a;">
+                                    {{ $result && $result->grade ? $result->grade : ($result && $result->percentage ? $result->percentage . '%' : '—') }}
+                                </span>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Grade & Summary Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 items-center">
-                <!-- Percentage & Grade Box -->
-                <div class="sm:col-span-2 grid grid-cols-2 gap-4">
-                    <div class="bg-slate-950/30 border border-slate-850 p-4 rounded-2xl flex flex-col justify-center print-bg-light print-border-slate">
-                        <span class="text-xs text-slate-500 uppercase font-semibold tracking-wider">Percentage</span>
-                        <strong class="text-xl font-bold text-slate-200 font-mono print-text-dark mt-1">{{ $result->percentage }}%</strong>
-                    </div>
-                    <div class="bg-slate-950/30 border border-slate-850 p-4 rounded-2xl flex flex-col justify-center print-bg-light print-border-slate">
-                        <span class="text-xs text-slate-500 uppercase font-semibold tracking-wider">Final Grade</span>
-                        <strong class="text-xl font-bold text-indigo-400 print-text-dark mt-1">{{ $result->grade }}</strong>
-                    </div>
-                </div>
+            <!-- 5. Overall Result Summary & Status (Exact Side-by-Side Design) -->
+            <table class="summary-table">
+                <tr>
+                    <td class="summary-left">
+                        @php
+                            $remarksText = $result ? $result->remarks : null;
+                            if (empty($remarksText) && $result) {
+                                if ($result->status === 'Pass') {
+                                    $remarksText = 'Qualified For Second Round Examination';
+                                } elseif ($result->status === 'Fail') {
+                                    $remarksText = 'Not Qualified For Second Round Examination';
+                                }
+                            }
+                        @endphp
+                        <div style="line-height: 1.5;">
+                            <strong>Percentage:</strong> {{ $result ? $result->percentage : '0' }}%<br>
+                            <strong>Final Grade:</strong> {{ $result ? $result->grade : 'N/A' }}<br>
+                            @if($remarksText)
+                                <strong>Remarks:</strong> {{ $remarksText }}
+                            @endif
+                        </div>
+                    </td>
+                    <td class="summary-right">
+                        @php
+                            $statusText = $result ? $result->status : 'Absent';
+                            $statusBorder = '#10b981';
+                            $statusBg = '#ecfdf5';
+                            $statusColor = '#047857';
+                            if ($statusText === 'Fail') {
+                                $statusBorder = '#f43f5e';
+                                $statusBg = '#fff1f2';
+                                $statusColor = '#be123c';
+                            } elseif ($statusText === 'Absent' || $statusText === 'Withheld') {
+                                $statusBorder = '#f59e0b';
+                                $statusBg = '#fef3c7';
+                                $statusColor = '#b45309';
+                            }
+                        @endphp
+                        <div class="status-badge-box"
+                            style="display: inline-block; border: 2px solid {{ $statusBorder }}; background-color: {{ $statusBg }}; color: {{ $statusColor }}; padding: 8px 24px; border-radius: 8px; font-weight: 800; font-size: 16px; letter-spacing: 2px; text-transform: uppercase;">
+                            {{ $statusText }}
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
-                <!-- Status Badge Banner -->
-                <div class="flex justify-center sm:justify-end">
-                    @php
-                        $resStatus = $result->status;
-                        $badgeClass = 'border-indigo-500/20 text-indigo-400 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.08)] print-badge-amber';
-                        if ($resStatus === 'Pass') {
-                            $badgeClass = 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.08)] print-badge-pass';
-                        } elseif ($resStatus === 'Fail') {
-                            $badgeClass = 'border-rose-500/20 text-rose-400 bg-rose-500/10 shadow-[0_0_20px_rgba(244,63,94,0.08)] print-badge-fail';
-                        } elseif ($resStatus === 'Absent' || $resStatus === 'Withheld') {
-                            $badgeClass = 'border-amber-500/20 text-amber-400 bg-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.08)] print-badge-amber';
-                        }
-                    @endphp
-                    <div class="w-full border-2 rounded-2xl py-5 text-center font-extrabold text-2xl uppercase tracking-widest leading-none {{ $badgeClass }}">
-                        {{ $resStatus }}
-                    </div>
-                </div>
-            </div>
+            <hr style="border: 0; border-top: 1px solid #000000; margin: 10px 0;">
 
-            <!-- Signatures Layout -->
-            <div class="grid grid-cols-2 gap-8 border-t border-slate-800/80 pt-10 mt-10 print-border-slate text-center text-xs">
-                <div>
-                    <div class="h-10"></div> <!-- Sig spacing -->
-                    <div class="w-36 mx-auto border-b border-slate-700/60 print-border-slate mb-1.5"></div>
-                    <span class="block text-slate-500 font-semibold uppercase tracking-wider">Controller of Examinations</span>
-                    <span class="block text-[10px] text-slate-600 mt-0.5">Yes India Foundation</span>
-                </div>
-                <div>
-                    <div class="h-10"></div> <!-- Sig spacing -->
-                    <div class="w-36 mx-auto border-b border-slate-700/60 print-border-slate mb-1.5"></div>
-                    <span class="block text-slate-500 font-semibold uppercase tracking-wider">Board President</span>
-                    <span class="block text-[10px] text-slate-600 mt-0.5">Yes India Foundation</span>
-                </div>
-            </div>
-            
+            <!-- 6. Barcode & Controller Signature Row (Exact Side-by-Side Design) -->
+            <table class="barcode-sig-table">
+                <tr>
+                    <td class="barcode-col">
+                        <img src="{{ $barcodeSvg }}" class="barcode-svg-img">
+                    </td>
+                    <td class="signature-col">
+                        <div style="display: inline-block; text-align: center;">
+                            @if($signPath)
+                                <img src="{{ $signPath }}" alt="Controller Signature" class="sign-img">
+                            @else
+                                <svg width="100" height="28" viewBox="0 0 100 28" xmlns="http://www.w3.org/2000/svg"
+                                    style="display: block; margin: 0 auto 2px auto;">
+                                    <path d="M5 18 C20 8, 35 22, 50 10 C60 5, 75 20, 90 12" fill="none" stroke="#1d4ed8"
+                                        stroke-width="1.8" />
+                                    <path d="M30 20 L75 6" fill="none" stroke="#1d4ed8" stroke-width="1.4" />
+                                </svg>
+                            @endif
+                            <div class="controller-label">
+                                Controller Of Examination
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 7. Bottom Footnote -->
+            <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 8px 0 5px;">
+            <table class="footnote-table"
+                style="width: 100%; border-collapse: collapse; font-size: 9px; color: #475569;">
+                <tr>
+                    <td style="width: 50%; text-align: left; vertical-align: top;">
+                        Board of Examinations<br>
+                        YES Academia
+                    </td>
+                    <td style="width: 50%; text-align: right; vertical-align: top;">
+                        yesgeniusacademia@gmail.com
+                    </td>
+                </tr>
+            </table>
+
         </div>
 
-        <!-- Print Actions Bar (Hidden on print) -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 px-2 no-print">
-            <a href="{{ route('results.check-form') }}" class="text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        <!-- Action Bar Under Marksheet (Hidden on print) -->
+        <div class="action-bar w-full max-w-[780px] flex items-center justify-between gap-4 mt-4 sm:mt-6 no-print">
+            <a href="{{ route('results.check-form') }}"
+                class="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                 </svg>
                 Check Another Result
             </a>
 
-            <button type="button" onclick="window.print()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/10 flex items-center gap-2 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 0 1-2.25 2.25H8.59a2.25 2.25 0 0 1-2.25-2.25M17.66 18c.067-.179.1-.368.1-.562V12h1.5A2.25 2.25 0 0 0 17 9.75H7A2.25 2.25 0 0 0 4.75 12v5.438c0 .194.033.383.1.562m12.8 0H4.85M16.5 9.75V4.875c0-.621-.504-1.125-1.125-1.125h-6.75a1.125 1.125 0 0 0-1.125 1.125V9.75M8.25 12.5h.008v.008H8.25v-.008Zm3.75 0h.008v.008H12v-.008Z" />
+            <button type="button" id="print-marksheet-btn"
+                class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/10 flex items-center gap-2 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0a2.25 2.25 0 0 1-2.25 2.25H8.59a2.25 2.25 0 0 1-2.25-2.25M17.66 18c.067-.179.1-.368.1-.562V12h1.5A2.25 2.25 0 0 0 17 9.75H7A2.25 2.25 0 0 0 4.75 12v5.438c0 .194.033.383.1.562m12.8 0H4.85M16.5 9.75V4.875c0-.621-.504-1.125-1.125-1.125h-6.75a1.125 1.125 0 0 0-1.125 1.125V9.75M8.25 12.5h.008v.008H8.25v-.008Zm3.75 0h.008v.008H12v-.008Z" />
                 </svg>
                 Print Statement of Marks
             </button>
         </div>
     </div>
+
+    <!-- Public Footer Component (Hidden on print) -->
+    <div class="w-full no-print">
+        <x-public-footer page="results" />
+    </div>
+
+    <script @nonce>
+        document.addEventListener('DOMContentLoaded', function () {
+            var printBtn = document.getElementById('print-marksheet-btn');
+            if (printBtn) {
+                printBtn.addEventListener('click', function () {
+                    window.print();
+                });
+            }
+        });
+    </script>
 </body>
+
 </html>

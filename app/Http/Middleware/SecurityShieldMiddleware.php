@@ -100,7 +100,7 @@ class SecurityShieldMiddleware
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                "img-src 'self' data: https://* http://*; " .
-               "font-src 'self' https://fonts.gstatic.com; " .
+               "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; " .
                "connect-src 'self' https://api.cashfree.com https://sandbox.cashfree.com https://challenges.cloudflare.com; " .
                "frame-src 'self' https://sdk.cashfree.com https://challenges.cloudflare.com; " .
                "frame-ancestors 'none';";

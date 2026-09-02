@@ -14,7 +14,7 @@
     </div>
 
     {{-- Candidate Info Card --}}
-    <div class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-4 items-center">
+    <div class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row gap-4 items-center shadow-lg">
         <div class="w-16 h-16 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shrink-0">
             <img src="{{ $student->photo_url }}" alt="{{ $student->name }}" class="w-full h-full object-cover">
         </div>
@@ -35,7 +35,17 @@
         @csrf
         @method('PUT')
 
-        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 space-y-5">
+        @if ($errors->any())
+            <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 space-y-5 shadow-xl">
             <h4 class="text-sm font-semibold text-slate-200 border-b border-slate-800/60 pb-3 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-indigo-400">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.062a4.5 4.5 0 0 1-1.89 1.13L2.685 21.8a.75.75 0 0 1-.944-.94l.813-2.831a4.5 4.5 0 0 1 1.13-1.89L16.863 4.487zm0 0L19.5 7.125" />
@@ -45,12 +55,12 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Marks Obtained</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Marks Obtained <span class="text-rose-400">*</span></label>
                     <input type="number" name="marks_obtained" id="marks_obtained" value="{{ $result->marks_obtained }}" min="0" placeholder="e.g. 350" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Maximum Marks</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Maximum Marks <span class="text-rose-400">*</span></label>
                     <input type="number" name="max_marks" id="max_marks" value="{{ $result->max_marks }}" min="1" placeholder="e.g. 500" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
                 </div>
 
@@ -72,34 +82,8 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1.5">Remarks / Comments (Optional)</label>
-                <textarea name="remarks" rows="2" placeholder="Enter general comments about candidate performance..." class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">{{ $result->remarks }}</textarea>
+                <textarea name="remarks" id="remarks" rows="2" placeholder="e.g. Qualified For Second Round Examination" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">{{ $result->remarks }}</textarea>
             </div>
-        </div>
-
-        {{-- Subject-wise Details --}}
-        <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-6 space-y-5">
-            <div class="border-b border-slate-800/60 pb-3 flex items-center justify-between">
-                <h4 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-indigo-400">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 0A48.536 48.536 0 0112 3m0 0c2.917 0 5.747.294 8.5.862" />
-                    </svg>
-                    Subject-wise Scores (Optional)
-                </h4>
-                <button type="button" id="add-subject-btn" class="px-3 py-1.5 rounded-lg border border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 text-indigo-400 text-xs font-bold transition-all duration-200 flex items-center gap-1 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Add Subject
-                </button>
-            </div>
-
-            <div id="subject-container" class="space-y-3">
-                {{-- Dynamic rows will be inserted here --}}
-            </div>
-
-            <p class="text-[11px] text-slate-500 italic">
-                Note: Subject-wise marks are optional. If added, they will show on the candidate's marksheet certificate.
-            </p>
         </div>
 
         <div class="flex justify-end gap-3">
@@ -114,100 +98,23 @@
 </div>
 
 <script @nonce>
-    function addSubjectRow(name = '', marks = '', max = '100') {
-        const container = document.getElementById('subject-container');
-        const rowId = 'row-' + Date.now() + Math.random().toString(36).substr(2, 5);
-        
-        const rowHTML = `
-            <div id="${rowId}" class="flex flex-col sm:flex-row gap-3 items-center bg-slate-800/30 border border-slate-850 p-3 rounded-xl">
-                <div class="flex-1 w-full">
-                    <label class="block text-slate-500 text-[10px] mb-1 font-semibold">Subject Name</label>
-                    <input type="text" name="subject_names[]" value="${name}" placeholder="e.g. Mathematics" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
-                </div>
-                <div class="w-full sm:w-28">
-                    <label class="block text-slate-500 text-[10px] mb-1 font-semibold">Marks Obtained</label>
-                    <input type="number" name="subject_marks[]" value="${marks}" placeholder="85" min="0" class="subject-obtained-input w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
-                </div>
-                <div class="w-full sm:w-28">
-                    <label class="block text-slate-500 text-[10px] mb-1 font-semibold">Max Marks</label>
-                    <input type="number" name="subject_max[]" value="${max}" placeholder="100" min="1" class="subject-max-input w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
-                </div>
-                <div class="self-end pb-1 w-full sm:w-auto flex justify-end">
-                    <button type="button" data-remove-row="${rowId}" class="remove-subject-btn p-2 rounded-lg bg-slate-900 hover:bg-rose-950/40 text-rose-400 hover:text-rose-300 transition-colors border border-rose-950/20 cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        container.insertAdjacentHTML('beforeend', rowHTML);
+document.addEventListener('DOMContentLoaded', function() {
+    var statusSelect = document.getElementById('status');
+    var remarksInput = document.getElementById('remarks');
+    var defaultPass = 'Qualified For Second Round Examination';
+    var defaultFail = 'Not Qualified For Second Round Examination';
 
-        // Attach event listeners for calculations
-        const row = document.getElementById(rowId);
-        row.querySelector('.subject-obtained-input').addEventListener('input', calculateTotals);
-        row.querySelector('.subject-max-input').addEventListener('input', calculateTotals);
-        calculateTotals();
-    }
-
-    // Auto calculate sum of marks
-    function calculateTotals() {
-        const obtainedInputs = document.querySelectorAll('.subject-obtained-input');
-        const maxInputs = document.querySelectorAll('.subject-max-input');
-        
-        let totalObtained = 0;
-        let totalMax = 0;
-
-        obtainedInputs.forEach(input => {
-            if (input.value) totalObtained += parseInt(input.value);
-        });
-
-        maxInputs.forEach(input => {
-            if (input.value) totalMax += parseInt(input.value);
-        });
-
-        // Set aggregate values if there are subjects
-        if (obtainedInputs.length > 0) {
-            document.getElementById('marks_obtained').value = totalObtained;
-            document.getElementById('max_marks').value = totalMax;
-            
-            // Auto update Pass/Fail status
-            const pct = (totalObtained / totalMax) * 100;
-            const statusDropdown = document.getElementById('status');
-            if (pct >= 35) {
-                statusDropdown.value = 'Pass';
+    statusSelect.addEventListener('change', function() {
+        if (!remarksInput.value || remarksInput.value === defaultPass || remarksInput.value === defaultFail) {
+            if (statusSelect.value === 'Pass') {
+                remarksInput.value = defaultPass;
+            } else if (statusSelect.value === 'Fail') {
+                remarksInput.value = defaultFail;
             } else {
-                statusDropdown.value = 'Fail';
+                remarksInput.value = '';
             }
         }
-    }
-
-    // Wire up Add Subject button + event delegation for remove buttons
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('add-subject-btn').addEventListener('click', () => addSubjectRow());
-
-        // Event delegation: handle remove buttons for dynamically-created rows
-        document.getElementById('subject-container').addEventListener('click', function(e) {
-            const btn = e.target.closest('.remove-subject-btn');
-            if (!btn) return;
-            const rowId = btn.dataset.removeRow;
-            const row = document.getElementById(rowId);
-            if (row) row.remove();
-            calculateTotals();
-        });
-
-        // Populates previous subjects
-        @if($result->subject_marks && count($result->subject_marks) > 0)
-            @foreach($result->subject_marks as $name => $data)
-                addSubjectRow('{{ $name }}', '{{ $data['marks'] }}', '{{ $data['max'] }}');
-            @endforeach
-        @else
-            // Fallbacks
-            addSubjectRow('English', '', '100');
-            addSubjectRow('Mathematics', '', '100');
-            addSubjectRow('Science', '', '100');
-        @endif
     });
+});
 </script>
 @endsection
