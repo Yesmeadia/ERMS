@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\School;
-use App\Models\ClassMaster;
-use App\Models\CategoryMaster;
-use App\Models\Examination;
 use App\Exports\ReportsExport;
+use App\Models\CategoryMaster;
+use App\Models\ClassMaster;
+use App\Models\Examination;
+use App\Models\School;
+use App\Models\Student;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -21,11 +21,11 @@ class ReportController extends Controller
      */
     public function adminIndex(Request $request)
     {
-        $reportType    = $request->get('type', 'school_wise');
+        $reportType = $request->get('type', 'school_wise');
         $examinationId = $request->get('examination_id');
-        $classId       = $request->get('class_id');
-        $categoryId    = $request->get('category_id');
-        $zone          = $request->get('zone');
+        $classId = $request->get('class_id');
+        $categoryId = $request->get('category_id');
+        $zone = $request->get('zone');
 
         $examinations = Examination::all();
 
@@ -34,14 +34,14 @@ class ReportController extends Controller
         if ($examinationId) {
             $studentQuery->where('examination_id', $examinationId);
         }
-        $registeredClassIds    = (clone $studentQuery)->distinct()->pluck('class_id');
+        $registeredClassIds = (clone $studentQuery)->distinct()->pluck('class_id');
         $registeredCategoryIds = (clone $studentQuery)->distinct()->pluck('category_id');
 
-        $classes    = ClassMaster::whereIn('id', $registeredClassIds)->orderBy('name')->get();
+        $classes = ClassMaster::whereIn('id', $registeredClassIds)->orderBy('name')->get();
         $categories = CategoryMaster::whereIn('id', $registeredCategoryIds)->orderBy('name')->get();
-        $zones      = School::whereNotNull('zone')->where('zone', '!=', '')->distinct()->orderBy('zone')->pluck('zone');
+        $zones = School::whereNotNull('zone')->where('zone', '!=', '')->distinct()->orderBy('zone')->pluck('zone');
 
-        $reportData   = $this->getAdminReportData($reportType, $examinationId, $classId, $categoryId, $zone);
+        $reportData = $this->getAdminReportData($reportType, $examinationId, $classId, $categoryId, $zone);
         $reportCharts = $this->getAdminReportCharts($examinationId);
 
         return view('super-admin.reports.index', compact(
@@ -64,12 +64,12 @@ class ReportController extends Controller
      */
     public function schoolIndex(Request $request)
     {
-        $reportType    = $request->get('type', 'registered');
+        $reportType = $request->get('type', 'registered');
         $examinationId = $request->get('examination_id');
-        $classId       = $request->get('class_id');
-        $categoryId    = $request->get('category_id');
+        $classId = $request->get('class_id');
+        $categoryId = $request->get('category_id');
 
-        $school       = Auth::user()->school;
+        $school = Auth::user()->school;
         $examinations = Examination::all();
 
         // Only show classes/categories that have student registrations for this school
@@ -77,10 +77,10 @@ class ReportController extends Controller
         if ($examinationId) {
             $studentQuery->where('examination_id', $examinationId);
         }
-        $registeredClassIds    = (clone $studentQuery)->distinct()->pluck('class_id');
+        $registeredClassIds = (clone $studentQuery)->distinct()->pluck('class_id');
         $registeredCategoryIds = (clone $studentQuery)->distinct()->pluck('category_id');
 
-        $classes    = ClassMaster::whereIn('id', $registeredClassIds)->orderBy('name')->get();
+        $classes = ClassMaster::whereIn('id', $registeredClassIds)->orderBy('name')->get();
         $categories = CategoryMaster::whereIn('id', $registeredCategoryIds)->orderBy('name')->get();
 
         $reportData = $this->getSchoolReportData($reportType, $school->id, $examinationId, $classId, $categoryId);
@@ -102,23 +102,24 @@ class ReportController extends Controller
      */
     public function adminExport(Request $request)
     {
-        $reportType    = $request->get('type', 'school_wise');
+        $reportType = $request->get('type', 'school_wise');
         $examinationId = $request->get('examination_id');
-        $classId       = $request->get('class_id');
-        $categoryId    = $request->get('category_id');
-        $zone          = $request->get('zone');
-        $format        = $request->get('format', 'excel'); // excel, csv, pdf
+        $classId = $request->get('class_id');
+        $categoryId = $request->get('category_id');
+        $zone = $request->get('zone');
+        $format = $request->get('format', 'excel'); // excel, csv, pdf
 
         $reportData = $this->getAdminReportData($reportType, $examinationId, $classId, $categoryId, $zone);
-        $title = ucwords(str_replace('_', ' ', $reportType)) . ' Report';
+        $title = ucwords(str_replace('_', ' ', $reportType)).' Report';
 
         if ($format === 'pdf') {
             $pdf = Pdf::loadView('pdf.report', compact('reportData', 'title'));
             $pdf->setPaper('a4', 'landscape');
-            return $pdf->download(strtolower(str_replace(' ', '_', $title)) . '_' . time() . '.pdf');
+
+            return $pdf->download(strtolower(str_replace(' ', '_', $title)).'_'.time().'.pdf');
         }
 
-        $fileName = strtolower(str_replace(' ', '_', $title)) . '_' . time() . ($format === 'csv' ? '.csv' : '.xlsx');
+        $fileName = strtolower(str_replace(' ', '_', $title)).'_'.time().($format === 'csv' ? '.csv' : '.xlsx');
         $excelFormat = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
 
         return Excel::download(
@@ -133,23 +134,24 @@ class ReportController extends Controller
      */
     public function schoolExport(Request $request)
     {
-        $reportType    = $request->get('type', 'registered');
+        $reportType = $request->get('type', 'registered');
         $examinationId = $request->get('examination_id');
-        $classId       = $request->get('class_id');
-        $categoryId    = $request->get('category_id');
-        $format        = $request->get('format', 'excel');
+        $classId = $request->get('class_id');
+        $categoryId = $request->get('category_id');
+        $format = $request->get('format', 'excel');
 
-        $school     = Auth::user()->school;
+        $school = Auth::user()->school;
         $reportData = $this->getSchoolReportData($reportType, $school->id, $examinationId, $classId, $categoryId);
-        $title      = $school->code . ' - ' . ucwords(str_replace('_', ' ', $reportType)) . ' Report';
+        $title = $school->code.' - '.ucwords(str_replace('_', ' ', $reportType)).' Report';
 
         if ($format === 'pdf') {
             $pdf = Pdf::loadView('pdf.report', compact('reportData', 'title'));
             $pdf->setPaper('a4', 'landscape');
-            return $pdf->download(strtolower(str_replace(' ', '_', $title)) . '_' . time() . '.pdf');
+
+            return $pdf->download(strtolower(str_replace(' ', '_', $title)).'_'.time().'.pdf');
         }
 
-        $fileName = strtolower(str_replace(' ', '_', $title)) . '_' . time() . ($format === 'csv' ? '.csv' : '.xlsx');
+        $fileName = strtolower(str_replace(' ', '_', $title)).'_'.time().($format === 'csv' ? '.csv' : '.xlsx');
         $excelFormat = $format === 'csv' ? \Maatwebsite\Excel\Excel::CSV : \Maatwebsite\Excel\Excel::XLSX;
 
         return Excel::download(
@@ -219,24 +221,24 @@ class ReportController extends Controller
                         $item->rejected ?? 0,
                         $item->ht_issued ?? 0,
                     ];
-                    $rows[]       = $row;
+                    $rows[] = $row;
                     $exportRows[] = $row;
                 }
 
                 $ordered = $data->sortByDesc('total')->values();
 
                 $chart = [
-                    'title'      => 'Students by Zone',
-                    'chartType'  => 'bar',
-                    'stacked'    => true,
+                    'title' => 'Students by Zone',
+                    'chartType' => 'bar',
+                    'stacked' => true,
                     'categories' => $ordered->pluck('zone_name')->all(),
-                    'series'     => [
-                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn($v) => (int)($v ?? 0))->all()],
-                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn($v) => (int)($v ?? 0))->all()],
-                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn($v) => (int)($v ?? 0))->all()],
-                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn($v) => (int)($v ?? 0))->all()],
-                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn($v) => (int)($v ?? 0))->all()],
-                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn($v) => (int)($v ?? 0))->all()],
+                    'series' => [
+                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn ($v) => (int) ($v ?? 0))->all()],
+                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn ($v) => (int) ($v ?? 0))->all()],
+                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn ($v) => (int) ($v ?? 0))->all()],
+                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn ($v) => (int) ($v ?? 0))->all()],
+                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn ($v) => (int) ($v ?? 0))->all()],
+                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn ($v) => (int) ($v ?? 0))->all()],
                     ],
                 ];
                 break;
@@ -283,7 +285,7 @@ class ReportController extends Controller
                         $item->under_review ?? 0,
                         $item->approved ?? 0,
                         $item->rejected ?? 0,
-                        $item->ht_issued ?? 0
+                        $item->ht_issued ?? 0,
                     ];
                     $rows[] = $row;
                     $exportRows[] = $row;
@@ -297,12 +299,12 @@ class ReportController extends Controller
                     'stacked' => true,
                     'categories' => $ordered->pluck('name')->all(),
                     'series' => [
-                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn($value) => (int) ($value ?? 0))->all()],
-                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Draft', 'data' => $ordered->pluck('draft')->map(fn ($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Submitted', 'data' => $ordered->pluck('submitted')->map(fn ($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Under Review', 'data' => $ordered->pluck('under_review')->map(fn ($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Approved', 'data' => $ordered->pluck('approved')->map(fn ($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Rejected', 'data' => $ordered->pluck('rejected')->map(fn ($value) => (int) ($value ?? 0))->all()],
+                        ['name' => 'Hall Ticket Issued', 'data' => $ordered->pluck('ht_issued')->map(fn ($value) => (int) ($value ?? 0))->all()],
                     ],
                 ];
                 break;
@@ -361,19 +363,19 @@ class ReportController extends Controller
                         $item->attendance_date ? date('d M Y', strtotime($item->attendance_date)) : 'N/A',
                         $item->attendance_time ? date('h:i A', strtotime($item->attendance_time)) : 'N/A',
                         $item->marker_name ?? 'N/A',
-                        $item->status
+                        $item->status,
                     ];
                     $rows[] = $row;
                     $exportRows[] = $row;
                 }
 
-                $grouped = $data->groupBy('status')->map(fn($items) => $items->count());
+                $grouped = $data->groupBy('status')->map(fn ($items) => $items->count());
                 $chart = [
                     'title' => 'Attendance Summary',
                     'chartType' => 'donut',
                     'categories' => $grouped->keys()->all(),
                     'labels' => $grouped->keys()->all(),
-                    'series' => $grouped->values()->map(fn($value) => (int) $value)->all(),
+                    'series' => $grouped->values()->map(fn ($value) => (int) $value)->all(),
                 ];
                 break;
 
@@ -405,14 +407,14 @@ class ReportController extends Controller
                     $total = $item->total_issued ?? 0;
                     $present = $item->present_count ?? 0;
                     $absent = $total - $present;
-                    $rate = $total > 0 ? round(($present / $total) * 100, 1) . '%' : '0%';
+                    $rate = $total > 0 ? round(($present / $total) * 100, 1).'%' : '0%';
 
                     $row = [
                         $item->category_name,
                         $total,
                         $present,
                         $absent,
-                        $rate
+                        $rate,
                     ];
                     $rows[] = $row;
                     $exportRows[] = $row;
@@ -425,8 +427,8 @@ class ReportController extends Controller
                     'chartType' => 'bar',
                     'categories' => $ordered->pluck('category_name')->all(),
                     'series' => [
-                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn($value) => (int) $value)->all()],
-                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn($value) => (int) $value)->all()],
+                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn ($value) => (int) $value)->all()],
+                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn ($value) => (int) $value)->all()],
                     ],
                 ];
                 break;
@@ -457,14 +459,14 @@ class ReportController extends Controller
                     $total = $item->total_issued ?? 0;
                     $present = $item->present_count ?? 0;
                     $absent = $total - $present;
-                    $rate = $total > 0 ? round(($present / $total) * 100, 1) . '%' : '0%';
+                    $rate = $total > 0 ? round(($present / $total) * 100, 1).'%' : '0%';
 
                     $row = [
                         $genderLabel,
                         $total,
                         $present,
                         $absent,
-                        $rate
+                        $rate,
                     ];
                     $rows[] = $row;
                     $exportRows[] = $row;
@@ -475,10 +477,10 @@ class ReportController extends Controller
                 $chart = [
                     'title' => 'Attendance by Gender',
                     'chartType' => 'bar',
-                    'categories' => $ordered->pluck('gender')->map(fn($g) => ucfirst($g ?? 'Unknown'))->all(),
+                    'categories' => $ordered->pluck('gender')->map(fn ($g) => ucfirst($g ?? 'Unknown'))->all(),
                     'series' => [
-                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn($value) => (int) $value)->all()],
-                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn($value) => (int) $value)->all()],
+                        ['name' => 'Tickets Issued', 'data' => $ordered->pluck('total_issued')->map(fn ($value) => (int) $value)->all()],
+                        ['name' => 'Present Today', 'data' => $ordered->pluck('present_count')->map(fn ($value) => (int) $value)->all()],
                     ],
                 ];
                 break;
@@ -502,7 +504,7 @@ class ReportController extends Controller
                 }
                 if ($zone) {
                     $query->leftJoin('schools as s_zone', 's_zone.id', '=', 'students.school_id')
-                          ->where('s_zone.zone', $zone);
+                        ->where('s_zone.zone', $zone);
                 }
 
                 $data = $query->select('classes.name', DB::raw('count(students.id) as total'))
@@ -522,7 +524,7 @@ class ReportController extends Controller
                     'chartType' => 'donut',
                     'categories' => $ordered->pluck('name')->all(),
                     'labels' => $ordered->pluck('name')->all(),
-                    'series' => $ordered->pluck('total')->map(fn($value) => (int) $value)->all(),
+                    'series' => $ordered->pluck('total')->map(fn ($value) => (int) $value)->all(),
                 ];
                 break;
 
@@ -545,7 +547,7 @@ class ReportController extends Controller
                 }
                 if ($zone) {
                     $query->leftJoin('schools as s_zone2', 's_zone2.id', '=', 'students.school_id')
-                          ->where('s_zone2.zone', $zone);
+                        ->where('s_zone2.zone', $zone);
                 }
 
                 $data = $query->select('categories.code', 'categories.name', DB::raw('count(students.id) as total'))
@@ -565,7 +567,7 @@ class ReportController extends Controller
                     'chartType' => 'pie',
                     'categories' => $ordered->pluck('name')->all(),
                     'labels' => $ordered->pluck('name')->all(),
-                    'series' => $ordered->pluck('total')->map(fn($value) => (int) $value)->all(),
+                    'series' => $ordered->pluck('total')->map(fn ($value) => (int) $value)->all(),
                 ];
                 break;
 
@@ -593,7 +595,7 @@ class ReportController extends Controller
                     'stacked' => false,
                     'categories' => $ordered->pluck('name')->all(),
                     'series' => [
-                        ['name' => 'Registrations', 'data' => $ordered->pluck('total')->map(fn($value) => (int) $value)->all()],
+                        ['name' => 'Registrations', 'data' => $ordered->pluck('total')->map(fn ($value) => (int) $value)->all()],
                     ],
                 ];
                 break;
@@ -638,7 +640,7 @@ class ReportController extends Controller
                         $item->class_name,
                         $item->category_name,
                         $item->exam_name,
-                        $item->status
+                        $item->status,
                     ];
                     if ($type === 'rejected') {
                         $row[] = $item->remarks ?? 'N/A';
@@ -647,7 +649,7 @@ class ReportController extends Controller
                     $exportRows[] = $row;
                 }
 
-                $groupedBySchool = $data->groupBy('school_name')->map(fn($items) => $items->count())->sortDesc();
+                $groupedBySchool = $data->groupBy('school_name')->map(fn ($items) => $items->count())->sortDesc();
                 $chartType = match ($type) {
                     'approved' => 'bar',
                     'rejected' => 'line',
@@ -656,20 +658,20 @@ class ReportController extends Controller
                 };
                 if ($chartType === 'pie') {
                     $chart = [
-                        'title' => ucfirst(str_replace('_', ' ', $type)) . ' Records by School',
+                        'title' => ucfirst(str_replace('_', ' ', $type)).' Records by School',
                         'chartType' => $chartType,
                         'categories' => $groupedBySchool->keys()->values()->all(),
                         'labels' => $groupedBySchool->keys()->values()->all(),
-                        'series' => $groupedBySchool->values()->map(fn($value) => (int) $value)->all(),
+                        'series' => $groupedBySchool->values()->map(fn ($value) => (int) $value)->all(),
                     ];
                 } else {
                     $chart = [
-                        'title' => ucfirst(str_replace('_', ' ', $type)) . ' Records by School',
+                        'title' => ucfirst(str_replace('_', ' ', $type)).' Records by School',
                         'chartType' => $chartType,
                         'stacked' => false,
                         'categories' => $groupedBySchool->keys()->values()->all(),
                         'series' => [
-                            ['name' => 'Records', 'data' => $groupedBySchool->values()->map(fn($value) => (int) $value)->all()],
+                            ['name' => 'Records', 'data' => $groupedBySchool->values()->map(fn ($value) => (int) $value)->all()],
                         ],
                     ];
                 }
@@ -735,11 +737,11 @@ class ReportController extends Controller
                 $reportDate = request('date', '2026-08-30');
 
                 $query->leftJoin('attendance', function ($join) use ($reportDate) {
-                        $join->on('students.id', '=', 'attendance.student_id');
-                        if ($reportDate) {
-                            $join->whereDate('attendance.attendance_date', $reportDate);
-                        }
-                    })
+                    $join->on('students.id', '=', 'attendance.student_id');
+                    if ($reportDate) {
+                        $join->whereDate('attendance.attendance_date', $reportDate);
+                    }
+                })
                     ->leftJoin('users', 'attendance.marked_by', '=', 'users.id')
                     ->where('students.status', 'Hall Ticket Issued');
 
@@ -771,7 +773,7 @@ class ReportController extends Controller
                         $item->attendance_date ? date('d M Y', strtotime($item->attendance_date)) : 'N/A',
                         $item->attendance_time ? date('h:i A', strtotime($item->attendance_time)) : 'N/A',
                         $item->marker_name ?? 'N/A',
-                        $item->status
+                        $item->status,
                     ];
                     $rows[] = $row;
                     $exportRows[] = $row;
@@ -825,7 +827,7 @@ class ReportController extends Controller
                         $item->category_name,
                         $item->exam_name,
                         $item->status,
-                        $item->hall_ticket_number ?? 'N/A'
+                        $item->hall_ticket_number ?? 'N/A',
                     ];
                     if ($type === 'rejected') {
                         $row[] = $item->remarks ?? 'N/A';
@@ -839,7 +841,7 @@ class ReportController extends Controller
         return [
             'headings' => $headings,
             'rows' => $rows,
-            'export_rows' => $exportRows
+            'export_rows' => $exportRows,
         ];
     }
 }

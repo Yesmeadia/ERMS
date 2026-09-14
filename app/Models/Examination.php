@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Examination extends Model
@@ -74,7 +74,7 @@ class Examination extends Model
     public static function isRegistrationOpen(): bool
     {
         $activeExam = self::getActiveExam();
-        if (!$activeExam) {
+        if (! $activeExam) {
             return false;
         }
 
@@ -94,6 +94,6 @@ class Examination extends Model
      */
     public static function isRegistrationClosed(): bool
     {
-        return !self::isRegistrationOpen();
+        return ! self::isRegistrationOpen();
     }
 }

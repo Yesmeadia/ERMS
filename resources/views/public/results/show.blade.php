@@ -694,15 +694,12 @@
 
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
 
-    <!-- Glowing Background Ambient Orbs (Hidden on print) -->
-    <div
-        class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none no-print">
-    </div>
-    <div
-        class="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none no-print">
+    <!-- Public Background Component (Hidden on print) -->
+    <div class="no-print">
+        <x-public-background />
     </div>
 
-    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1 flex flex-col items-center justify-center">
+    <div class="w-full max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-8 flex-1 flex flex-col items-center justify-center relative z-10">
 
         <!-- Main Marksheet Sheet (Scaled Down on Mobile) -->
         <div class="marksheet-sheet">
@@ -845,47 +842,19 @@
                 </table>
             </div>
 
-            <!-- 5. Overall Result Summary & Status (Exact Side-by-Side Design) -->
+            <!-- 5. Overall Result Summary -->
             <table class="summary-table">
                 <tr>
-                    <td class="summary-left">
+                    <td class="summary-left" style="width: 100%;">
                         @php
                             $remarksText = $result ? $result->remarks : null;
-                            if (empty($remarksText) && $result) {
-                                if ($result->status === 'Pass') {
-                                    $remarksText = 'Qualified For Second Round Examination';
-                                } elseif ($result->status === 'Fail') {
-                                    $remarksText = 'Not Qualified For Second Round Examination';
-                                }
-                            }
                         @endphp
-                        <div style="line-height: 1.5;">
+                        <div style="line-height: 1.6; font-size: 13px;">
                             <strong>Percentage:</strong> {{ $result ? $result->percentage : '0' }}%<br>
                             <strong>Final Grade:</strong> {{ $result ? $result->grade : 'N/A' }}<br>
-                            @if($remarksText)
+                            @if(!empty($remarksText))
                                 <strong>Remarks:</strong> {{ $remarksText }}
                             @endif
-                        </div>
-                    </td>
-                    <td class="summary-right">
-                        @php
-                            $statusText = $result ? $result->status : 'Absent';
-                            $statusBorder = '#10b981';
-                            $statusBg = '#ecfdf5';
-                            $statusColor = '#047857';
-                            if ($statusText === 'Fail') {
-                                $statusBorder = '#f43f5e';
-                                $statusBg = '#fff1f2';
-                                $statusColor = '#be123c';
-                            } elseif ($statusText === 'Absent' || $statusText === 'Withheld') {
-                                $statusBorder = '#f59e0b';
-                                $statusBg = '#fef3c7';
-                                $statusColor = '#b45309';
-                            }
-                        @endphp
-                        <div class="status-badge-box"
-                            style="display: inline-block; border: 2px solid {{ $statusBorder }}; background-color: {{ $statusBg }}; color: {{ $statusColor }}; padding: 8px 24px; border-radius: 8px; font-weight: 800; font-size: 16px; letter-spacing: 2px; text-transform: uppercase;">
-                            {{ $statusText }}
                         </div>
                     </td>
                 </tr>

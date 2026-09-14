@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\Examination;
-use App\Models\HallTicket;
 use App\Models\Attendance;
 use App\Models\AttendanceLog;
-use App\Models\School;
 use App\Models\ClassMaster;
-use App\Models\CategoryMaster;
+use App\Models\Examination;
+use App\Models\HallTicket;
+use App\Models\School;
+use App\Models\Student;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\UniqueConstraintViolationException;
 
 class AttendanceController extends Controller
 {
@@ -24,7 +23,7 @@ class AttendanceController extends Controller
     {
         // Restrict invigilators if no examination session is ongoing
         $ongoingExamExists = Examination::where('status', 'Examination Ongoing')->exists();
-        if (!$ongoingExamExists && Auth::user()->hasRole('invigilator')) {
+        if (! $ongoingExamExists && Auth::user()->hasRole('invigilator')) {
             return redirect()->route('attendance.history')->with('error', 'Attendance marking is only active when an examination is ongoing.');
         }
 
@@ -68,7 +67,7 @@ class AttendanceController extends Controller
 
         // Get count of present and logs for exam day (2026-08-30)
         $today = '2026-08-30';
-        
+
         $totalScans = Attendance::where('marked_by', $user->id)
             ->whereDate('attendance_date', $today)
             ->count();
@@ -87,25 +86,26 @@ class AttendanceController extends Controller
     public function verifyScan(Request $request)
     {
         $payload = $request->input('payload');
-        
-        if (!$payload) {
+
+        if (! $payload) {
             return response()->json(['error' => 'No QR data received.'], 400);
         }
 
         // F7: Reject oversized payloads before any processing (DoS / injection guard)
         if (strlen($payload) > 2000) {
             $this->logAction(null, 'scan_tampered', $request);
+
             return response()->json(['status' => 'error', 'message' => 'QR payload rejected: data exceeds maximum allowed size.'], 422);
         }
 
         // 1. Parse JSON
         $data = json_decode($payload, true);
 
-        if (!$data || !isset($data['student_id'], $data['hallticket_no'], $data['exam_id'], $data['token'])) {
+        if (! $data || ! isset($data['student_id'], $data['hallticket_no'], $data['exam_id'], $data['token'])) {
             // Log as invalid scan (if we can parse student_id we log it, otherwise null)
             $studentId = $data['student_id'] ?? null;
             $this->logAction($studentId, 'scan_invalid', $request);
-            
+
             return response()->json(['status' => 'error', 'message' => 'Invalid Hall Ticket. QR payload is corrupted or invalid.'], 422);
         }
 
@@ -117,8 +117,9 @@ class AttendanceController extends Controller
         // 2. Verify Student
         $student = Student::with(['school', 'class', 'category', 'centre'])->find($studentId);
 
-        if (!$student) {
+        if (! $student) {
             $this->logAction(null, 'scan_invalid', $request);
+
             return response()->json(['status' => 'error', 'message' => 'Invalid Hall Ticket. Student record not found.'], 422);
         }
 
@@ -127,9 +128,10 @@ class AttendanceController extends Controller
         if ($user->hasRole('invigilator')) {
             if ($user->school_id && $student->school_id !== $user->school_id && $student->centre_id !== $user->school_id) {
                 $this->logAction($studentId, 'scan_unauthorized', $request);
+
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Unauthorized. You are only authorized to mark attendance for students at your assigned examination center.'
+                    'message' => 'Unauthorized. You are only authorized to mark attendance for students at your assigned examination center.',
                 ], 403);
             }
         }
@@ -140,15 +142,17 @@ class AttendanceController extends Controller
             ->where('qr_token', $token)
             ->first();
 
-        if (!$hallTicket || $hallTicket->status !== 'Issued') {
+        if (! $hallTicket || $hallTicket->status !== 'Issued') {
             $this->logAction($studentId, 'scan_invalid', $request);
+
             return response()->json(['status' => 'error', 'message' => 'Invalid Hall Ticket. Signature token verification failed.'], 422);
         }
 
         // 4. Verify Exam Session
         $exam = Examination::find($examId);
-        if (!$exam || $exam->status !== 'Examination Ongoing') {
+        if (! $exam || $exam->status !== 'Examination Ongoing') {
             $this->logAction($studentId, 'scan_invalid', $request);
+
             return response()->json(['status' => 'error', 'message' => 'Attendance marking is only allowed when the examination is ongoing.'], 422);
         }
 
@@ -161,6 +165,7 @@ class AttendanceController extends Controller
 
         if ($alreadyMarked) {
             $this->logAction($studentId, 'scan_duplicate', $request);
+
             return response()->json([
                 'status' => 'duplicate',
                 'message' => 'Attendance Already Marked',
@@ -173,7 +178,7 @@ class AttendanceController extends Controller
                     'class' => $student->class->name,
                     'centre' => optional($student->centre)->name ?? 'Not Assigned',
                     'photo_url' => $student->photo_url,
-                ]
+                ],
             ]);
         }
 
@@ -194,7 +199,7 @@ class AttendanceController extends Controller
                 'exam_name' => $exam->name,
                 'photo_url' => $student->photo_url,
             ],
-            'exam_id' => $examId
+            'exam_id' => $examId,
         ]);
     }
 
@@ -220,7 +225,7 @@ class AttendanceController extends Controller
         if ($exam->status !== 'Examination Ongoing') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Attendance marking is only allowed when the examination is ongoing.'
+                'message' => 'Attendance marking is only allowed when the examination is ongoing.',
             ], 422);
         }
 
@@ -229,7 +234,7 @@ class AttendanceController extends Controller
             if ($user->school_id && $student->school_id !== $user->school_id && $student->centre_id !== $user->school_id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Unauthorized. You are only authorized to mark attendance for students at your assigned examination center.'
+                    'message' => 'Unauthorized. You are only authorized to mark attendance for students at your assigned examination center.',
                 ], 403);
             }
         }
@@ -268,13 +273,13 @@ class AttendanceController extends Controller
             // the DB unique constraint blocked the second insert.
             return response()->json([
                 'status' => 'duplicate',
-                'message' => 'Attendance was already marked for this student today.'
+                'message' => 'Attendance was already marked for this student today.',
             ]);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'duplicate') {
                 return response()->json([
                     'status' => 'duplicate',
-                    'message' => 'Attendance was already marked for this student today.'
+                    'message' => 'Attendance was already marked for this student today.',
                 ]);
             }
             throw $e;
@@ -286,8 +291,8 @@ class AttendanceController extends Controller
             'data' => [
                 'student_name' => $student->name,
                 'hallticket_no' => $student->hall_ticket_number,
-                'scan_time' => now()->format('d M Y, h:i A')
-            ]
+                'scan_time' => now()->format('d M Y, h:i A'),
+            ],
         ]);
     }
 
@@ -330,7 +335,7 @@ class AttendanceController extends Controller
         $classes = ClassMaster::where('status', true)->get();
 
         $examinationId = $request->get('examination_id');
-        if (!$examinationId && $examinations->count() > 0) {
+        if (! $examinationId && $examinations->count() > 0) {
             $activeExam = $examinations->where('status', 'Active')->first();
             $examinationId = $activeExam ? $activeExam->id : $examinations->first()->id;
         }
@@ -341,11 +346,11 @@ class AttendanceController extends Controller
         $classId = $request->get('class_id');
         $search = $request->get('search');
 
-        $baseQuery = function() use ($date, $examinationId, $schoolId, $centreId, $classId, $search) {
+        $baseQuery = function () use ($date, $examinationId, $schoolId, $centreId, $classId, $search) {
             $q = Student::where('students.status', 'Hall Ticket Issued')
-                ->leftJoin('attendance', function($join) use ($date, $examinationId) {
+                ->leftJoin('attendance', function ($join) use ($date, $examinationId) {
                     $join->on('students.id', '=', 'attendance.student_id')
-                         ->whereDate('attendance.attendance_date', '=', $date);
+                        ->whereDate('attendance.attendance_date', '=', $date);
                     if ($examinationId) {
                         $join->where('attendance.exam_id', '=', $examinationId);
                     }
@@ -355,43 +360,52 @@ class AttendanceController extends Controller
                     'attendance.status as attendance_status',
                     'attendance.attendance_time'
                 );
-            if ($examinationId) $q->where('students.examination_id', $examinationId);
-            if ($schoolId)      $q->where('students.school_id', $schoolId);
-            if ($centreId)      $q->where('students.centre_id', $centreId);
-            if ($classId)       $q->where('students.class_id', $classId);
+            if ($examinationId) {
+                $q->where('students.examination_id', $examinationId);
+            }
+            if ($schoolId) {
+                $q->where('students.school_id', $schoolId);
+            }
+            if ($centreId) {
+                $q->where('students.centre_id', $centreId);
+            }
+            if ($classId) {
+                $q->where('students.class_id', $classId);
+            }
             if ($search) {
-                $q->where(function($s) use ($search) {
+                $q->where(function ($s) use ($search) {
                     $s->where('students.name', 'like', "%{$search}%")
-                      ->orWhere('students.registration_number', 'like', "%{$search}%")
-                      ->orWhere('students.hall_ticket_number', 'like', "%{$search}%");
+                        ->orWhere('students.registration_number', 'like', "%{$search}%")
+                        ->orWhere('students.hall_ticket_number', 'like', "%{$search}%");
                 });
             }
+
             return $q;
         };
 
         // Aggregate summary
         $allRows = $baseQuery()->with(['school', 'centre', 'class'])->get();
-        $total   = $allRows->count();
+        $total = $allRows->count();
         $present = $allRows->where('attendance_status', 'Present')->count();
-        $absent  = $total - $present;
+        $absent = $total - $present;
         $percent = $total > 0 ? round(($present / $total) * 100, 1) : 0;
         $summary = compact('total', 'present', 'absent', 'percent');
 
         // Class-wise breakdown
-        $classBreakdown = $allRows->groupBy(fn($s) => optional($s->class)->name ?? 'N/A')
-            ->map(fn($grp) => [
-                'total'   => $grp->count(),
+        $classBreakdown = $allRows->groupBy(fn ($s) => optional($s->class)->name ?? 'N/A')
+            ->map(fn ($grp) => [
+                'total' => $grp->count(),
                 'present' => $grp->where('attendance_status', 'Present')->count(),
-                'absent'  => $grp->where('attendance_status', 'Absent')->count()
+                'absent' => $grp->where('attendance_status', 'Absent')->count()
                               + $grp->whereNull('attendance_status')->count(),
             ]);
 
         // Exam Centre-wise breakdown
-        $centreBreakdown = $allRows->groupBy(fn($s) => optional($s->centre)->name ?? 'Not Assigned')
-            ->map(fn($grp) => [
-                'total'   => $grp->count(),
+        $centreBreakdown = $allRows->groupBy(fn ($s) => optional($s->centre)->name ?? 'Not Assigned')
+            ->map(fn ($grp) => [
+                'total' => $grp->count(),
                 'present' => $grp->where('attendance_status', 'Present')->count(),
-                'absent'  => $grp->where('attendance_status', 'Absent')->count()
+                'absent' => $grp->where('attendance_status', 'Absent')->count()
                               + $grp->whereNull('attendance_status')->count(),
             ]);
 
@@ -421,7 +435,7 @@ class AttendanceController extends Controller
     public function schoolAttendanceIndex(Request $request)
     {
         $school = Auth::user()->school;
-        if (!$school) {
+        if (! $school) {
             return redirect()->route('school.dashboard')->with('error', 'No school associated with this account.');
         }
 
@@ -429,7 +443,7 @@ class AttendanceController extends Controller
         $classes = ClassMaster::where('status', true)->get();
 
         $examinationId = $request->get('examination_id');
-        if (!$examinationId && $examinations->count() > 0) {
+        if (! $examinationId && $examinations->count() > 0) {
             $activeExam = $examinations->where('status', 'Active')->first();
             $examinationId = $activeExam ? $activeExam->id : $examinations->first()->id;
         }
@@ -438,12 +452,12 @@ class AttendanceController extends Controller
         $classId = $request->get('class_id');
         $search = $request->get('search');
 
-        $baseQuery = function() use ($school, $date, $examinationId, $classId, $search) {
+        $baseQuery = function () use ($school, $date, $examinationId, $classId, $search) {
             $q = Student::where('students.school_id', $school->id)
                 ->where('students.status', 'Hall Ticket Issued')
-                ->leftJoin('attendance', function($join) use ($date, $examinationId) {
+                ->leftJoin('attendance', function ($join) use ($date, $examinationId) {
                     $join->on('students.id', '=', 'attendance.student_id')
-                         ->whereDate('attendance.attendance_date', '=', $date);
+                        ->whereDate('attendance.attendance_date', '=', $date);
                     if ($examinationId) {
                         $join->where('attendance.exam_id', '=', $examinationId);
                     }
@@ -453,32 +467,37 @@ class AttendanceController extends Controller
                     'attendance.status as attendance_status',
                     'attendance.attendance_time'
                 );
-            if ($examinationId) $q->where('students.examination_id', $examinationId);
-            if ($classId)       $q->where('students.class_id', $classId);
+            if ($examinationId) {
+                $q->where('students.examination_id', $examinationId);
+            }
+            if ($classId) {
+                $q->where('students.class_id', $classId);
+            }
             if ($search) {
-                $q->where(function($s) use ($search) {
+                $q->where(function ($s) use ($search) {
                     $s->where('students.name', 'like', "%{$search}%")
-                      ->orWhere('students.registration_number', 'like', "%{$search}%")
-                      ->orWhere('students.hall_ticket_number', 'like', "%{$search}%");
+                        ->orWhere('students.registration_number', 'like', "%{$search}%")
+                        ->orWhere('students.hall_ticket_number', 'like', "%{$search}%");
                 });
             }
+
             return $q;
         };
 
         // Aggregate summary
         $allRows = $baseQuery()->get();
-        $total   = $allRows->count();
+        $total = $allRows->count();
         $present = $allRows->where('attendance_status', 'Present')->count();
-        $absent  = $total - $present;
+        $absent = $total - $present;
         $percent = $total > 0 ? round(($present / $total) * 100, 1) : 0;
         $summary = compact('total', 'present', 'absent', 'percent');
 
         // Class-wise breakdown
-        $classBreakdown = $allRows->groupBy(fn($s) => optional($s->class)->name ?? 'N/A')
-            ->map(fn($grp) => [
-                'total'   => $grp->count(),
+        $classBreakdown = $allRows->groupBy(fn ($s) => optional($s->class)->name ?? 'N/A')
+            ->map(fn ($grp) => [
+                'total' => $grp->count(),
                 'present' => $grp->where('attendance_status', 'Present')->count(),
-                'absent'  => $grp->where('attendance_status', 'Absent')->count()
+                'absent' => $grp->where('attendance_status', 'Absent')->count()
                               + $grp->whereNull('attendance_status')->count(),
             ]);
 
@@ -522,7 +541,7 @@ class AttendanceController extends Controller
         if ($exam->status === 'result published') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Attendance cannot be marked or changed after results are published.'
+                'message' => 'Attendance cannot be marked or changed after results are published.',
             ], 422);
         }
 
@@ -545,14 +564,14 @@ class AttendanceController extends Controller
             'student_id' => $studentId,
             'scanner_user_id' => $adminId,
             'scan_time' => now(),
-            'device_info' => $request->userAgent() . ' (Manual Mark)',
+            'device_info' => $request->userAgent().' (Manual Mark)',
             'ip_address' => $request->ip(),
             'action' => $status === 'Present' ? 'mark_present' : 'mark_absent',
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Attendance marked successfully.'
+            'message' => 'Attendance marked successfully.',
         ]);
     }
 }

@@ -2213,7 +2213,10 @@
             }
         }
 
-        /* @media nav 440px override moved to x-public-nav component */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.75); }
+        }
     </style>
 </head>
 
@@ -2418,80 +2421,25 @@
                     Integrated Studies, recognized at Genius
                     Jam.</p>
 
-                @if($winners->isNotEmpty())
-                    @php
-                        $catColors = [
-                            0 => ['tag' => 'bg:rgba(99,102,241,0.15);color:#a5b4fc;border:rgba(99,102,241,0.3)', 'score' => 'background:rgba(99,102,241,0.12);color:#a5b4fc;'],
-                            1 => ['tag' => 'bg:rgba(168,85,247,0.15);color:#d8b4fe;border:rgba(168,85,247,0.3)', 'score' => 'background:rgba(168,85,247,0.12);color:#d8b4fe;'],
-                            2 => ['tag' => 'bg:rgba(6,182,212,0.15);color:#67e8f9;border:rgba(6,182,212,0.3)', 'score' => 'background:rgba(6,182,212,0.12);color:#67e8f9;'],
-                            3 => ['tag' => 'bg:rgba(16,185,129,0.15);color:#6ee7b7;border:rgba(16,185,129,0.3)', 'score' => 'background:rgba(16,185,129,0.12);color:#6ee7b7;'],
-                            4 => ['tag' => 'bg:rgba(245,158,11,0.15);color:#fcd34d;border:rgba(245,158,11,0.3)', 'score' => 'background:rgba(245,158,11,0.12);color:#fcd34d;'],
-                        ];
-                        $ci = 0;
-                    @endphp
-
-                    @foreach($winners as $categoryName => $topStudents)
-                        @php $palette = $catColors[$ci % count($catColors)];
-                        $ci++; @endphp
-                        <div style="margin-bottom: 48px;">
-                            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-                                <div style="height:1px;flex:1;max-width:40px;background:rgba(255,255,255,0.08);"></div>
-                                <span
-                                    style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:0.12em;text-transform:uppercase;">Category</span>
-                                <h3 style="font-size:18px;font-weight:800;color:#f1f5f9;letter-spacing:-0.01em;">
-                                    {{ $categoryName }}
-                                </h3>
-                                <div style="height:1px;flex:1;background:rgba(255,255,255,0.08);"></div>
-                            </div>
-                            <div class="winners-grid">
-                                @foreach($topStudents as $idx => $winner)
-                                    @php
-                                        $rank = $idx + 1;
-                                    @endphp
-                                    <div class="winner-card">
-                                        <div x-data="{ 
-                                                                    activeSlide: {{ ($idx + $rank) % 5 }},
-                                                                    init() {
-                                                                        setInterval(() => {
-                                                                            this.activeSlide = (this.activeSlide + 1) % 5;
-                                                                        }, 3000 + Math.random() * 1000);
-                                                                    }
-                                                                }" class="winner-card-slider">
-                                            <div class="winner-card-slider-track"
-                                                :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}"
-                                                        x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
-                                                        alt="Winners" class="winner-card-img">
-                                                @endfor
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
-                @else
-                    <div class="winners-fallback-container">
-                        <div x-data="{ 
-                                    activeSlide: 0,
-                                    init() {
-                                        setInterval(() => {
-                                            this.activeSlide = (this.activeSlide + 1) % 5;
-                                        }, 3000);
-                                    }
-                                }" class="winners-fallback-slider">
-                            <div class="winners-fallback-slider-track"
-                                :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}"
-                                        x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
-                                        alt="Previous Winners" class="winners-fallback-img">
-                                @endfor
-                            </div>
+                <div class="winners-fallback-container">
+                    <div x-data="{ 
+                                activeSlide: 0,
+                                init() {
+                                    setInterval(() => {
+                                        this.activeSlide = (this.activeSlide + 1) % 5;
+                                    }, 3000);
+                                }
+                            }" class="winners-fallback-slider">
+                        <div class="winners-fallback-slider-track"
+                            :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
+                            @for($i = 1; $i <= 5; $i++)
+                                <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}"
+                                    x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
+                                    alt="Previous Winners" class="winners-fallback-img">
+                            @endfor
                         </div>
                     </div>
-                @endif
+                </div>
             </div>
 
             <!-- ── GALLERY PREVIEW ─────────────────── -->
@@ -2614,18 +2562,45 @@
                             @endforeach
                         </div>
 
-                        <span class="util-badge util-badge-purple">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" style="width:10px;height:10px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            </svg>
-                            Board Certified
+                        <span class="util-badge util-badge-purple" id="home-result-badge">
+                            @if($released ?? false)
+                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:6px;"></span>
+                                Results Released
+                            @else
+                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#c084fc;margin-right:6px;animation:pulse 1.4s ease-in-out infinite;"></span>
+                                Releasing Soon
+                            @endif
                         </span>
 
                         <div class="util-title">Official Results<br>Portal</div>
                         <p class="util-desc">Students and parents can access board-certified, digitally authenticated
                             marksheets once results are published. Fully printable and QR-verified.</p>
+
+                        {{-- ── LIVE COUNTDOWN (Shown before release) ── --}}
+                        <div id="home-countdown-wrap" style="{{ ($released ?? false) ? 'display:none;' : '' }}">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                <span style="font-size:10.5px;font-weight:700;color:#c084fc;letter-spacing:0.08em;text-transform:uppercase;">Scheduled Release</span>
+                                <span style="font-size:11px;font-weight:700;color:#e2e8f0;">{{ $releaseIst ?? '16 Sep 2026, 05:30 PM' }} IST</span>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:18px;">
+                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-days" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
+                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Days</div>
+                                </div>
+                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-hours" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
+                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Hours</div>
+                                </div>
+                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-mins" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
+                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Mins</div>
+                                </div>
+                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-secs" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
+                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Secs</div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="util-stat-row">
                             <div class="util-stat-chip"><span class="util-stat-chip-dot dot-purple"></span>QR
@@ -2634,14 +2609,36 @@
                             </div>
                         </div>
 
-                        <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn">
-                            Check Exam Results
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                stroke="currentColor" style="width:15px;height:15px;">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                            </svg>
-                        </a>
+                        {{-- ── CTA / INPUT SECTION ── --}}
+                        <div id="home-result-action" class="verify-input-wrap">
+                            @if($released ?? false)
+                                <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn" style="width:100%;">
+                                    Check Exam Results
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                        stroke="currentColor" style="width:15px;height:15px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            @else
+                                <div id="home-result-locked-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);color:#c084fc;font-size:13px;font-weight:700;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                    </svg>
+                                    Result Portal Opens at 5:30 PM IST
+                                </div>
+                                <div id="home-result-unlocked-btn" style="display:none;">
+                                    <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn" style="width:100%;">
+                                        Check Exam Results
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                            stroke="currentColor" style="width:15px;height:15px;">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                 </div>
@@ -2875,6 +2872,59 @@
             });
         }
     </script>
+    @if(!($released ?? false))
+    <script @nonce>
+        (function () {
+            const releaseIso = '{{ $releaseIso ?? "2026-09-16T12:00:00Z" }}';
+            const releaseMs = new Date(releaseIso).getTime();
+            const daysEl = document.getElementById('home-cd-days');
+            const hoursEl = document.getElementById('home-cd-hours');
+            const minsEl = document.getElementById('home-cd-mins');
+            const secsEl = document.getElementById('home-cd-secs');
+
+            const lockedBtn = document.getElementById('home-result-locked-btn');
+            const unlockedBtn = document.getElementById('home-result-unlocked-btn');
+            const badgeEl = document.getElementById('home-result-badge');
+
+            function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
+
+            function update() {
+                const diff = releaseMs - Date.now();
+                if (diff <= 0) {
+                    if (daysEl) daysEl.textContent = '00';
+                    if (hoursEl) hoursEl.textContent = '00';
+                    if (minsEl) minsEl.textContent = '00';
+                    if (secsEl) secsEl.textContent = '00';
+
+                    if (lockedBtn) lockedBtn.style.display = 'none';
+                    if (unlockedBtn) unlockedBtn.style.display = 'block';
+                    if (badgeEl) {
+                        badgeEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:6px;"></span> Results Released';
+                    }
+                    return;
+                }
+
+                const days = Math.floor(diff / 86400000);
+                const hours = Math.floor((diff % 86400000) / 3600000);
+                const mins = Math.floor((diff % 3600000) / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+
+                const dStr = pad(days);
+                const hStr = pad(hours);
+                const mStr = pad(mins);
+                const sStr = pad(secs);
+
+                if (daysEl) daysEl.textContent = dStr;
+                if (hoursEl) hoursEl.textContent = hStr;
+                if (minsEl) minsEl.textContent = mStr;
+                if (secsEl) secsEl.textContent = sStr;
+            }
+
+            update();
+            setInterval(update, 1000);
+        })();
+    </script>
+    @endif
 </body>
 
 </html>

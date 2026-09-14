@@ -20,6 +20,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
             if ($user) {
                 if ($user->hasRole('super-admin')) {
                     return route('admin.dashboard');
+                } elseif ($user->hasRole('exam-admin')) {
+                    return route('admin.online-exams.dashboard');
                 } elseif ($user->hasRole('school-admin')) {
                     return route('school.dashboard');
                 } elseif ($user->hasRole('invigilator')) {
@@ -47,6 +49,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'online_exam_session' => \App\Http\Middleware\OnlineExamSessionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -11,6 +11,15 @@
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route('admin.result-timer.index') }}"
+                class="px-4 py-2.5 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 text-sm font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-4 h-4 text-purple-400">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Release Timer
+            </a>
             <a href="{{ route('admin.results.import-form') }}"
                 class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-md shadow-indigo-600/20 flex items-center gap-2 cursor-pointer active:scale-95">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -97,17 +106,13 @@
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Result
-                    Status</label>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Result Status</label>
                 <select name="result_status"
                     class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
                     <option value="">All Candidates</option>
-                    <option value="Pass" @selected(request('result_status') == 'Pass')>Pass</option>
-                    <option value="Fail" @selected(request('result_status') == 'Fail')>Fail</option>
-                    <option value="Absent" @selected(request('result_status') == 'Absent')>Absent</option>
-                    <option value="Withheld" @selected(request('result_status') == 'Withheld')>Withheld</option>
                     <option value="entered" @selected(request('result_status') == 'entered')>Results Entered</option>
                     <option value="pending" @selected(request('result_status') == 'pending')>Results Pending</option>
+                    <option value="Absent" @selected(request('result_status') == 'Absent')>Absent</option>
                 </select>
             </div>
 
@@ -216,7 +221,7 @@
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">
                             Grade</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">
-                            Status</th>
+                            Remarks</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">
                             Actions</th>
                     </tr>
@@ -238,10 +243,10 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-slate-300">{{ $student->school->name }}</td>
+                            <td class="px-6 py-4 text-slate-300">{{ $student->school?->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4 text-slate-300">
-                                <p class="font-medium text-xs">{{ $student->class->name }}</p>
-                                <p class="text-[10px] text-slate-500 mt-0.5">{{ $student->category->name }}</p>
+                                <p class="font-medium text-xs">{{ $student->class?->name ?? 'N/A' }}</p>
+                                <p class="text-[10px] text-slate-500 mt-0.5">{{ $student->category?->name ?? 'N/A' }}</p>
                             </td>
                             <td class="px-6 py-4 text-center text-slate-200 font-medium font-mono">
                                 @if($student->result)
@@ -266,30 +271,17 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @if($student->result)
-                                    @php
-                                        $resStatus = $student->result->status;
-                                        $statusClass = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
-                                        $dotClass = 'bg-indigo-400';
-                                        if ($resStatus === 'Pass') {
-                                            $statusClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-                                            $dotClass = 'bg-emerald-400';
-                                        } elseif ($resStatus === 'Fail') {
-                                            $statusClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-                                            $dotClass = 'bg-rose-400';
-                                        } elseif ($resStatus === 'Absent' || $resStatus === 'Withheld') {
-                                            $statusClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-                                            $dotClass = 'bg-amber-400';
-                                        }
-                                    @endphp
-                                    <span
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border {{ $statusClass }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $dotClass }}"></span>
-                                        {{ $resStatus }}
+                                @if($student->result && $student->result->remarks)
+                                    <span class="max-w-[200px] truncate inline-block text-xs text-slate-300 font-medium" title="{{ $student->result->remarks }}">
+                                        {{ $student->result->remarks }}
+                                    </span>
+                                @elseif($student->result)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+                                        Entered
                                     </span>
                                 @else
                                     <span
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-slate-800/40 text-slate-500 border-slate-700/20">
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-slate-800/40 text-slate-500 border-slate-700/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                                         Pending
                                     </span>
@@ -297,8 +289,9 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 @php
-                                    $isPresent = $student->attendances->where('status', 'Present')->count() > 0;
-                                    $isMarkedAbsent = $student->attendances->where('status', 'Absent')->count() > 0;
+                                    $attendancesList = $student->attendances ?? collect();
+                                    $isPresent = $attendancesList->where('status', 'Present')->count() > 0;
+                                    $isMarkedAbsent = $attendancesList->where('status', 'Absent')->count() > 0;
                                 @endphp
                                 <div class="flex items-center justify-end gap-2">
                                     @if($student->result)

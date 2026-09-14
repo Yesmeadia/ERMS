@@ -13,6 +13,7 @@ class ExaminationController extends Controller
     public function index()
     {
         $examinations = Examination::withCount('students')->latest()->get();
+
         return view('super-admin.examinations.index', compact('examinations'));
     }
 
@@ -53,6 +54,7 @@ class ExaminationController extends Controller
     public function show(Examination $examination)
     {
         $examination->loadCount('students');
+
         return view('super-admin.examinations.show', compact('examination'));
     }
 

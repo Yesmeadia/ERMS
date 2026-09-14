@@ -53,7 +53,7 @@ class AnnouncementController extends Controller
     public function toggleStatus(Announcement $announcement): RedirectResponse
     {
         $announcement->update([
-            'is_active' => !$announcement->is_active,
+            'is_active' => ! $announcement->is_active,
         ]);
 
         $status = $announcement->is_active ? 'activated' : 'deactivated';
@@ -78,7 +78,7 @@ class AnnouncementController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['announcement' => null]);
         }
 
@@ -94,7 +94,7 @@ class AnnouncementController extends Controller
             ->latest()
             ->first();
 
-        if (!$unreadAnnouncement) {
+        if (! $unreadAnnouncement) {
             return response()->json(['announcement' => null]);
         }
 
@@ -104,7 +104,7 @@ class AnnouncementController extends Controller
                 'title' => $unreadAnnouncement->title,
                 'message' => $unreadAnnouncement->message,
                 'created_at' => $unreadAnnouncement->created_at ? $unreadAnnouncement->created_at->toIso8601String() : null,
-            ]
+            ],
         ]);
     }
 
@@ -118,14 +118,15 @@ class AnnouncementController extends Controller
         $announcementId = 0;
         if (is_object($id)) {
             $announcementId = $id->id;
-        } elseif (is_numeric($id) && (int)$id > 0) {
-            $announcementId = (int)$id;
+        } elseif (is_numeric($id) && (int) $id > 0) {
+            $announcementId = (int) $id;
         } else {
-            $announcementId = (int)$request->input('announcement_id');
+            $announcementId = (int) $request->input('announcement_id');
         }
 
-        if (!$user) {
+        if (! $user) {
             Log::warning('Announcement markAsRead attempted without authenticated session.');
+
             return response()->json(['success' => false, 'message' => 'Unauthenticated session.'], 401);
         }
 
@@ -133,7 +134,7 @@ class AnnouncementController extends Controller
             $userIds = [$user->id];
 
             // If user belongs to a school, mark read for all users associated with that school
-            if (!empty($user->school_id)) {
+            if (! empty($user->school_id)) {
                 $schoolUserIds = DB::table('users')->where('school_id', $user->school_id)->pluck('id')->toArray();
                 $userIds = array_unique(array_merge($userIds, $schoolUserIds));
             }

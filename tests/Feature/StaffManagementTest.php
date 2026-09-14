@@ -2,19 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Models\Examination;
 use App\Models\School;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class StaffManagementTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $superAdmin;
+
     protected $superAdminRole;
+
     protected $invigilatorRole;
+
     protected $centre;
 
     protected function setUp(): void
@@ -36,12 +40,16 @@ class StaffManagementTest extends TestCase
             'code' => 'CENTRE-101',
             'email' => 'stmary@centre.com',
             'phone' => '9876543210',
+            'mobile_number' => '9876543210',
             'address' => 'Test Centre Address',
+            'zone' => 'Central Zone',
+            'state' => 'Kerala',
+            'contact_person' => 'Father Principal',
             'is_centre' => true,
             'status' => true,
         ]);
 
-        \App\Models\Examination::create([
+        Examination::create([
             'name' => 'Annual Board Examination 2026',
             'academic_year' => '2025-2026',
             'registration_start_date' => now()->subDays(10),

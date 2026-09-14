@@ -42,6 +42,8 @@ class AppServiceProvider extends ServiceProvider
             return 'nonce="<?php echo app(\'csp-nonce\'); ?>"';
         });
 
+        \Illuminate\Support\Facades\Vite::useCspNonce(app('csp-nonce'));
+
         \Illuminate\Support\Facades\RateLimiter::for('login', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($request->ip());
         });

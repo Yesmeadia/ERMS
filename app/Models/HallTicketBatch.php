@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
 class HallTicketBatch extends Model
@@ -82,6 +82,7 @@ class HallTicketBatch extends Model
         }
 
         $processed = $this->completed_students + $this->failed_students;
+
         return (int) min(100, round(($processed / $this->total_students) * 100));
     }
 
@@ -124,12 +125,12 @@ class HallTicketBatch extends Model
                 $this->status = 'failed';
             }
 
-            if (!$this->completed_at) {
+            if (! $this->completed_at) {
                 $this->completed_at = now();
             }
         } elseif ($parts->whereIn('status', ['processing', 'completed'])->count() > 0) {
             $this->status = 'processing';
-            if (!$this->started_at) {
+            if (! $this->started_at) {
                 $this->started_at = now();
             }
         } elseif ($parts->where('status', 'pending')->count() === $totalParts) {

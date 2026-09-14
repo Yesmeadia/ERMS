@@ -2,19 +2,22 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\School;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $superAdmin;
+
     protected $schoolAdmin;
+
     protected $school;
+
     protected $invigilator;
 
     protected function setUp(): void
@@ -83,7 +86,7 @@ class ProfileTest extends TestCase
     {
         $response = $this->actingAs($this->schoolAdmin)
             ->get(route('admin.profile.edit'));
-        
+
         $response->assertStatus(403);
     }
 
@@ -182,7 +185,7 @@ class ProfileTest extends TestCase
     public function test_invigilator_can_change_password(): void
     {
         // Use a highly unique password that won't be flagged by the uncompromised() rule
-        $newPassword = 'T3st!nv!g#' . substr(md5(uniqid('', true)), 0, 8);
+        $newPassword = 'T3st!nv!g#'.substr(md5(uniqid('', true)), 0, 8);
 
         $response = $this->actingAs($this->invigilator)
             ->post(route('password.update'), [

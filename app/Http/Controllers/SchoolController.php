@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SchoolCreatedMail;
+use App\Models\CategoryMaster;
 use App\Models\School;
 use App\Models\User;
-use App\Models\CategoryMaster;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use App\Mail\SchoolCreatedMail;
 use Spatie\Permission\Models\Role;
 
 class SchoolController extends Controller
@@ -24,11 +25,11 @@ class SchoolController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('zone', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('zone', 'like', "%{$search}%");
             });
         }
 
@@ -94,7 +95,7 @@ class SchoolController extends Controller
         $user->assignRole($role);
 
         // Generate password set token
-        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+        $token = Password::createToken($user);
 
         // Send email with credentials
         try {
@@ -160,6 +161,7 @@ class SchoolController extends Controller
                     return $idx;
                 }
             }
+
             return 999;
         })->values();
 
@@ -231,7 +233,7 @@ class SchoolController extends Controller
      */
     public function toggleStatus(School $school)
     {
-        $school->status = !$school->status;
+        $school->status = ! $school->status;
         $school->save();
 
         $statusStr = $school->status ? 'Activated' : 'Deactivated';
@@ -271,7 +273,7 @@ class SchoolController extends Controller
             ->causedBy(auth()->user())
             ->log("Assigned School Admin Account ({$user->email}) to school: {$school->name}");
 
-        return back()->with('success', "School Admin account assigned successfully.");
+        return back()->with('success', 'School Admin account assigned successfully.');
     }
 
     /**
@@ -294,7 +296,7 @@ class SchoolController extends Controller
             ->causedBy(auth()->user())
             ->log("Reset password for School Admin ({$user->email}) of school: {$school->name}");
 
-        return back()->with('success', "School Admin password reset successfully.");
+        return back()->with('success', 'School Admin password reset successfully.');
     }
 
     /**
@@ -302,7 +304,7 @@ class SchoolController extends Controller
      */
     public function toggleFine(Request $request, School $school)
     {
-        $school->is_fine_enabled = !$school->is_fine_enabled;
+        $school->is_fine_enabled = ! $school->is_fine_enabled;
         $school->save();
 
         $statusText = $school->is_fine_enabled ? 'enabled' : 'disabled (waived)';
@@ -315,7 +317,7 @@ class SchoolController extends Controller
         if ($request->expectsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
-                'is_fine_enabled' => (bool)$school->is_fine_enabled,
+                'is_fine_enabled' => (bool) $school->is_fine_enabled,
                 'message' => "Fine amount for {$school->name} has been {$statusText}.",
             ]);
         }

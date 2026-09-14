@@ -22,9 +22,13 @@ class HallTicketPdfBenchmarkTest extends TestCase
     use RefreshDatabase;
 
     protected School $school;
+
     protected User $schoolAdmin;
+
     protected Examination $examination;
+
     protected ClassMaster $class;
+
     protected CategoryMaster $category;
 
     protected function setUp(): void
@@ -91,6 +95,7 @@ class HallTicketPdfBenchmarkTest extends TestCase
             ]);
             $studentIds[] = $student->id;
         }
+
         return $studentIds;
     }
 
@@ -117,6 +122,9 @@ class HallTicketPdfBenchmarkTest extends TestCase
 
             // Measure memory before
             gc_collect_cycles();
+            if (function_exists('memory_reset_peak_usage')) {
+                memory_reset_peak_usage();
+            }
             $timeStart = microtime(true);
 
             $job = new GenerateHallTicketPdfPart($part->id);
@@ -150,12 +158,12 @@ class HallTicketPdfBenchmarkTest extends TestCase
         }
 
         // Output results to stdout/log for inspection
-        fwrite(STDOUT, "\n" . str_repeat('=', 65) . "\n");
-        fwrite(STDOUT, sprintf("%-15s | %-15s | %-15s | %-15s\n", "Student Count", "Time (seconds)", "Peak RAM (MB)", "PDF Size (KB)"));
-        fwrite(STDOUT, str_repeat('-', 65) . "\n");
+        fwrite(STDOUT, "\n".str_repeat('=', 65)."\n");
+        fwrite(STDOUT, sprintf("%-15s | %-15s | %-15s | %-15s\n", 'Student Count', 'Time (seconds)', 'Peak RAM (MB)', 'PDF Size (KB)'));
+        fwrite(STDOUT, str_repeat('-', 65)."\n");
         foreach ($results as $r) {
             fwrite(STDOUT, sprintf("%-15d | %-15.3f | %-15.2f | %-15.1f\n", $r['students'], $r['time_seconds'], $r['peak_memory_mb'], $r['pdf_size_kb']));
         }
-        fwrite(STDOUT, str_repeat('=', 65) . "\n");
+        fwrite(STDOUT, str_repeat('=', 65)."\n");
     }
 }

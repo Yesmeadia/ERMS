@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CategoryMaster extends Model
@@ -31,5 +31,21 @@ class CategoryMaster extends Model
     public function students(): HasMany
     {
         return $this->hasMany(Student::class, 'category_id');
+    }
+
+    /**
+     * Get online exams for this category.
+     */
+    public function onlineExams(): HasMany
+    {
+        return $this->hasMany(OnlineExam::class, 'category_id');
+    }
+
+    /**
+     * Get question bank questions for this category.
+     */
+    public function onlineQuestions(): HasMany
+    {
+        return $this->hasMany(OnlineQuestion::class, 'category_id');
     }
 }

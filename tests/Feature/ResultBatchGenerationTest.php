@@ -6,8 +6,6 @@ use App\Jobs\GenerateResultPdfPart;
 use App\Models\CategoryMaster;
 use App\Models\ClassMaster;
 use App\Models\Examination;
-use App\Models\ResultBatch;
-use App\Models\ResultPdfPart;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\StudentResult;
@@ -24,12 +22,19 @@ class ResultBatchGenerationTest extends TestCase
     use RefreshDatabase;
 
     protected School $school;
+
     protected School $schoolB;
+
     protected User $schoolAdmin;
+
     protected User $schoolAdminB;
+
     protected User $superAdmin;
+
     protected Examination $examination;
+
     protected ClassMaster $class;
+
     protected CategoryMaster $category;
 
     protected function setUp(): void
@@ -115,8 +120,8 @@ class ResultBatchGenerationTest extends TestCase
                 'father_name' => "Father {$i}",
                 'mother_name' => "Mother {$i}",
                 'mobile_number' => '9876543210',
-                'registration_number' => "REG-{$school->code}-" . str_pad($i, 4, '0', STR_PAD_LEFT),
-                'hall_ticket_number' => "HT-{$school->code}-" . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'registration_number' => "REG-{$school->code}-".str_pad($i, 4, '0', STR_PAD_LEFT),
+                'hall_ticket_number' => "HT-{$school->code}-".str_pad($i, 4, '0', STR_PAD_LEFT),
                 'gender' => ($i % 2 === 0) ? 'female' : 'male',
                 'status' => 'Hall Ticket Issued',
                 'hall_ticket_issued_at' => now(),

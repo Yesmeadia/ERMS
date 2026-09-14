@@ -4,68 +4,110 @@
 @section('page_description', 'Retrieve and download your official examination statement of marks and score card.')
 
 @section('content')
+@php
+    // Safe fallbacks in case controller has not passed them or old controller is cached
+    $released = $released ?? (class_exists(\App\Models\AppSetting::class) ? \App\Models\AppSetting::resultsReleased() : false);
+    $releaseIso = $releaseIso ?? (class_exists(\App\Models\AppSetting::class) ? \App\Models\AppSetting::resultReleaseDatetime()->toIso8601String() : '2026-09-16T12:00:00Z');
+    $releaseIst = $releaseIst ?? (class_exists(\App\Models\AppSetting::class) ? \App\Models\AppSetting::resultReleaseDatetime()->copy()->setTimezone('Asia/Kolkata')->format('d M Y, h:i A') : '16 Sep 2026, 05:30 PM');
+    $examinations = $examinations ?? \App\Models\Examination::where('status', 'result published')->get();
+@endphp
 <div>
-    <!-- Title and Subtitle -->
-    <div class="mb-8">
+
+@if(!$released)
+    {{-- ─── COUNTDOWN GATE ────────────────────────────────────────────── --}}
+    <div class="text-center mb-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border mb-5"
+             style="background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.3); color: #c084fc;">
+            <span class="w-2 h-2 rounded-full bg-purple-400" style="animation: cdPulse 1.4s ease-in-out infinite;"></span>
+            Results Not Yet Released
+        </div>
+    </div>
+
+    <h1 class="text-3xl font-extrabold text-white tracking-tight text-center mb-2">Results Releasing Soon</h1>
+    <p class="text-sm text-slate-400 text-center mb-6">
+        Your official marksheet will be available on <strong class="text-purple-300">{{ $releaseIst }} IST</strong>
+    </p>
+
+    {{-- Countdown tiles --}}
+    <div class="grid grid-cols-4 gap-3 mb-6" id="cd-grid">
+        @foreach(['days' => 'Days', 'hours' => 'Hours', 'mins' => 'Mins', 'secs' => 'Secs'] as $id => $label)
+            <div class="rounded-2xl text-center py-5 px-2"
+                 style="background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.18);">
+                <div id="rc-{{ $id }}" class="text-3xl font-black text-white tabular-nums">--</div>
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">{{ $label }}</div>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- Will appear after timer ends --}}
+    <div id="rc-form-wrap" class="hidden">
+        {{-- revealed by JS --}}
+    </div>
+
+    <p class="text-center text-xs text-slate-600 mt-4" id="rc-server-time">
+        Current time: <span class="text-slate-400 font-mono tabular-nums" id="rc-clock"></span> IST
+    </p>
+
+@else
+    {{-- ─── FORM (released) ─────────────────────────────────────────── --}}
+    <div class="mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border mb-4"
+             style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #6ee7b7;">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Results Released — {{ $releaseIst }} IST
+        </div>
         <h1 class="text-3xl font-extrabold text-white tracking-tight">Check Exam Results</h1>
         <p class="text-sm text-slate-400 mt-1.5">Enter details below to access your marksheet</p>
     </div>
 
-    <!-- Alert Banners -->
-    @if (session('error'))
-        <div class="mb-5 p-4 rounded-xl bg-rose-950/40 border border-rose-800/40 text-rose-200 text-xs font-medium leading-relaxed">
-            {{ session('error') }}
-        </div>
-    @endif
+    @include('public.results._check_form')
+@endif
 
-    @if ($errors->any())
-        <div class="mb-5 p-4 rounded-xl bg-rose-950/40 border border-rose-800/40 text-rose-200 text-xs font-medium">
-            <ul class="list-disc list-inside space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    <!-- Results Verification Form -->
-    <form method="POST" action="{{ route('results.check-submit') }}" class="space-y-5">
-        @csrf
-        
-        <!-- Examination Dropdown -->
-        <div>
-            <label for="examination_id" class="block text-sm font-semibold text-slate-300 mb-1.5">Examination Session</label>
-            <select id="examination_id" name="examination_id" required autofocus
-                class="block w-full px-4 py-3 bg-slate-950/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl text-slate-100 placeholder-slate-650 focus:outline-none transition-all duration-200 text-sm">
-                <option value="" class="bg-slate-900 text-slate-400">-- Select Examination --</option>
-                @foreach($examinations as $exam)
-                    <option value="{{ $exam->id }}" @selected(old('examination_id') == $exam->id) class="bg-slate-900 text-slate-200">{{ $exam->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Registration or Hall Ticket Number Input -->
-        <div>
-            <label for="search_number" class="block text-sm font-semibold text-slate-300 mb-1.5">Registration Number / Hall Ticket Number</label>
-            <input id="search_number" type="text" name="search_number" value="{{ old('search_number') }}" required placeholder="e.g. 30051 or F89C23D4829E"
-                class="block w-full px-4 py-3 bg-slate-950/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none transition-all duration-200 text-sm">
-        </div>
-
-        <!-- Date of Birth Input -->
-        <div>
-            <label for="dob" class="block text-sm font-semibold text-slate-300 mb-1.5">Candidate Date of Birth (DOB)</label>
-            <input id="dob" type="date" name="dob" value="{{ old('dob') }}" required
-                class="block w-full px-4 py-3 bg-slate-950/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none transition-all duration-200 text-sm">
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit"
-            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all duration-200 shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 cursor-pointer mt-4">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.637 10.637Z" />
-            </svg>
-            Retrieve Result Card
-        </button>
-    </form>
 </div>
+
+@if(!$released)
+<style>
+    @keyframes cdPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.3; transform: scale(0.6); }
+    }
+</style>
+<script @nonce>
+(function () {
+    const releaseMs = new Date('{{ $releaseIso }}').getTime();
+    const grid      = document.getElementById('cd-grid');
+    const formWrap  = document.getElementById('rc-form-wrap');
+    const clockEl   = document.getElementById('rc-clock');
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tick() {
+        const diff = releaseMs - Date.now();
+        const nowIst = new Date(Date.now() + 5.5 * 3600 * 1000);
+        if (clockEl) {
+            clockEl.textContent = nowIst.toISOString().replace('T', ' ').substring(0, 19);
+        }
+
+        if (diff <= 0) {
+            // Timer expired — reload page so the full form is shown
+            window.location.reload();
+            return;
+        }
+
+        const days  = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins  = Math.floor((diff % 3600000)  / 60000);
+        const secs  = Math.floor((diff % 60000)    / 1000);
+
+        document.getElementById('rc-days').textContent  = pad(days);
+        document.getElementById('rc-hours').textContent = pad(hours);
+        document.getElementById('rc-mins').textContent  = pad(mins);
+        document.getElementById('rc-secs').textContent  = pad(secs);
+    }
+
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+@endif
 @endsection

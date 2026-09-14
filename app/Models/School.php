@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class School extends Model
@@ -84,7 +85,7 @@ class School extends Model
      */
     public function isFineApplicable(): bool
     {
-        if (array_key_exists('is_fine_enabled', $this->attributes) && !$this->is_fine_enabled) {
+        if (array_key_exists('is_fine_enabled', $this->attributes) && ! $this->is_fine_enabled) {
             return false;
         }
 
@@ -98,7 +99,8 @@ class School extends Model
 
         // Standard deadline: Registration without fine ends on August 15, 2026 11:59:59 PM IST.
         // Starting tomorrow (August 16, 2026 IST onwards), fine of ₹50 applies.
-        $withoutFineCutoff = \Carbon\Carbon::parse('2026-08-15 23:59:59', 'Asia/Kolkata');
+        $withoutFineCutoff = Carbon::parse('2026-08-15 23:59:59', 'Asia/Kolkata');
+
         return now('Asia/Kolkata')->greaterThan($withoutFineCutoff);
     }
 

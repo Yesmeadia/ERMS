@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Models\School;
-use App\Models\ClassMaster;
-use App\Models\CategoryMaster;
-use App\Models\Student;
-use App\Models\Attendance;
-use App\Models\Examination;
+use App\Enums\ExamSessionStatus;
+use App\Enums\ExamStatus;
 use App\Models\Announcement;
-use Spatie\Activitylog\Models\Activity;
+use App\Models\Attendance;
+use App\Models\CategoryMaster;
+use App\Models\ClassMaster;
+use App\Models\Examination;
+use App\Models\OnlineExam;
+use App\Models\OnlineExamSession;
+use App\Models\OnlineExamStudent;
+use App\Models\School;
+use App\Models\Student;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -104,6 +109,49 @@ class DashboardController extends Controller
         // Recent 5 activities
         $recentActivities = Activity::with('causer')->latest()->take(5)->get();
 
+        // Online Examination Real-Time Status & Metrics
+        $today = now()->format('Y-m-d');
+        $hasExamsTable = Schema::hasTable('online_exams');
+        $hasSessionsTable = Schema::hasTable('online_exam_sessions');
+        $hasStudentsTable = Schema::hasTable('online_exam_students');
+
+        // Card 1: Total Created Exams (subcounts: Live, Drafted)
+        $totalCreatedExams = $hasExamsTable ? OnlineExam::count() : 0;
+        $liveExamsCount = $hasExamsTable ? OnlineExam::where('status', ExamStatus::ACTIVE)
+            ->orWhere(function ($q) use ($today) {
+                $q->where('status', ExamStatus::PUBLISHED)->where('exam_date', $today);
+            })
+            ->count() : 0;
+        $draftExamsCount = $hasExamsTable ? OnlineExam::where('status', ExamStatus::DRAFT)->count() : 0;
+
+        // Card 2: Participating Students (subcounts: Live, Terminated, Completed)
+        $liveStudentsCount = $hasSessionsTable ? OnlineExamSession::whereIn('status', [
+            ExamSessionStatus::IN_PROGRESS,
+            ExamSessionStatus::QUESTION_ACTIVE,
+            ExamSessionStatus::ANSWERED,
+        ])->count() : 0;
+        $terminatedStudentsCount = $hasSessionsTable ? OnlineExamSession::where('status', ExamSessionStatus::TERMINATED)->count() : 0;
+        $completedStudentsCount = $hasSessionsTable ? OnlineExamSession::whereIn('status', [
+            ExamSessionStatus::SUBMITTED,
+            ExamSessionStatus::EXPIRED,
+        ])->count() : 0;
+        $totalParticipatingStudents = ($hasStudentsTable && $hasSessionsTable)
+            ? max(
+                OnlineExamStudent::where('is_eligible', true)->count(),
+                OnlineExamSession::count()
+            )
+            : 0;
+
+        $onlineExamStats = [
+            'total_exams' => $totalCreatedExams,
+            'live_exams' => $liveExamsCount,
+            'draft_exams' => $draftExamsCount,
+            'total_students' => $totalParticipatingStudents,
+            'live_students' => $liveStudentsCount,
+            'terminated_students' => $terminatedStudentsCount,
+            'completed_students' => $completedStudentsCount,
+        ];
+
         return view('super-admin.dashboard', compact(
             'stats',
             'schoolWise',
@@ -113,7 +161,8 @@ class DashboardController extends Controller
             'categoryAttendance',
             'genderAttendance',
             'registrationTrend',
-            'recentActivities'
+            'recentActivities',
+            'onlineExamStats'
         ));
     }
 
@@ -124,13 +173,14 @@ class DashboardController extends Controller
     {
         $school = Auth::user()->school;
 
-        if (!$school) {
+        if (! $school) {
             Auth::logout();
+
             return redirect()->route('login')->withErrors(['email' => 'User not associated with any school.']);
         }
 
         $schoolIssued = Student::where('school_id', $school->id)->where('status', 'Hall Ticket Issued')->count();
-        $schoolPresent = Attendance::whereIn('student_id', function($q) use ($school) {
+        $schoolPresent = Attendance::whereIn('student_id', function ($q) use ($school) {
             $q->select('id')->from('students')->where('school_id', $school->id);
         })->where('status', 'Present')->count();
         $schoolAbsent = $schoolIssued - $schoolPresent;
@@ -192,6 +242,7 @@ class DashboardController extends Controller
     public function activityLogs()
     {
         $activities = Activity::with('causer')->latest()->paginate(25);
+
         return view('super-admin.activity-logs', compact('activities'));
     }
 }

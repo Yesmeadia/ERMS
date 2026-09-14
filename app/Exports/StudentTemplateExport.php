@@ -6,8 +6,8 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullComparison, WithStyles
 {
@@ -48,7 +48,7 @@ class StudentTemplateExport implements FromArray, WithHeadings, WithStrictNullCo
                 '9876543210',
                 '3RD',
                 'RB3',
-            ]
+            ],
         ];
     }
 

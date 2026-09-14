@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
 use App\Models\ClassMaster;
-use App\Models\School;
+use App\Models\Examination;
 use App\Models\Payment;
+use App\Models\School;
+use App\Models\Student;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -78,7 +80,7 @@ class PaymentController extends Controller
             ->take(3)
             ->get();
 
-        $isRegistrationClosed = \App\Models\Examination::isRegistrationClosed();
+        $isRegistrationClosed = Examination::isRegistrationClosed();
 
         return view('school-admin.payments.index', compact(
             'balanceSheet',
@@ -115,13 +117,13 @@ class PaymentController extends Controller
      */
     public function checkout(Request $request)
     {
-        if (\App\Models\Examination::isRegistrationClosed()) {
+        if (Examination::isRegistrationClosed()) {
             return redirect()->route('school.students.index')->with('error', 'Registration is closed for this examination session. Payments for drafted candidates are no longer accepted.');
         }
 
         $studentIds = $request->input('student_ids');
 
-        if (empty($studentIds) || !is_array($studentIds)) {
+        if (empty($studentIds) || ! is_array($studentIds)) {
             return redirect()->route('school.students.index')->with('error', 'Please select at least one student to pay registration fee.');
         }
 
@@ -180,7 +182,7 @@ class PaymentController extends Controller
             $fineTotal += $studentFine;
             $totalAmount += $fee;
 
-            if (!isset($classBreakdown[$classId])) {
+            if (! isset($classBreakdown[$classId])) {
                 $classBreakdown[$classId] = [
                     'name' => $className,
                     'count' => 0,
@@ -210,13 +212,13 @@ class PaymentController extends Controller
      */
     public function initiate(Request $request)
     {
-        if (\App\Models\Examination::isRegistrationClosed()) {
+        if (Examination::isRegistrationClosed()) {
             return redirect()->route('school.students.index')->with('error', 'Registration is closed for this examination session. Payments for drafted candidates are no longer accepted.');
         }
 
         $studentIds = $request->input('student_ids');
 
-        if (empty($studentIds) || !is_array($studentIds)) {
+        if (empty($studentIds) || ! is_array($studentIds)) {
             return redirect()->route('school.students.index')->with('error', 'Please select at least one student to pay registration fee.');
         }
 
@@ -285,7 +287,7 @@ class PaymentController extends Controller
             // Verify existing session against Cashfree
             try {
                 $http = new GuzzleClient(['timeout' => 15]);
-                $cfResponse = $http->get($baseUrl . '/orders/' . $cfOrderId, [
+                $cfResponse = $http->get($baseUrl.'/orders/'.$cfOrderId, [
                     'headers' => $headers,
                 ]);
                 $cfOrder = json_decode((string) $cfResponse->getBody(), true);
@@ -307,7 +309,7 @@ class PaymentController extends Controller
         }
 
         // If no matching payment session was found or verified, initiate a new one
-        if (!$matchingPayment) {
+        if (! $matchingPayment) {
             try {
                 // CWE-362 & CWE-602: Perform database locks and calculations inside a transaction
                 $checkoutData = DB::transaction(function () use ($school, $studentIds, $baseUrl, $headers) {
@@ -348,8 +350,8 @@ class PaymentController extends Controller
                     $totalAmount = $baseAmount + $fineAmount;
 
                     // Build a unique order ID
-                    $cfOrderId = 'ERMS_' . strtoupper(bin2hex(random_bytes(8)));
-                    $returnUrl = route('school.payments.callback') . '?order_id=' . $cfOrderId;
+                    $cfOrderId = 'ERMS_'.strtoupper(bin2hex(random_bytes(8)));
+                    $returnUrl = route('school.payments.callback').'?order_id='.$cfOrderId;
 
                     // Extract and sanitize customer phone number from school profile
                     $phoneDigits = preg_replace('/[^0-9]/', '', $school->mobile_number ?? '');
@@ -362,9 +364,9 @@ class PaymentController extends Controller
                         'order_id' => $cfOrderId,
                         'order_amount' => round($totalAmount, 2),
                         'order_currency' => 'INR',
-                        'order_note' => 'YES GENIUS — Registration Fee for ' . $school->name,
+                        'order_note' => 'YES GENIUS — Registration Fee for '.$school->name,
                         'customer_details' => [
-                            'customer_id' => 'school_' . $school->id,
+                            'customer_id' => 'school_'.$school->id,
                             'customer_phone' => $customerPhone,
                             'customer_email' => Auth::user()->email,
                             'customer_name' => Auth::user()->name,
@@ -375,14 +377,14 @@ class PaymentController extends Controller
                     ];
 
                     $http = new GuzzleClient(['timeout' => 15]);
-                    $cfResponse = $http->post($baseUrl . '/orders', [
+                    $cfResponse = $http->post($baseUrl.'/orders', [
                         'headers' => $headers,
                         'json' => $payload,
                     ]);
                     $cfOrder = json_decode((string) $cfResponse->getBody(), true);
                     $paymentSessionId = $cfOrder['payment_session_id'] ?? null;
 
-                    if (!$paymentSessionId) {
+                    if (! $paymentSessionId) {
                         throw new \Exception('Failed to get payment session ID from Cashfree.');
                     }
 
@@ -428,7 +430,7 @@ class PaymentController extends Controller
 
             } catch (\Exception $e) {
                 return redirect()->route('school.students.index')
-                    ->with('error', 'Could not initiate payment: ' . $e->getMessage());
+                    ->with('error', 'Could not initiate payment: '.$e->getMessage());
             }
         }
 
@@ -450,7 +452,7 @@ class PaymentController extends Controller
             $baseTotal += $baseFee;
             $fineTotal += $studentFine;
 
-            if (!isset($classBreakdown[$classId])) {
+            if (! isset($classBreakdown[$classId])) {
                 $classBreakdown[$classId] = [
                     'name' => $className,
                     'count' => 0,
@@ -491,7 +493,7 @@ class PaymentController extends Controller
     {
         $cfOrderId = $request->query('order_id');
 
-        if (!$cfOrderId) {
+        if (! $cfOrderId) {
             return redirect()->route('school.students.index')
                 ->with('error', 'Invalid payment return. Please contact support.');
         }
@@ -507,7 +509,7 @@ class PaymentController extends Controller
                     ->first();
             });
 
-            if (!$payment) {
+            if (! $payment) {
                 return redirect()->route('school.students.index')
                     ->with('error', 'Invalid payment session.');
             }
@@ -539,7 +541,7 @@ class PaymentController extends Controller
         $http = new GuzzleClient(['timeout' => 15]);
 
         try {
-            $cfResponse = $http->get($baseUrl . '/orders/' . $cfOrderId, ['headers' => $headers]);
+            $cfResponse = $http->get($baseUrl.'/orders/'.$cfOrderId, ['headers' => $headers]);
             $cfOrder = json_decode((string) $cfResponse->getBody(), true);
             $orderStatus = $cfOrder['order_status'] ?? 'UNKNOWN';
         } catch (RequestException $e) {
@@ -556,20 +558,20 @@ class PaymentController extends Controller
 
                 activity()
                     ->performedOn($payment)
-                    ->log('Cashfree: Payment not completed. Order status: ' . $orderStatus . '. Payment marked as Failed.');
+                    ->log('Cashfree: Payment not completed. Order status: '.$orderStatus.'. Payment marked as Failed.');
             });
 
             return redirect()->route('school.students.index')
-                ->with('error', 'Payment was not completed (status: ' . $orderStatus . '). No amount was charged.');
+                ->with('error', 'Payment was not completed (status: '.$orderStatus.'). No amount was charged.');
         }
 
         // Payment successful — fetch the CF payment ID and actual payment method
         $cfPaymentId = null;
         $resolvedMethod = 'Cashfree'; // fallback
         try {
-            $paymentsResponse = $http->get($baseUrl . '/orders/' . $cfOrderId . '/payments', ['headers' => $headers]);
+            $paymentsResponse = $http->get($baseUrl.'/orders/'.$cfOrderId.'/payments', ['headers' => $headers]);
             $cfPayments = json_decode((string) $paymentsResponse->getBody(), true);
-            if (!empty($cfPayments) && isset($cfPayments[0]['cf_payment_id'])) {
+            if (! empty($cfPayments) && isset($cfPayments[0]['cf_payment_id'])) {
                 $cfPaymentId = (string) $cfPayments[0]['cf_payment_id'];
                 $resolvedMethod = self::resolveCashfreePaymentMethod($cfPayments[0]);
             }
@@ -582,7 +584,7 @@ class PaymentController extends Controller
             // Re-lock the payment row inside the transaction to prevent TOCTOU race with webhook (CWE-367)
             $lockedPayment = Payment::where('id', $payment->id)->lockForUpdate()->first();
 
-            if (!$lockedPayment || $lockedPayment->status === 'Paid') {
+            if (! $lockedPayment || $lockedPayment->status === 'Paid') {
                 return; // Already processed by webhook
             }
 
@@ -606,11 +608,11 @@ class PaymentController extends Controller
 
             activity()
                 ->performedOn($lockedPayment)
-                ->log('Cashfree: Order ' . $cfOrderId . ' verified PAID. ₹' . number_format($lockedPayment->amount, 2) . ' collected.');
+                ->log('Cashfree: Order '.$cfOrderId.' verified PAID. ₹'.number_format($lockedPayment->amount, 2).' collected.');
         });
 
         return redirect()->route('school.payments.receipt', $payment->id)
-            ->with('success', 'Payment of ₹' . number_format($payment->amount, 2) . ' collected successfully! Candidates submitted to the board.');
+            ->with('success', 'Payment of ₹'.number_format($payment->amount, 2).' collected successfully! Candidates submitted to the board.');
     }
 
     /**
@@ -622,8 +624,8 @@ class PaymentController extends Controller
     {
         $webhookSecret = config('services.cashfree.webhook_secret');
 
-        if (!$webhookSecret) {
-            \Illuminate\Support\Facades\Log::critical('CASHFREE_WEBHOOK_SECRET not configured — rejecting webhook');
+        if (! $webhookSecret) {
+            Log::critical('CASHFREE_WEBHOOK_SECRET not configured — rejecting webhook');
             abort(500, 'Webhook verification not configured');
         }
 
@@ -632,14 +634,14 @@ class PaymentController extends Controller
         $signature = $request->header('x-webhook-signature');
         $rawBody = $request->getContent();
 
-        if (!$timestamp || !$signature) {
+        if (! $timestamp || ! $signature) {
             return response()->json(['status' => 'error', 'message' => 'Missing webhook signature headers'], 401);
         }
 
-        $signedPayload = $timestamp . $rawBody;
+        $signedPayload = $timestamp.$rawBody;
         $expectedSig = base64_encode(hash_hmac('sha256', $signedPayload, $webhookSecret, true));
 
-        if (!hash_equals($expectedSig, $signature)) {
+        if (! hash_equals($expectedSig, $signature)) {
             return response()->json(['status' => 'error', 'message' => 'Invalid webhook signature'], 401);
         }
 
@@ -650,7 +652,7 @@ class PaymentController extends Controller
         $cfOrderId = $orderData['order_id'] ?? null;
 
         // Only process PAYMENT_SUCCESS events
-        if ($eventType !== 'PAYMENT_SUCCESS' || !$cfOrderId) {
+        if ($eventType !== 'PAYMENT_SUCCESS' || ! $cfOrderId) {
             return response()->json(['status' => 'ok', 'message' => 'Event ignored']);
         }
 
@@ -658,7 +660,7 @@ class PaymentController extends Controller
             ->where('status', 'Pending')
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             // Already processed or unknown order — respond 200 to stop retries
             return response()->json(['status' => 'ok', 'message' => 'Payment already processed or not found']);
         }
@@ -672,7 +674,7 @@ class PaymentController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (!$payment || $payment->status === 'Paid') {
+            if (! $payment || $payment->status === 'Paid') {
                 return; // Already handled by callback
             }
 
@@ -695,7 +697,7 @@ class PaymentController extends Controller
 
             activity()
                 ->performedOn($payment)
-                ->log('Cashfree webhook: Order ' . $cfOrderId . ' confirmed PAID. ₹' . number_format($payment->amount, 2) . ' collected.');
+                ->log('Cashfree webhook: Order '.$cfOrderId.' confirmed PAID. ₹'.number_format($payment->amount, 2).' collected.');
         });
 
         return response()->json(['status' => 'ok']);
@@ -714,31 +716,36 @@ class PaymentController extends Controller
         switch ($group) {
             case 'upi':
                 $upiId = $method['upi']['upi_id'] ?? null;
-                return $upiId ? 'UPI (' . $upiId . ')' : 'UPI';
+
+                return $upiId ? 'UPI ('.$upiId.')' : 'UPI';
 
             case 'card':
                 $card = $method['card'] ?? [];
                 $cardType = ucfirst(strtolower($card['card_type'] ?? '')); // DEBIT / CREDIT
                 $network = ucfirst(strtolower($card['card_network'] ?? '')); // VISA / MASTERCARD
                 $last4 = $card['card_number'] ?? null; // last 4 digits if available
-                $label = trim($network . ' ' . $cardType . ' Card');
+                $label = trim($network.' '.$cardType.' Card');
                 if ($last4) {
-                    $label .= ' (···' . substr($last4, -4) . ')';
+                    $label .= ' (···'.substr($last4, -4).')';
                 }
+
                 return $label ?: 'Card';
 
             case 'net_banking':
             case 'netbanking':
                 $bankName = $method['netbanking']['channel'] ?? $method['netbanking']['netbanking_bank_code'] ?? null;
-                return $bankName ? 'Net Banking (' . $bankName . ')' : 'Net Banking';
+
+                return $bankName ? 'Net Banking ('.$bankName.')' : 'Net Banking';
 
             case 'wallet':
                 $walletName = $method['app']['channel'] ?? null;
-                return $walletName ? ucfirst($walletName) . ' Wallet' : 'Wallet';
+
+                return $walletName ? ucfirst($walletName).' Wallet' : 'Wallet';
 
             case 'emi':
                 $emiCard = $method['emi']['card_network'] ?? null;
-                return $emiCard ? 'EMI (' . ucfirst(strtolower($emiCard)) . ')' : 'EMI';
+
+                return $emiCard ? 'EMI ('.ucfirst(strtolower($emiCard)).')' : 'EMI';
 
             case 'pay_later':
                 return 'Pay Later';
@@ -796,7 +803,7 @@ class PaymentController extends Controller
         if ($request->filled('date')) {
             $query->where(function ($q) use ($request) {
                 $q->whereDate('paid_at', $request->date)
-                  ->orWhereDate('created_at', $request->date);
+                    ->orWhereDate('created_at', $request->date);
             });
         }
         if ($request->filled('start_date')) {
@@ -897,11 +904,11 @@ class PaymentController extends Controller
         $payments = $query->orderByRaw('COALESCE(paid_at, created_at) DESC')->orderBy('id', 'DESC')->get();
 
         $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=erms_payouts_report_" . time() . ".csv",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=erms_payouts_report_'.time().'.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = ['Date', 'School Name', 'School Code', 'Transaction ID', 'Method', 'Candidates Count', 'Base Amount (INR)', 'Fine Amount (INR)', 'Total Amount (INR)', 'Status'];
@@ -916,8 +923,9 @@ class PaymentController extends Controller
                 }
                 $value = (string) $value;
                 if (strlen($value) > 0 && in_array(substr($value, 0, 1), ['=', '+', '-', '@'])) {
-                    return "'" . $value;
+                    return "'".$value;
                 }
+
                 return $value;
             };
 

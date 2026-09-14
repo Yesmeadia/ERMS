@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property Carbon|null $dob
+ */
 class Student extends Model
 {
     use HasFactory, SoftDeletes;
@@ -81,7 +89,7 @@ class Student extends Model
     /**
      * Get the hall ticket associated with the student.
      */
-    public function hallTicket(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function hallTicket(): HasOne
     {
         return $this->hasOne(HallTicket::class, 'student_id');
     }
@@ -89,7 +97,7 @@ class Student extends Model
     /**
      * Get the result associated with the student.
      */
-    public function result(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function result(): HasOne
     {
         return $this->hasOne(StudentResult::class, 'student_id');
     }
@@ -97,7 +105,7 @@ class Student extends Model
     /**
      * Get the payments associated with the student.
      */
-    public function payments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function payments(): BelongsToMany
     {
         return $this->belongsToMany(Payment::class, 'payment_student', 'student_id', 'payment_id')
             ->withPivot('amount', 'base_amount', 'fine_amount')
@@ -107,7 +115,7 @@ class Student extends Model
     /**
      * Get the attendance records for the student.
      */
-    public function attendances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'student_id');
     }
@@ -115,7 +123,7 @@ class Student extends Model
     /**
      * Get the attendance logs for the student.
      */
-    public function attendanceLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function attendanceLogs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class, 'student_id');
     }
@@ -125,11 +133,11 @@ class Student extends Model
      */
     public function getPhotoUrlAttribute(): string
     {
-        if ($this->photograph && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->photograph)) {
-            return asset('storage/' . $this->photograph);
+        if ($this->photograph && Storage::disk('public')->exists($this->photograph)) {
+            return asset('storage/'.$this->photograph);
         }
-        
-        return 'data:image/svg+xml;base64,' . base64_encode($this->generateInitialsAvatar());
+
+        return 'data:image/svg+xml;base64,'.base64_encode($this->generateInitialsAvatar());
     }
 
     /**
@@ -138,14 +146,14 @@ class Student extends Model
     private function generateInitialsAvatar(): string
     {
         $initials = collect(explode(' ', $this->name))
-            ->map(fn($n) => mb_substr($n, 0, 1))
+            ->map(fn ($n) => mb_substr($n, 0, 1))
             ->take(2)
             ->join('');
-            
+
         return '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
             <rect fill="#6366f1" width="128" height="128" rx="16"/>
-            <text x="64" y="64" text-anchor="middle" dominant-baseline="central" fill="white" font-size="48" font-family="sans-serif" font-weight="bold">' 
-            . htmlspecialchars($initials) . 
+            <text x="64" y="64" text-anchor="middle" dominant-baseline="central" fill="white" font-size="48" font-family="sans-serif" font-weight="bold">'
+            .htmlspecialchars($initials).
             '</text>
         </svg>';
     }
@@ -157,7 +165,7 @@ class Student extends Model
     protected static function booted(): void
     {
         static::deleting(function (Student $student) {
-            if (!$student->isForceDeleting() && $student->registration_number !== null) {
+            if (! $student->isForceDeleting() && $student->registration_number !== null) {
                 $student->registration_number = null;
                 $student->saveQuietly();
             }
@@ -200,8 +208,8 @@ class Student extends Model
 
         // Fallback checks using any digits in class name
         preg_match('/\d+/', $className, $matches);
-        if (!empty($matches)) {
-            $digit = (int)$matches[0];
+        if (! empty($matches)) {
+            $digit = (int) $matches[0];
             if ($digit >= 1 && $digit <= 9) {
                 return [$digit * 10000 + 1, $digit * 10000 + 9999];
             }
@@ -222,6 +230,7 @@ class Student extends Model
 
         [$start, $end] = $this->getRegistrationNumberRange();
         $allocated = self::allocateRegistrationNumbers($start, $end, 1);
+
         return $allocated[0];
     }
 
@@ -229,10 +238,11 @@ class Student extends Model
      * Concurrency-safe sequential allocation of registration numbers for active students.
      * Soft-deleted students do NOT reserve registration numbers.
      *
-     * @param int $start Range start (e.g. 60001)
-     * @param int $end Range end (e.g. 69999)
-     * @param int $count Number of registrations to allocate
+     * @param  int  $start  Range start (e.g. 60001)
+     * @param  int  $end  Range end (e.g. 69999)
+     * @param  int  $count  Number of registrations to allocate
      * @return array<string> List of allocated registration numbers
+     *
      * @throws \RuntimeException If registration range is exhausted
      */
     public static function allocateRegistrationNumbers(int $start, int $end, int $count = 1): array
@@ -260,12 +270,12 @@ class Student extends Model
 
             // Find current highest registration number used by ACTIVE students only
             $maxActiveReg = self::query()
-                ->whereBetween('registration_number', [(string)$start, (string)$end])
+                ->whereBetween('registration_number', [(string) $start, (string) $end])
                 ->orderByRaw('CAST(registration_number AS UNSIGNED) DESC')
                 ->value('registration_number');
 
-            $currentHighestActive = $maxActiveReg ? (int)$maxActiveReg : ($start - 1);
-            $candidate = max((int)($sequence->next_number ?? $start), $currentHighestActive + 1);
+            $currentHighestActive = $maxActiveReg ? (int) $maxActiveReg : ($start - 1);
+            $candidate = max((int) ($sequence->next_number ?? $start), $currentHighestActive + 1);
 
             $allocated = [];
             while (count($allocated) < $count) {
@@ -274,12 +284,12 @@ class Student extends Model
                 }
 
                 // Verify candidate is not occupied by an active student
-                $isUsedByActive = self::query()->where('registration_number', (string)$candidate)->exists();
-                if (!$isUsedByActive) {
+                $isUsedByActive = self::query()->where('registration_number', (string) $candidate)->exists();
+                if (! $isUsedByActive) {
                     // If previously occupied by a soft-deleted student, clear it to satisfy database unique constraint
-                    self::onlyTrashed()->where('registration_number', (string)$candidate)->update(['registration_number' => null]);
+                    self::onlyTrashed()->where('registration_number', (string) $candidate)->update(['registration_number' => null]);
 
-                    $allocated[] = (string)$candidate;
+                    $allocated[] = (string) $candidate;
                 }
                 $candidate++;
             }
@@ -311,6 +321,7 @@ class Student extends Model
         if ($this->category && $this->category->registration_fee > 0) {
             return (float) $this->category->registration_fee;
         }
+
         return $this->class ? (float) $this->class->registration_fee : 0.0;
     }
 
@@ -320,6 +331,7 @@ class Student extends Model
     public function getFineAmountAttribute(): float
     {
         $school = $this->school;
+
         return $school ? $school->getFinePerStudentAmount() : 0.0;
     }
 
@@ -353,5 +365,39 @@ class Student extends Model
     public function setMotherNameAttribute($value)
     {
         $this->attributes['mother_name'] = mb_strtoupper(trim($value));
+    }
+
+    /**
+     * Online exam enrollments for this student.
+     */
+    public function onlineExamStudents(): HasMany
+    {
+        return $this->hasMany(OnlineExamStudent::class, 'student_id');
+    }
+
+    /**
+     * Online exams this student is enrolled in.
+     */
+    public function onlineExams(): BelongsToMany
+    {
+        return $this->belongsToMany(OnlineExam::class, 'online_exam_students', 'student_id', 'online_exam_id')
+            ->withPivot(['registration_number', 'is_eligible', 'eligibility_notes', 'enrolled_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Online exam sessions for this student.
+     */
+    public function onlineExamSessions(): HasMany
+    {
+        return $this->hasMany(OnlineExamSession::class, 'student_id');
+    }
+
+    /**
+     * Online exam results for this student.
+     */
+    public function onlineExamResults(): HasMany
+    {
+        return $this->hasMany(OnlineExamResult::class, 'student_id');
     }
 }

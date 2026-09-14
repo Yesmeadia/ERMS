@@ -3,24 +3,29 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\ResetPasswordMail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-
-use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'school_id', 'profile_image', 'two_factor_secret', 'two_factor_enabled', 'mfa_recovery_codes', 'is_active', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
+/**
+ * @property Carbon|null $last_login_at
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
      * Get the school that the user is assigned to.
@@ -44,11 +49,10 @@ class User extends Authenticatable
      * Send the password reset notification.
      *
      * @param  string  $token
-     * @return void
      */
     public function sendPasswordResetNotification($token): void
     {
-        \Illuminate\Support\Facades\Mail::to($this->email)->send(new \App\Mail\ResetPasswordMail($this, $token));
+        Mail::to($this->email)->send(new ResetPasswordMail($this, $token));
     }
 
     /**
@@ -68,4 +72,3 @@ class User extends Authenticatable
         ];
     }
 }
-

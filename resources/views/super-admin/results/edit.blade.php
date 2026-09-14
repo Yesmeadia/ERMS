@@ -25,7 +25,7 @@
                 Reg Number: <span class="font-mono text-slate-200 font-bold">{{ $student->registration_number }}</span>
             </p>
             <p class="text-xs text-slate-500 mt-0.5">
-                School: {{ $student->school->name }} | Class: {{ $student->class->name }} | Category: {{ $student->category->name }}
+                School: {{ $student->school?->name ?? 'N/A' }} | Class: {{ $student->class?->name ?? 'N/A' }} | Category: {{ $student->category?->name ?? 'N/A' }}
             </p>
         </div>
     </div>
@@ -50,28 +50,19 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-indigo-400">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.83 20.062a4.5 4.5 0 0 1-1.89 1.13L2.685 21.8a.75.75 0 0 1-.944-.94l.813-2.831a4.5 4.5 0 0 1 1.13-1.89L16.863 4.487zm0 0L19.5 7.125" />
                 </svg>
-                Result Score & Status
+                Result Score & Details
             </h4>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">Marks Obtained <span class="text-rose-400">*</span></label>
-                    <input type="number" name="marks_obtained" id="marks_obtained" value="{{ $result->marks_obtained }}" min="0" placeholder="e.g. 350" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
+                    <input type="number" name="marks_obtained" id="marks_obtained" value="{{ $result->marks_obtained }}" min="0" placeholder="e.g. 35" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">Maximum Marks <span class="text-rose-400">*</span></label>
-                    <input type="number" name="max_marks" id="max_marks" value="{{ $result->max_marks }}" min="1" placeholder="e.g. 500" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Result Status</label>
-                    <select name="status" id="status" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">
-                        <option value="Pass" @selected($result->status === 'Pass')>Pass</option>
-                        <option value="Fail" @selected($result->status === 'Fail')>Fail</option>
-                        <option value="Absent" @selected($result->status === 'Absent')>Absent</option>
-                        <option value="Withheld" @selected($result->status === 'Withheld')>Withheld</option>
-                    </select>
+                    <input type="number" name="max_marks" id="max_marks" value="{{ $result->max_marks }}" min="1" placeholder="e.g. 50" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50" required>
+                    <p class="text-[11px] text-slate-500 mt-1">Category ({{ $result->student?->category?->name ?? 'Standard' }}): <strong>{{ \App\Models\StudentResult::getDefaultMaxMarks($result->student?->category?->name) }} standard max</strong></p>
                 </div>
 
                 <div>
@@ -82,7 +73,7 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1.5">Remarks / Comments (Optional)</label>
-                <textarea name="remarks" id="remarks" rows="2" placeholder="e.g. Qualified For Second Round Examination" class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">{{ $result->remarks }}</textarea>
+                <textarea name="remarks" id="remarks" rows="2" placeholder="Enter manual remarks or comments..." class="w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/50">{{ $result->remarks }}</textarea>
             </div>
         </div>
 
@@ -96,25 +87,4 @@
         </div>
     </form>
 </div>
-
-<script @nonce>
-document.addEventListener('DOMContentLoaded', function() {
-    var statusSelect = document.getElementById('status');
-    var remarksInput = document.getElementById('remarks');
-    var defaultPass = 'Qualified For Second Round Examination';
-    var defaultFail = 'Not Qualified For Second Round Examination';
-
-    statusSelect.addEventListener('change', function() {
-        if (!remarksInput.value || remarksInput.value === defaultPass || remarksInput.value === defaultFail) {
-            if (statusSelect.value === 'Pass') {
-                remarksInput.value = defaultPass;
-            } else if (statusSelect.value === 'Fail') {
-                remarksInput.value = defaultFail;
-            } else {
-                remarksInput.value = '';
-            }
-        }
-    });
-});
-</script>
 @endsection

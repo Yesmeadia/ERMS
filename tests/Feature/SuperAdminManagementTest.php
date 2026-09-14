@@ -2,19 +2,20 @@
 
 namespace Tests\Feature;
 
+use App\Mail\SuperAdminCreatedMail;
+use App\Mail\SuperAdminLoginAlertMail;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\SuperAdminLoginAlertMail;
-use App\Mail\SuperAdminCreatedMail;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 class SuperAdminManagementTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $superAdmin;
+
     protected $superAdminRole;
 
     protected function setUp(): void

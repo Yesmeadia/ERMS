@@ -13,6 +13,7 @@ class ClassController extends Controller
     public function index()
     {
         $classes = ClassMaster::withCount('students')->latest()->get();
+
         return view('super-admin.classes.index', compact('classes'));
     }
 
@@ -93,7 +94,7 @@ class ClassController extends Controller
      */
     public function toggleStatus(ClassMaster $class)
     {
-        $class->status = !$class->status;
+        $class->status = ! $class->status;
         $class->save();
 
         $statusStr = $class->status ? 'Activated' : 'Deactivated';

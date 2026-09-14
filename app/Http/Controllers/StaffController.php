@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\School;
+use App\Mail\InvigilatorCreatedMail;
 use App\Models\Examination;
+use App\Models\School;
+use App\Models\User;
+use App\Rules\VirusFree;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Mail\InvigilatorCreatedMail;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class StaffController extends Controller
 {
@@ -20,15 +23,15 @@ class StaffController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('status')) {
             if ($request->status === 'active') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('is_active', true)->orWhereNull('is_active');
                 });
             } elseif ($request->status === 'banned') {
@@ -58,15 +61,15 @@ class StaffController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('status')) {
             if ($request->status === 'active') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('is_active', true)->orWhereNull('is_active');
                 });
             } elseif ($request->status === 'banned') {
@@ -88,8 +91,8 @@ class StaffController extends Controller
             'total' => $invigilators->count(),
             'logged_in' => $invigilators->whereNotNull('last_login_at')->count(),
             'not_logged_in' => $invigilators->whereNull('last_login_at')->count(),
-            'active' => $invigilators->filter(fn($u) => $u->is_active ?? true)->count(),
-            'banned' => $invigilators->filter(fn($u) => !($u->is_active ?? true))->count(),
+            'active' => $invigilators->filter(fn ($u) => $u->is_active ?? true)->count(),
+            'banned' => $invigilators->filter(fn ($u) => ! ($u->is_active ?? true))->count(),
         ];
 
         $examination = $request->filled('examination_id')
@@ -110,13 +113,15 @@ class StaffController extends Controller
 
         $pdf->setPaper('a4', 'portrait');
 
-        $filename = 'Invigilators_List_' . now()->format('Ymd_His') . '.pdf';
+        $filename = 'Invigilators_List_'.now()->format('Ymd_His').'.pdf';
+
         return $pdf->download($filename);
     }
 
     public function create()
     {
         $examinationCentres = School::where('is_centre', true)->where('status', true)->orderBy('name')->get();
+
         return view('super-admin.staff.create', compact('examinationCentres'));
     }
 
@@ -126,7 +131,7 @@ class StaffController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'school_id' => ['nullable', 'exists:schools,id'],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new VirusFree],
         ]);
 
         $userData = [
@@ -145,7 +150,7 @@ class StaffController extends Controller
         $user->assignRole('invigilator');
 
         // Generate password set token
-        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+        $token = Password::createToken($user);
 
         // Send email with credentials
         try {
@@ -165,11 +170,12 @@ class StaffController extends Controller
     {
         $staff = User::findOrFail($id);
 
-        if (!$staff->hasRole('invigilator')) {
+        if (! $staff->hasRole('invigilator')) {
             abort(404);
         }
 
         $examinationCentres = School::where('is_centre', true)->where('status', true)->orderBy('name')->get();
+
         return view('super-admin.staff.edit', compact('staff', 'examinationCentres'));
     }
 
@@ -177,16 +183,16 @@ class StaffController extends Controller
     {
         $staff = User::findOrFail($id);
 
-        if (!$staff->hasRole('invigilator')) {
+        if (! $staff->hasRole('invigilator')) {
             abort(404);
         }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', "unique:users,email,{$staff->id}"],
-            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)],
             'school_id' => ['nullable', 'exists:schools,id'],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new VirusFree],
         ]);
 
         $staff->name = $validated['name'];
@@ -195,7 +201,7 @@ class StaffController extends Controller
 
         if ($request->hasFile('profile_image')) {
             if ($staff->profile_image) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($staff->profile_image);
+                Storage::disk('public')->delete($staff->profile_image);
             }
             $staff->profile_image = $request->file('profile_image')->store('profiles', 'public');
         }
@@ -217,7 +223,7 @@ class StaffController extends Controller
     {
         $staff = User::findOrFail($id);
 
-        if (!$staff->hasRole('invigilator')) {
+        if (! $staff->hasRole('invigilator')) {
             abort(404);
         }
 
@@ -237,11 +243,11 @@ class StaffController extends Controller
     {
         $staff = User::findOrFail($id);
 
-        if (!$staff->hasRole('invigilator')) {
+        if (! $staff->hasRole('invigilator')) {
             abort(404);
         }
 
-        $staff->is_active = !($staff->is_active ?? true);
+        $staff->is_active = ! ($staff->is_active ?? true);
         $staff->save();
 
         $statusStr = $staff->is_active ? 'Activated' : 'Banned / Deactivated';
@@ -260,17 +266,18 @@ class StaffController extends Controller
     {
         $staff = User::findOrFail($id);
 
-        if (!$staff->hasRole('invigilator')) {
+        if (! $staff->hasRole('invigilator')) {
             abort(404);
         }
 
-        $token = \Illuminate\Support\Facades\Password::broker()->createToken($staff);
+        $token = Password::createToken($staff);
 
         try {
             Mail::to($staff->email)->send(new InvigilatorCreatedMail($staff, $token));
         } catch (\Exception $e) {
             report($e);
-            return back()->with('error', 'Failed to send password reset email: ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to send password reset email: '.$e->getMessage());
         }
 
         activity()

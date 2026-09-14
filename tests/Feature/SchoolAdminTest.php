@@ -2,30 +2,35 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\School;
-use App\Models\ClassMaster;
 use App\Models\CategoryMaster;
-use App\Models\Student;
+use App\Models\ClassMaster;
 use App\Models\Examination;
-use Spatie\Permission\Models\Role;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
-use Tests\TestCase;
-use Illuminate\Support\Facades\DB;
+use App\Models\School;
+use App\Models\Student;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 class SchoolAdminTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $school;
+
     protected $schoolAdmin;
+
     protected $anotherSchool;
+
     protected $anotherSchoolAdmin;
+
     protected $class;
+
     protected $category;
+
     protected $examination;
 
     protected function setUp(): void
@@ -202,8 +207,8 @@ class SchoolAdminTest extends TestCase
             ->get(route('school.students.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Visible Student');
-        $response->assertDontSee('Hidden Student');
+        $response->assertSee('VISIBLE STUDENT');
+        $response->assertDontSee('HIDDEN STUDENT');
     }
 
     /**
@@ -228,7 +233,7 @@ class SchoolAdminTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('students', [
-            'name' => 'New Student',
+            'name' => 'NEW STUDENT',
             'school_id' => $this->school->id,
             'status' => 'Draft',
         ]);
@@ -297,7 +302,7 @@ class SchoolAdminTest extends TestCase
         $response->assertRedirect(route('school.students.index'));
         $this->assertDatabaseHas('students', [
             'id' => $student->id,
-            'name' => 'Updated Name',
+            'name' => 'UPDATED NAME',
             'status' => 'Draft',
         ]);
     }
@@ -337,7 +342,7 @@ class SchoolAdminTest extends TestCase
         $response->assertStatus(403);
         $this->assertDatabaseHas('students', [
             'id' => $student->id,
-            'name' => 'School B Student',
+            'name' => 'SCHOOL B STUDENT',
         ]);
     }
 
@@ -377,7 +382,7 @@ class SchoolAdminTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertDatabaseHas('students', [
             'id' => $student->id,
-            'name' => 'Submitted Student',
+            'name' => 'SUBMITTED STUDENT',
         ]);
     }
 
@@ -404,7 +409,8 @@ class SchoolAdminTest extends TestCase
             ->delete(route('school.students.destroy', $student));
 
         $response->assertRedirect(route('school.students.index'));
-        $this->assertDatabaseMissing('students', [
+        $response->assertSessionHas('success');
+        $this->assertSoftDeleted('students', [
             'id' => $student->id,
         ]);
     }
@@ -514,6 +520,7 @@ class SchoolAdminTest extends TestCase
             'father_name' => 'Father',
             'mother_name' => 'Mother',
             'mobile_number' => '1111111111',
+            'centre_id' => $this->school->id,
             'status' => 'Hall Ticket Issued',
             'hall_ticket_number' => '2027-000001',
             'hall_ticket_issued_at' => now(),
@@ -616,8 +623,8 @@ class SchoolAdminTest extends TestCase
             ->get(route('school.reports.index', ['type' => 'submitted']));
 
         $response->assertStatus(200);
-        $response->assertSee('School A Registered');
-        $response->assertDontSee('School B Registered');
+        $response->assertSee('SCHOOL A REGISTERED');
+        $response->assertDontSee('SCHOOL B REGISTERED');
     }
 
     /**

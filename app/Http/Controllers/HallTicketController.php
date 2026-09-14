@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\School;
+use App\Models\CategoryMaster;
 use App\Models\Examination;
 use App\Models\HallTicket;
 use App\Models\HallTicketBatch;
 use App\Models\HallTicketPdfPart;
+use App\Models\School;
+use App\Models\Student;
 use App\Services\HallTicketBatchService;
 use App\Services\HallTicketPdfService;
 use Illuminate\Http\Request;
@@ -16,10 +17,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class HallTicketController extends Controller
 {
     protected HallTicketBatchService $batchService;
+
     protected HallTicketPdfService $pdfService;
 
     public function __construct(HallTicketBatchService $batchService, HallTicketPdfService $pdfService)
@@ -73,7 +76,7 @@ class HallTicketController extends Controller
         $schools = School::where('status', true)->get();
         $centres = School::where('is_centre', true)->get();
         $examinations = Examination::all();
-        $categories = \App\Models\CategoryMaster::where('status', true)->get();
+        $categories = CategoryMaster::where('status', true)->get();
 
         // Recent batches for super admin quick access & monitoring
         $recentBatches = HallTicketBatch::with(['school', 'examination', 'requester', 'parts'])
@@ -119,7 +122,7 @@ class HallTicketController extends Controller
         $students = $query->latest()->paginate(20);
         $centres = School::where('is_centre', true)->get();
         $examinations = Examination::all();
-        $categories = \App\Models\CategoryMaster::where('status', true)->get();
+        $categories = CategoryMaster::where('status', true)->get();
 
         // Active & Recent batches for this school
         $recentBatches = HallTicketBatch::where('school_id', $school->id)
@@ -144,7 +147,7 @@ class HallTicketController extends Controller
             return back()->with('error', 'Hall ticket can only be generated for Approved students.');
         }
 
-        if (!$student->centre_id) {
+        if (! $student->centre_id) {
             return back()->with('error', 'Please assign an Examination Centre for this candidate before generating a hall ticket.');
         }
 
@@ -152,14 +155,14 @@ class HallTicketController extends Controller
             DB::transaction(function () use ($student) {
                 $locked = Student::lockForUpdate()->findOrFail($student->id);
 
-                if (!$locked->hall_ticket_number) {
+                if (! $locked->hall_ticket_number) {
                     do {
                         $candidate = strtoupper(bin2hex(random_bytes(6)));
                     } while (Student::withTrashed()->where('hall_ticket_number', $candidate)->exists());
                     $locked->hall_ticket_number = $candidate;
                 }
 
-                if (!$locked->registration_number) {
+                if (! $locked->registration_number) {
                     $locked->registration_number = $locked->issueRegistrationNumber();
                 }
 
@@ -247,6 +250,7 @@ class HallTicketController extends Controller
         foreach ($students as $student) {
             if ($student->hall_ticket_number) {
                 $tokens[$student->id] = $student->hall_ticket_number;
+
                 continue;
             }
 
@@ -262,7 +266,7 @@ class HallTicketController extends Controller
 
         try {
             DB::transaction(function () use ($students, $tokens, $now, &$count) {
-                $studentsNeedingReg = $students->filter(fn($s) => empty($s->registration_number));
+                $studentsNeedingReg = $students->filter(fn ($s) => empty($s->registration_number));
 
                 $groupedByRange = [];
                 foreach ($studentsNeedingReg as $student) {
@@ -339,7 +343,7 @@ class HallTicketController extends Controller
         $student->loadMissing(['school', 'class', 'category', 'examination', 'hallTicket', 'centre']);
         $pdf = $this->pdfService->generateSinglePdf($student);
 
-        return $pdf->stream('hall_ticket_' . $student->hall_ticket_number . '.pdf');
+        return $pdf->stream('hall_ticket_'.$student->hall_ticket_number.'.pdf');
     }
 
     /**
@@ -361,7 +365,7 @@ class HallTicketController extends Controller
 
         $pdf = $this->pdfService->generateSinglePdf($student);
 
-        return $pdf->download('hall_ticket_' . $student->hall_ticket_number . '.pdf');
+        return $pdf->download('hall_ticket_'.$student->hall_ticket_number.'.pdf');
     }
 
     /**
@@ -374,7 +378,7 @@ class HallTicketController extends Controller
         ]);
 
         $school = Auth::user()->school;
-        if (!$school) {
+        if (! $school) {
             abort(403, 'User is not assigned to a school.');
         }
 
@@ -387,10 +391,11 @@ class HallTicketController extends Controller
                 Auth::id(),
                 $filters
             );
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            Log::error('Bulk download batch creation failed: ' . $e->getMessage(), ['exception' => $e]);
+            Log::error('Bulk download batch creation failed: '.$e->getMessage(), ['exception' => $e]);
+
             return back()->with('error', 'Unable to prepare the Hall Tickets. Please try again or contact the administrator.');
         }
 
@@ -406,7 +411,7 @@ class HallTicketController extends Controller
      */
     public function printBulk(Request $request)
     {
-        if (!Auth::user()->hasRole('super-admin')) {
+        if (! Auth::user()->hasRole('super-admin')) {
             abort(403, 'Only Super Administrators can perform bulk print across institutions.');
         }
 
@@ -424,10 +429,11 @@ class HallTicketController extends Controller
                 Auth::id(),
                 $filters
             );
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            Log::error('Super Admin bulk download batch creation failed: ' . $e->getMessage(), ['exception' => $e]);
+            Log::error('Super Admin bulk download batch creation failed: '.$e->getMessage(), ['exception' => $e]);
+
             return back()->with('error', 'Unable to prepare the Hall Tickets. Please try again or contact the administrator.');
         }
 
@@ -447,15 +453,15 @@ class HallTicketController extends Controller
 
         $batch->load(['school', 'examination', 'parts']);
 
-        $initialParts = $batch->parts->map(fn($p) => [
+        $initialParts = $batch->parts->map(fn ($p) => [
             'id' => $p->id,
             'part_number' => $p->part_number,
             'total_students' => $p->total_students,
             'completed_students' => $p->completed_students,
             'status' => $p->status,
-            'file_size_formatted' => $p->file_size ? number_format($p->file_size / 1024, 1) . ' KB' : null,
+            'file_size_formatted' => $p->file_size ? number_format($p->file_size / 1024, 1).' KB' : null,
             'error_message' => $p->error_message,
-            'download_url' => ($p->status === 'completed' && !empty($p->pdf_path))
+            'download_url' => ($p->status === 'completed' && ! empty($p->pdf_path))
                 ? route('school.hall-tickets.parts.download', $p)
                 : null,
         ]);
@@ -472,15 +478,15 @@ class HallTicketController extends Controller
 
         $batch->load(['school', 'examination', 'parts']);
 
-        $initialParts = $batch->parts->map(fn($p) => [
+        $initialParts = $batch->parts->map(fn ($p) => [
             'id' => $p->id,
             'part_number' => $p->part_number,
             'total_students' => $p->total_students,
             'completed_students' => $p->completed_students,
             'status' => $p->status,
-            'file_size_formatted' => $p->file_size ? number_format($p->file_size / 1024, 1) . ' KB' : null,
+            'file_size_formatted' => $p->file_size ? number_format($p->file_size / 1024, 1).' KB' : null,
             'error_message' => $p->error_message,
-            'download_url' => ($p->status === 'completed' && !empty($p->pdf_path))
+            'download_url' => ($p->status === 'completed' && ! empty($p->pdf_path))
                 ? route('admin.hall-tickets.parts.download', $p)
                 : null,
         ]);
@@ -500,7 +506,7 @@ class HallTicketController extends Controller
 
         $partsData = $parts->map(function ($part) use ($isSuperAdmin) {
             $downloadUrl = null;
-            if ($part->status === 'completed' && !empty($part->pdf_path)) {
+            if ($part->status === 'completed' && ! empty($part->pdf_path)) {
                 $downloadUrl = $isSuperAdmin
                     ? route('admin.hall-tickets.parts.download', $part)
                     : route('school.hall-tickets.parts.download', $part);
@@ -512,7 +518,7 @@ class HallTicketController extends Controller
                 'total_students' => $part->total_students,
                 'completed_students' => $part->completed_students,
                 'status' => $part->status,
-                'file_size_formatted' => $part->file_size ? number_format($part->file_size / 1024, 1) . ' KB' : null,
+                'file_size_formatted' => $part->file_size ? number_format($part->file_size / 1024, 1).' KB' : null,
                 'error_message' => $part->error_message,
                 'download_url' => $downloadUrl,
             ];
@@ -544,7 +550,7 @@ class HallTicketController extends Controller
         Gate::authorize('download', $part);
 
         $batch = $part->batch;
-        if (!$batch) {
+        if (! $batch) {
             abort(404, 'Associated batch not found.');
         }
 
@@ -553,7 +559,7 @@ class HallTicketController extends Controller
         }
 
         $disk = Storage::disk(config('hallticket.disk', 'local'));
-        if (!$disk->exists($part->pdf_path)) {
+        if (! $disk->exists($part->pdf_path)) {
             return back()->with('error', 'The requested PDF part file was not found or has expired.');
         }
 
@@ -563,7 +569,7 @@ class HallTicketController extends Controller
 
         activity()
             ->performedOn($batch)
-            ->log("User " . Auth::user()->name . " downloaded Hall Ticket PDF Part #{$part->part_number} for Batch #{$batch->id}");
+            ->log('User '.Auth::user()->name." downloaded Hall Ticket PDF Part #{$part->part_number} for Batch #{$batch->id}");
 
         return $disk->download($part->pdf_path, $filename, [
             'Content-Type' => 'application/pdf',
