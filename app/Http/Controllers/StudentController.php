@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\School;
-use App\Models\ClassMaster;
-use App\Models\CategoryMaster;
-use App\Models\Examination;
-use App\Imports\StudentsImport;
 use App\Exports\StudentTemplateExport;
+use App\Imports\StudentsImport;
+use App\Models\CategoryMaster;
+use App\Models\ClassMaster;
+use App\Models\Examination;
+use App\Models\School;
+use App\Models\Student;
+use App\Rules\VirusFree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class StudentController extends Controller
 {
@@ -50,9 +52,9 @@ class StudentController extends Controller
                 });
             } elseif ($filterStatus === 'Absent') {
                 $query->whereIn('status', ['Approved', 'Hall Ticket Issued'])
-                      ->whereDoesntHave('attendances', function ($q) {
-                          $q->where('status', 'Present');
-                      });
+                    ->whereDoesntHave('attendances', function ($q) {
+                        $q->where('status', 'Present');
+                    });
             } else {
                 $query->where('status', $filterStatus);
             }
@@ -62,22 +64,22 @@ class StudentController extends Controller
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%");
             });
         }
 
-        $students     = $query->latest()->paginate(20)->withQueryString();
+        $students = $query->latest()->paginate(20)->withQueryString();
         $examinations = Examination::all();
-        $schools      = School::where('status', true)->get();
-        $categories   = CategoryMaster::where('status', true)->get();
-        $genders      = ['Male', 'Female', 'Other'];
-        $statuses     = ['Draft', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued', 'Present', 'Absent'];
+        $schools = School::where('status', true)->get();
+        $categories = CategoryMaster::where('status', true)->get();
+        $genders = ['Male', 'Female', 'Other'];
+        $statuses = ['Draft', 'Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued', 'Present', 'Absent'];
         $designatedCentres = School::where('is_centre', true)->where('status', true)->get();
 
         // Stats
-        $totalCount    = Student::count();
-        $draftCount    = Student::where('status', 'Draft')->count();
+        $totalCount = Student::count();
+        $draftCount = Student::where('status', 'Draft')->count();
         $submittedCount = Student::where('status', 'Submitted')->count();
         $approvedCount = Student::whereIn('status', ['Approved', 'Hall Ticket Issued'])->count();
 
@@ -94,10 +96,10 @@ class StudentController extends Controller
     public function adminIssueRegistration(Student $student)
     {
         if ($student->registration_number) {
-            return back()->with('info', 'Registration number already issued: ' . $student->registration_number);
+            return back()->with('info', 'Registration number already issued: '.$student->registration_number);
         }
 
-        if (!in_array($student->status, ['Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'])) {
+        if (! in_array($student->status, ['Submitted', 'Under Review', 'Approved', 'Rejected', 'Hall Ticket Issued'])) {
             return back()->with('error', 'Registration number can only be issued for submitted or approved students.');
         }
 
@@ -135,6 +137,7 @@ class StudentController extends Controller
     {
         $student->load(['class', 'category', 'school', 'examination', 'hallTicket', 'result', 'attendances', 'payments', 'centre']);
         $designatedCentres = School::where('is_centre', true)->where('status', true)->get();
+
         return view('super-admin.students.show', compact('student', 'designatedCentres'));
     }
 
@@ -172,7 +175,7 @@ class StudentController extends Controller
             'status' => ['required', 'in:Draft,Submitted,Under Review,Approved,Rejected,Hall Ticket Issued'],
             'payment_status' => ['required', 'in:Unpaid,Paid'],
             'remarks' => ['nullable', 'string', 'max:500'],
-            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
+            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new VirusFree],
             'photograph_cropped' => ['nullable', 'string'],
         ]);
 
@@ -185,7 +188,7 @@ class StudentController extends Controller
             }
             $data = substr($request->input('photograph_cropped'), strpos($request->input('photograph_cropped'), ',') + 1);
             $data = base64_decode($data);
-            $filename = 'students/photos/' . Str::random(40) . '.' . strtolower($type[1] ?? 'jpg');
+            $filename = 'students/photos/'.Str::random(40).'.'.strtolower($type[1] ?? 'jpg');
             Storage::disk('public')->put($filename, $data);
             $studentData['photograph'] = $filename;
         } elseif ($request->hasFile('photograph')) {
@@ -216,9 +219,9 @@ class StudentController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%");
             });
         }
 
@@ -279,7 +282,7 @@ class StudentController extends Controller
             'father_name' => ['required', 'string', 'max:255'],
             'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
-            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree], // Max 3MB + Virus scan
+            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new VirusFree], // Max 3MB + Virus scan
             'photograph_cropped' => ['nullable', 'string'],
         ]);
 
@@ -300,7 +303,7 @@ class StudentController extends Controller
         if ($request->filled('photograph_cropped') && preg_match('/^data:image\/(\w+);base64,/', $request->input('photograph_cropped'), $type)) {
             $data = substr($request->input('photograph_cropped'), strpos($request->input('photograph_cropped'), ',') + 1);
             $data = base64_decode($data);
-            $filename = 'students/photos/' . Str::random(40) . '.' . strtolower($type[1] ?? 'jpg');
+            $filename = 'students/photos/'.Str::random(40).'.'.strtolower($type[1] ?? 'jpg');
             Storage::disk('public')->put($filename, $data);
             $studentData['photograph'] = $filename;
         } elseif ($request->hasFile('photograph')) {
@@ -323,6 +326,7 @@ class StudentController extends Controller
     {
         $this->authorizeAccess($student);
         $student->load(['class', 'category', 'school', 'examination', 'payments']);
+
         return view('school-admin.students.show', compact('student'));
     }
 
@@ -334,7 +338,7 @@ class StudentController extends Controller
         $this->authorizeAccess($student);
 
         // Allow editing only if status is Draft or Rejected
-        if (!in_array($student->status, ['Draft', 'Rejected'])) {
+        if (! in_array($student->status, ['Draft', 'Rejected'])) {
             return redirect()->route('school.students.index')->with('error', 'Cannot edit student registration once submitted or approved.');
         }
 
@@ -352,7 +356,7 @@ class StudentController extends Controller
     {
         $this->authorizeAccess($student);
 
-        if (!in_array($student->status, ['Draft', 'Rejected'])) {
+        if (! in_array($student->status, ['Draft', 'Rejected'])) {
             return redirect()->route('school.students.index')->with('error', 'Cannot update student registration once submitted or approved.');
         }
 
@@ -366,7 +370,7 @@ class StudentController extends Controller
             'father_name' => ['required', 'string', 'max:255'],
             'mother_name' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:15'],
-            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new \App\Rules\VirusFree],
+            'photograph' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:3072', new VirusFree],
             'photograph_cropped' => ['nullable', 'string'],
         ]);
 
@@ -386,7 +390,7 @@ class StudentController extends Controller
             }
             $data = substr($request->input('photograph_cropped'), strpos($request->input('photograph_cropped'), ',') + 1);
             $data = base64_decode($data);
-            $filename = 'students/photos/' . Str::random(40) . '.' . strtolower($type[1] ?? 'jpg');
+            $filename = 'students/photos/'.Str::random(40).'.'.strtolower($type[1] ?? 'jpg');
             Storage::disk('public')->put($filename, $data);
             $studentData['photograph'] = $filename;
         } elseif ($request->hasFile('photograph')) {
@@ -416,7 +420,7 @@ class StudentController extends Controller
     {
         $this->authorizeAccess($student);
 
-        if (!in_array($student->status, ['Draft', 'Rejected'])) {
+        if (! in_array($student->status, ['Draft', 'Rejected'])) {
             return redirect()->route('school.students.index')->with('error', 'Cannot delete student registration once submitted or approved.');
         }
 
@@ -440,7 +444,7 @@ class StudentController extends Controller
     {
         $this->authorizeAccess($student);
 
-        if (!in_array($student->status, ['Draft', 'Rejected'])) {
+        if (! in_array($student->status, ['Draft', 'Rejected'])) {
             return back()->with('error', 'Student registration has already been submitted.');
         }
 
@@ -449,9 +453,9 @@ class StudentController extends Controller
 
         activity()
             ->performedOn($student)
-            ->log("Submitted student registration for verification");
+            ->log('Submitted student registration for verification');
 
-        return back()->with('success', "Student registration submitted successfully.");
+        return back()->with('success', 'Student registration submitted successfully.');
     }
 
     /**
@@ -491,15 +495,16 @@ class StudentController extends Controller
                 ->log("Bulk imported student registrations for examination: {$exam->name} from Excel");
 
             return redirect()->route('school.students.index')->with('success', 'Students imported successfully as drafts. Please review and submit them.');
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+        } catch (ValidationException $e) {
             $failures = $e->failures();
             $errorMsgs = [];
             foreach ($failures as $failure) {
-                $errorMsgs[] = "Row {$failure->row()}: " . implode(', ', $failure->errors());
+                $errorMsgs[] = "Row {$failure->row()}: ".implode(', ', $failure->errors());
             }
+
             return back()->withErrors($errorMsgs)->withInput();
         } catch (\Exception $e) {
-            return back()->with('error', 'Error importing file: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Error importing file: '.$e->getMessage())->withInput();
         }
     }
 

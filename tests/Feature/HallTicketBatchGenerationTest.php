@@ -7,7 +7,6 @@ use App\Models\CategoryMaster;
 use App\Models\ClassMaster;
 use App\Models\Examination;
 use App\Models\HallTicketBatch;
-use App\Models\HallTicketPdfPart;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
@@ -24,12 +23,19 @@ class HallTicketBatchGenerationTest extends TestCase
     use RefreshDatabase;
 
     protected School $school;
+
     protected School $schoolB;
+
     protected User $schoolAdmin;
+
     protected User $schoolAdminB;
+
     protected User $superAdmin;
+
     protected Examination $examination;
+
     protected ClassMaster $class;
+
     protected CategoryMaster $category;
 
     protected function setUp(): void
@@ -291,7 +297,7 @@ class HallTicketBatchGenerationTest extends TestCase
             'progress',
             'download_available',
             'parts' => [
-                '*' => ['id', 'part_number', 'total_students', 'completed_students', 'status', 'download_url']
+                '*' => ['id', 'part_number', 'total_students', 'completed_students', 'status', 'download_url'],
             ],
         ]);
     }

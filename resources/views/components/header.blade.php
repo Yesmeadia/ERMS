@@ -29,6 +29,13 @@
                 <span>Exam Results</span>
                 <span class="nav-link-indicator"></span>
             </a>
+            <a href="{{ route('online-exam.login') }}" class="nav-link-item">
+                <span style="display:inline-flex;align-items:center;gap:5px;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+                    Online Exam
+                </span>
+                <span class="nav-link-indicator"></span>
+            </a>
         </div>
 
         <!-- Right: Actions -->

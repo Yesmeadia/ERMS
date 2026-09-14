@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\School;
-use App\Models\ClassMaster;
 use App\Models\CategoryMaster;
-use App\Models\Examination;
+use App\Models\ClassMaster;
+use App\Models\School;
+use App\Models\Student;
 use Illuminate\Http\Request;
 
 class VerificationController extends Controller
@@ -59,6 +58,7 @@ class VerificationController extends Controller
     public function show(Student $student)
     {
         $student->load(['school', 'class', 'category', 'examination', 'payments']);
+
         return view('super-admin.verification.show', compact('student'));
     }
 
@@ -91,7 +91,7 @@ class VerificationController extends Controller
 
         activity()
             ->performedOn($student)
-            ->log("Updated verification status from '{$oldStatus}' to '{$student->status}'" . ($request->action === 'reject' ? " with remarks: {$request->remarks}" : ''));
+            ->log("Updated verification status from '{$oldStatus}' to '{$student->status}'".($request->action === 'reject' ? " with remarks: {$request->remarks}" : ''));
 
         return redirect()->route('admin.verification.index')->with('success', "Student registration is now {$student->status}.");
     }
@@ -131,7 +131,7 @@ class VerificationController extends Controller
 
                 activity()
                     ->performedOn($student)
-                    ->log("Updated verification status from '{$oldStatus}' to '{$student->status}' via bulk action" . ($request->action === 'reject' ? " with remarks: {$request->remarks}" : ''));
+                    ->log("Updated verification status from '{$oldStatus}' to '{$student->status}' via bulk action".($request->action === 'reject' ? " with remarks: {$request->remarks}" : ''));
 
                 $updatedCount++;
             }
@@ -166,7 +166,7 @@ class VerificationController extends Controller
             'examination_id',
             'hall_ticket_number',
             'hall_ticket_issued_at',
-            'status'
+            'status',
         ];
 
         $student = Student::select($safeColumns)
@@ -174,7 +174,7 @@ class VerificationController extends Controller
             ->with(['school:id,name', 'class:id,name', 'category:id,name', 'examination:id,name'])
             ->first();
 
-        if (!$student) {
+        if (! $student) {
             $student = Student::select($safeColumns)
                 ->where('registration_number', $number)
                 ->with(['school:id,name', 'class:id,name', 'category:id,name', 'examination:id,name'])

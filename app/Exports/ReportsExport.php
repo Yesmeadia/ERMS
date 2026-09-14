@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 class ReportsExport implements FromArray, WithHeadings, WithStrictNullComparison
 {
     private $headings;
+
     private $data;
 
     public function __construct(array $headings, array $data)

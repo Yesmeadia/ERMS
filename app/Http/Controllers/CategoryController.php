@@ -13,6 +13,7 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = CategoryMaster::withCount('students')->latest()->get();
+
         return view('super-admin.categories.index', compact('categories'));
     }
 
@@ -30,8 +31,8 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'             => ['required', 'string', 'max:255'],
-            'code'             => ['required', 'string', 'max:50', 'unique:categories,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', 'unique:categories,code'],
             'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -58,8 +59,8 @@ class CategoryController extends Controller
     public function update(Request $request, CategoryMaster $category)
     {
         $validated = $request->validate([
-            'name'             => ['required', 'string', 'max:255'],
-            'code'             => ['required', 'string', 'max:50', "unique:categories,code,{$category->id}"],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', "unique:categories,code,{$category->id}"],
             'registration_fee' => ['required', 'numeric', 'min:0'],
         ]);
 
@@ -95,7 +96,7 @@ class CategoryController extends Controller
      */
     public function toggleStatus(CategoryMaster $category)
     {
-        $category->status = !$category->status;
+        $category->status = ! $category->status;
         $category->save();
 
         $statusStr = $category->status ? 'Activated' : 'Deactivated';

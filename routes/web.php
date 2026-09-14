@@ -16,9 +16,20 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\ResultController;
+use App\Http\Controllers\ResultTimerController;
+use App\Models\AppSetting;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ExamCentreController;
 use App\Http\Controllers\SuperAdmin\AnnouncementController;
+use App\Http\Controllers\StudentOnlineExamController;
+use App\Http\Controllers\Admin\OnlineExamDashboardController;
+use App\Http\Controllers\Admin\OnlineExamController;
+use App\Http\Controllers\Admin\OnlineQuestionBankController;
+use App\Http\Controllers\Admin\OnlineExamQuestionController;
+use App\Http\Controllers\Admin\OnlineExamStudentController;
+use App\Http\Controllers\Admin\OnlineExamLiveMonitoringController;
+use App\Http\Controllers\Admin\OnlineExamReportController;
+use App\Http\Controllers\OnlineExamWebRTCController;
 
 
 // Public Homepage Route (accessible to all — guests and authenticated users)
@@ -35,7 +46,12 @@ Route::get('/', function () {
         ->groupBy(fn($r) => optional($r->student->category)->name ?? 'General')
         ->map(fn($group) => $group->take(3)->values());
 
-    return view('welcome', compact('activeExam', 'winners'));
+    $releaseUtc = AppSetting::resultReleaseDatetime();
+    $released   = AppSetting::resultsReleased();
+    $releaseIso = $releaseUtc->toIso8601String();
+    $releaseIst = $releaseUtc->copy()->setTimezone('Asia/Kolkata')->format('d M Y, h:i A');
+
+    return view('welcome', compact('activeExam', 'winners', 'releaseUtc', 'released', 'releaseIso', 'releaseIst'));
 })->name('home');
 
 // 1. Guest Routes
@@ -87,6 +103,33 @@ Route::get('/results/{student}/marksheet', [ResultController::class, 'showPublic
 
 // Cashfree Webhook (Public, signature verified inside controller)
 Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
+
+// ============================================
+// ONLINE EXAMINATION - STUDENT PORTAL
+// ============================================
+Route::prefix('online-exam')->name('online-exam.')->group(function () {
+    Route::get('/login', [StudentOnlineExamController::class, 'showLogin'])->name('login');
+    Route::post('/login', [StudentOnlineExamController::class, 'login'])->name('login.submit')->middleware('throttle:15,1');
+    Route::get('/terminated', [StudentOnlineExamController::class, 'terminated'])->name('terminated');
+
+    // Protected by online exam session token
+    Route::middleware('online_exam_session')->group(function () {
+        Route::get('/instructions', [StudentOnlineExamController::class, 'instructions'])->name('instructions');
+        Route::post('/start', [StudentOnlineExamController::class, 'startExam'])->name('start');
+        Route::get('/take', [StudentOnlineExamController::class, 'take'])->name('take');
+        Route::post('/submit-answer', [StudentOnlineExamController::class, 'submitAnswer'])->name('submit-answer');
+        Route::post('/next-question', [StudentOnlineExamController::class, 'nextQuestion'])->name('next-question');
+        Route::post('/previous-question', [StudentOnlineExamController::class, 'previousQuestion'])->name('previous-question');
+        Route::post('/heartbeat', [StudentOnlineExamController::class, 'heartbeat'])->name('heartbeat');
+        Route::post('/event', [StudentOnlineExamController::class, 'recordEvent'])->name('event');
+        Route::post('/finish', [StudentOnlineExamController::class, 'finish'])->name('finish');
+        Route::get('/result', [StudentOnlineExamController::class, 'result'])->name('result');
+
+        // WebRTC Signaling
+        Route::get('/webrtc/signals', [OnlineExamWebRTCController::class, 'getStudentSignals'])->name('webrtc.signals');
+        Route::post('/webrtc/signal', [OnlineExamWebRTCController::class, 'sendStudentSignal'])->name('webrtc.signal');
+    });
+});
 
 // 3. SECURE AUTHENTICATED ROUTES
 Route::middleware('auth')->group(function () {
@@ -208,6 +251,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/results/{result}/edit', [ResultController::class, 'edit'])->name('results.edit');
         Route::put('/results/{result}', [ResultController::class, 'update'])->name('results.update');
         Route::delete('/results/{result}', [ResultController::class, 'destroy'])->name('results.destroy');
+
+        // Result Timer Management
+        Route::get('/result-timer', [ResultTimerController::class, 'index'])->name('result-timer.index');
+        Route::post('/result-timer', [ResultTimerController::class, 'update'])->name('result-timer.update');
+        Route::post('/result-timer/force-release', [ResultTimerController::class, 'forceRelease'])->name('result-timer.force-release');
+        Route::get('/result-timer/status', [ResultTimerController::class, 'status'])->name('result-timer.status');
     });
 
     // ============================================
@@ -296,5 +345,64 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/exam-centres/{school}', [ExamCentreController::class, 'show'])->name('admin.exam-centres.show');
         Route::get('/admin/exam-centres/{school}/students-pdf', [ExamCentreController::class, 'downloadStudentsPdf'])->name('admin.exam-centres.students-pdf');
         Route::get('/admin/exam-centres/{school}/seat-planner-pdf', [ExamCentreController::class, 'downloadSeatPlannerPdf'])->name('admin.exam-centres.seat-planner-pdf');
+    });
+
+    // ============================================
+    // ONLINE EXAMINATION - ADMIN MANAGEMENT (Super Admin & Exam Admin)
+    // ============================================
+    Route::middleware('role:super-admin|exam-admin')->group(function () {
+        // Question Bank
+        Route::prefix('admin/online-questions')->name('admin.online-questions.')->group(function () {
+            Route::get('/', [OnlineQuestionBankController::class, 'index'])->name('index');
+            Route::get('/create', [OnlineQuestionBankController::class, 'create'])->name('create');
+            Route::post('/', [OnlineQuestionBankController::class, 'store'])->name('store');
+            Route::get('/{online_question}/edit', [OnlineQuestionBankController::class, 'edit'])->name('edit');
+            Route::put('/{online_question}', [OnlineQuestionBankController::class, 'update'])->name('update');
+            Route::delete('/{online_question}', [OnlineQuestionBankController::class, 'destroy'])->name('destroy');
+            Route::post('/{online_question}/toggle-status', [OnlineQuestionBankController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        // Online Exams
+        Route::prefix('admin/online-exams')->name('admin.online-exams.')->group(function () {
+            Route::get('/dashboard', [OnlineExamDashboardController::class, 'index'])->name('dashboard');
+
+            // Exam CRUD
+            Route::get('/', [OnlineExamController::class, 'index'])->name('index');
+            Route::get('/create', [OnlineExamController::class, 'create'])->name('create');
+            Route::post('/', [OnlineExamController::class, 'store'])->name('store');
+            Route::get('/{online_exam}', [OnlineExamController::class, 'show'])->name('show');
+            Route::get('/{online_exam}/edit', [OnlineExamController::class, 'edit'])->name('edit');
+            Route::put('/{online_exam}', [OnlineExamController::class, 'update'])->name('update');
+            Route::delete('/{online_exam}', [OnlineExamController::class, 'destroy'])->name('destroy');
+            Route::post('/{online_exam}/publish', [OnlineExamController::class, 'publish'])->name('publish');
+            Route::post('/{online_exam}/unpublish', [OnlineExamController::class, 'unpublish'])->name('unpublish');
+            Route::get('/{online_exam}/preview', [OnlineExamController::class, 'preview'])->name('preview');
+
+            // Question Assignment
+            Route::get('/{online_exam}/questions', [OnlineExamQuestionController::class, 'index'])->name('questions.index');
+            Route::post('/{online_exam}/questions/assign', [OnlineExamQuestionController::class, 'assign'])->name('questions.assign');
+            Route::post('/{online_exam}/questions/settings', [OnlineExamQuestionController::class, 'updateSettings'])->name('questions.update-settings');
+            Route::post('/{online_exam}/questions/update-settings', [OnlineExamQuestionController::class, 'updateSettings'])->name('questions.settings');
+            Route::delete('/{online_exam}/questions/{question}', [OnlineExamQuestionController::class, 'remove'])->name('questions.remove');
+
+            // Student Enrollment
+            Route::get('/{online_exam}/students', [OnlineExamStudentController::class, 'index'])->name('students.index');
+            Route::post('/{online_exam}/students/enroll', [OnlineExamStudentController::class, 'enroll'])->name('students.enroll');
+            Route::delete('/{online_exam}/students/{student}', [OnlineExamStudentController::class, 'remove'])->name('students.remove');
+
+            // Live Proctoring
+            Route::get('/{online_exam}/live', [OnlineExamLiveMonitoringController::class, 'show'])->name('live');
+            Route::get('/{online_exam}/live/poll', [OnlineExamLiveMonitoringController::class, 'poll'])->name('live.poll');
+            Route::post('/{online_exam}/live/terminate/{session}', [OnlineExamLiveMonitoringController::class, 'terminateSession'])->name('live.terminate');
+            Route::get('/{online_exam}/live/events/{session}', [OnlineExamLiveMonitoringController::class, 'sessionEvents'])->name('live.events');
+            Route::post('/{online_exam}/live/webrtc/{session}/signal', [OnlineExamWebRTCController::class, 'sendAdminSignal'])->name('live.webrtc.signal');
+            Route::get('/{online_exam}/live/webrtc/{session}/signals', [OnlineExamWebRTCController::class, 'getAdminSignals'])->name('live.webrtc.signals');
+
+            // Results & Reports
+            Route::get('/{online_exam}/results', [OnlineExamReportController::class, 'index'])->name('results');
+            Route::post('/{online_exam}/results/recalculate', [OnlineExamReportController::class, 'recalculateRanks'])->name('results.recalculate');
+            Route::get('/{online_exam}/results/export-csv', [OnlineExamReportController::class, 'exportCsv'])->name('results.csv');
+            Route::get('/{online_exam}/results/export-pdf', [OnlineExamReportController::class, 'exportPdf'])->name('results.pdf');
+        });
     });
 });

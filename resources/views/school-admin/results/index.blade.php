@@ -268,12 +268,12 @@
                         </td>
 
                         <td class="px-6 py-4">
-                            <div class="font-medium text-slate-200">{{ $student->class->name ?? 'N/A' }}</div>
-                            <div class="text-xs text-slate-500">{{ $student->category->name ?? 'General' }}</div>
+                            <div class="font-medium text-slate-200">{{ $student->class?->name ?? 'N/A' }}</div>
+                            <div class="text-xs text-slate-500">{{ $student->category?->name ?? 'General' }}</div>
                         </td>
 
                         <td class="px-6 py-4">
-                            <div class="text-xs font-medium text-slate-300">{{ $student->examination->name ?? 'N/A' }}</div>
+                            <div class="text-xs font-medium text-slate-300">{{ $student->examination?->name ?? 'N/A' }}</div>
                             @if($isExamPublished)
                                 <span class="inline-flex items-center text-[10px] text-emerald-400 font-medium">Published</span>
                             @else

@@ -12,6 +12,8 @@
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         background: rgba(6, 8, 16, 0.6);
         backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 10;
     }
 
     .footer-inner {

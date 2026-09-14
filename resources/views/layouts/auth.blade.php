@@ -30,6 +30,11 @@
             padding: 0;
         }
 
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+        }
+
         .auth-container {
             display: grid;
             grid-template-columns: 1fr;
@@ -46,12 +51,31 @@
 
         .auth-left {
             background-color: #090d16;
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 2rem;
             min-height: 100vh;
             box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .auth-left::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 52px 52px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-left > * {
+            position: relative;
+            z-index: 1;
         }
 
         @media (min-width: 640px) {
@@ -85,15 +109,11 @@
         .auth-right::before {
             content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background-image:
-                linear-gradient(rgba(0, 212, 255, 0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 212, 255, 0.015) 1px, transparent 1px);
-            background-size: 50px 50px;
-            background-position: center;
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 52px 52px;
             z-index: 1;
         }
 
@@ -308,9 +328,8 @@
 
 <body class="h-full antialiased text-slate-100 flex overflow-x-hidden">
     <div class="auth-container">
-        <!-- LEFT COLUMN: Auth Form & Logo -->
+        <!-- LEFT COLUMN: Auth Form -->
         <div class="auth-left">
-
             <!-- Content Area (Forms) -->
             <div class="auth-form-wrapper">
                 <div class="auth-form-content">
@@ -322,7 +341,9 @@
             <div class="space-y-1">
                 <p class="text-xs text-slate-500">&copy; {{ date('Y') }} YASIN EDUCATION SERVICES INDIA FOUNDATION. All
                     rights reserved.</p>
-                <div class="flex items-center gap-2 text-xs text-slate-500">
+                <div class="flex items-center gap-2.5 text-xs text-slate-500">
+                    <a href="{{ route('home') }}" class="hover:text-slate-300 transition-colors">Home</a>
+                    <span class="text-slate-700">&bull;</span>
                     <a href="{{ route('privacy-policy') }}" class="hover:text-slate-300 transition-colors">Privacy Policy</a>
                     <span class="text-slate-700">&bull;</span>
                     <a href="{{ route('terms-and-conditions') }}" class="hover:text-slate-300 transition-colors">Terms & Conditions</a>
@@ -370,10 +391,9 @@
                 <div class="node n20">Q: Speed of sound? A: 343m/s</div>
                 <div class="node n24">Q: First element? A: Hydrogen</div>
             </div>
-
-            <!-- Center Branding Wrapper -->
-            <div class="w-full max-w-md relative z-10 text-center px-6">
-                <div class="mb-8 flex justify-center">
+            <!-- Center Branding Wrapper (Right Side Center Logo) -->
+            <div class="w-full max-w-md relative z-10 flex flex-col justify-center items-center px-6">
+                <div class="flex justify-center items-center">
                     @if(file_exists(public_path('logo-w.png')))
                         <img src="{{ asset('logo-w.png') }}" alt="Logo"
                             class="max-w-[200px] w-full h-auto filter drop-shadow-[0_0_25px_rgba(0,212,255,0.15)]">

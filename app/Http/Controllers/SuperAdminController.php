@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SuperAdminCreatedMail;
 use App\Models\User;
+use App\Rules\VirusFree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\SuperAdminCreatedMail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 
 class SuperAdminController extends Controller
 {
@@ -18,9 +21,9 @@ class SuperAdminController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -57,8 +60,8 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
+            'password' => ['required', 'confirmed', Password::min(8)],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new VirusFree],
         ]);
 
         $userData = [
@@ -75,7 +78,7 @@ class SuperAdminController extends Controller
         $user->assignRole('super-admin');
 
         // Generate password set token
-        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+        $token = \Illuminate\Support\Facades\Password::createToken($user);
 
         // Send email with credentials
         try {
@@ -99,7 +102,7 @@ class SuperAdminController extends Controller
     {
         $admin = User::findOrFail($id);
 
-        if (!$admin->hasRole('super-admin')) {
+        if (! $admin->hasRole('super-admin')) {
             abort(404);
         }
 
@@ -118,7 +121,7 @@ class SuperAdminController extends Controller
     {
         $admin = User::findOrFail($id);
 
-        if (!$admin->hasRole('super-admin')) {
+        if (! $admin->hasRole('super-admin')) {
             abort(404);
         }
 
@@ -130,8 +133,8 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', "unique:users,email,{$admin->id}"],
-            'password' => ['nullable', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
+            'password' => ['nullable', 'confirmed', Password::min(8)],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new VirusFree],
         ]);
 
         $admin->name = $validated['name'];
@@ -139,7 +142,7 @@ class SuperAdminController extends Controller
 
         if ($request->hasFile('profile_image')) {
             if ($admin->profile_image) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($admin->profile_image);
+                Storage::disk('public')->delete($admin->profile_image);
             }
             $admin->profile_image = $request->file('profile_image')->store('profiles', 'public');
         }
@@ -165,7 +168,7 @@ class SuperAdminController extends Controller
     {
         $admin = User::findOrFail($id);
 
-        if (!$admin->hasRole('super-admin')) {
+        if (! $admin->hasRole('super-admin')) {
             abort(404);
         }
 
@@ -180,7 +183,7 @@ class SuperAdminController extends Controller
 
         // Delete profile photograph if exists
         if ($admin->profile_image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($admin->profile_image);
+            Storage::disk('public')->delete($admin->profile_image);
         }
 
         $admin->delete();

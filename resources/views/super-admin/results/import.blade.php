@@ -310,10 +310,15 @@
                             <span
                                 class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">Required</span>
                             <div class="text-slate-300">
-                                <strong class="text-slate-100">Marks Obtained</strong> & <strong class="text-slate-100">Max
-                                    Marks</strong>
-                                <p class="text-[11px] text-slate-500 mt-0.5">Integer scores where Marks Obtained &le; Max
-                                    Marks.</p>
+                                <strong class="text-slate-100">Marks Obtained</strong> & <strong class="text-slate-100">Max Marks</strong>
+                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                    Validated against student category rules:
+                                </p>
+                                <ul class="mt-1 space-y-0.5 text-[10px] text-slate-400 list-disc list-inside">
+                                    <li><strong class="text-indigo-300">Rainbow</strong> (Rainbow 3, 4, 5): <span class="text-emerald-400 font-bold">Max 40</span></li>
+                                    <li><strong class="text-indigo-300">Planets</strong>: <span class="text-emerald-400 font-bold">Max 50</span></li>
+                                    <li><strong class="text-indigo-300">Galaxy</strong> (HS / HSS): <span class="text-emerald-400 font-bold">Max 60</span></li>
+                                </ul>
                             </div>
                         </div>
 
@@ -321,50 +326,46 @@
                             <span
                                 class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 shrink-0">Optional</span>
                             <div class="text-slate-300">
-                                <strong class="text-slate-100">Status</strong>
-                                <p class="text-[11px] text-slate-500 mt-0.5">Defaults to <code
-                                        class="text-emerald-400">Pass</code> (&ge;35%) or <code
-                                        class="text-rose-400">Fail</code>.</p>
+                                <strong class="text-slate-100">Remarks</strong>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Custom evaluator remarks or notes for candidate.</p>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Automatic Calculations Notice --}}
-                    <div class="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 space-y-2 text-xs">
+                    {{-- Category-Specific Grading Rules Notice --}}
+                    <div class="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 space-y-2.5 text-xs">
                         <div class="flex items-center gap-2 text-indigo-300 font-bold">
-                            Automatic System Processing
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                            Category Grading Thresholds
                         </div>
-                        <ul class="space-y-1 text-[11px] text-slate-300">
-                            <li class="flex items-start gap-1.5">
-                                <span class="text-emerald-400 font-bold">✓</span>
-                                <span><strong>Grade Calculation:</strong> Automatically assigned (<code
-                                        class="text-indigo-300">A+</code>, <code class="text-indigo-300">A</code>, <code
-                                        class="text-indigo-300">B</code>, <code class="text-indigo-300">C</code>, <code
-                                        class="text-indigo-300">D</code>, <code class="text-indigo-300">E</code>, <code
-                                        class="text-indigo-300">F</code>) based on percentage.</span>
-                            </li>
-                            <li class="flex items-start gap-1.5">
-                                <span class="text-emerald-400 font-bold">✓</span>
-                                <span><strong>Auto Remarks:</strong>
-                                    <br><span class="text-emerald-400 font-semibold">• Pass:</span> <em>"Qualified For
-                                        Second Round Examination"</em>
-                                    <br><span class="text-rose-400 font-semibold">• Fail:</span> <em>"Not Qualified For
-                                        Second Round Examination"</em>
-                                </span>
-                            </li>
-                            <li class="flex items-start gap-1.5 text-slate-400 pt-1">
-                                <span>ℹ️ <em>Only Registration Number, Marks Obtained, Max Marks, and Status are needed in the Excel file.</em></span>
-                            </li>
-                        </ul>
+                        <div class="space-y-2 text-[11px] text-slate-300">
+                            <div class="p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                                <span class="font-bold text-emerald-400">Rainbow & Planets:</span>
+                                <div class="grid grid-cols-4 gap-1 text-[10px] mt-1 text-slate-300 font-mono">
+                                    <span>&ge;90%: <b class="text-white">A+</b></span>
+                                    <span>&ge;80%: <b class="text-white">A</b></span>
+                                    <span>&ge;70%: <b class="text-white">B+</b></span>
+                                    <span>&ge;60%: <b class="text-white">B</b></span>
+                                </div>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                                <span class="font-bold text-amber-400">Galaxy (HS, HSS Arts & Science):</span>
+                                <div class="grid grid-cols-4 gap-1 text-[10px] mt-1 text-slate-300 font-mono">
+                                    <span>&ge;85%: <b class="text-white">A+</b></span>
+                                    <span>&ge;70%: <b class="text-white">A</b></span>
+                                    <span>&ge;55%: <b class="text-white">B+</b></span>
+                                    <span>&ge;40%: <b class="text-white">B</b></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {{-- Live Sample Table Preview --}}
                 <div class="bg-slate-900/60 border border-slate-800/60 rounded-3xl p-6 shadow-xl space-y-3">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Sample Spreadsheet Preview
-                        </h3>
-                        <span class="text-[10px] text-indigo-400 font-medium">4 Columns</span>
+                        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Sample Spreadsheet Preview</h3>
+                        <span class="text-[10px] text-indigo-400 font-medium">Auto-Formatted</span>
                     </div>
 
                     <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/80">
@@ -372,49 +373,53 @@
                             <thead class="bg-slate-900 border-b border-slate-800 text-slate-400">
                                 <tr>
                                     <th class="p-2.5 whitespace-nowrap">Registration Number</th>
-                                    <th class="p-2.5 whitespace-nowrap text-center">Marks Obtained</th>
-                                    <th class="p-2.5 whitespace-nowrap text-center">Max Marks</th>
-                                    <th class="p-2.5 whitespace-nowrap text-center">Status</th>
+                                    <th class="p-2.5 whitespace-nowrap">Category</th>
+                                    <th class="p-2.5 whitespace-nowrap text-center">Marks</th>
+                                    <th class="p-2.5 whitespace-nowrap text-center">Max</th>
+                                    <th class="p-2.5 whitespace-nowrap text-center">Grade</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-800/50 text-slate-300">
                                 @if(isset($previewCandidates) && $previewCandidates->count() > 0)
                                     @foreach($previewCandidates->take(3) as $idx => $candidate)
+                                        @php
+                                            $cat = $candidate->category?->name ?? 'General';
+                                            $defMax = \App\Models\StudentResult::getDefaultMaxMarks($cat);
+                                            $sMarks = (int) round($defMax * ($idx == 0 ? 0.90 : ($idx == 1 ? 0.82 : 0.72)));
+                                            $pct = round(($sMarks / $defMax) * 100, 1);
+                                            $grd = \App\Models\StudentResult::calculateGrade($pct, $cat);
+                                        @endphp
                                         <tr class="hover:bg-slate-800/20">
                                             <td class="p-2.5 text-indigo-300 font-semibold">
                                                 {{ $candidate->registration_number ?? 'REG' . (10001 + $idx) }}
                                             </td>
-                                            <td class="p-2.5 text-center font-bold text-emerald-400">{{ 420 - ($idx * 45) }}</td>
-                                            <td class="p-2.5 text-center text-slate-400">500</td>
-                                            <td class="p-2.5 text-center"><span
-                                                    class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Pass</span>
-                                            </td>
+                                            <td class="p-2.5 text-slate-400">{{ $cat }}</td>
+                                            <td class="p-2.5 text-center font-bold text-emerald-400">{{ $sMarks }}</td>
+                                            <td class="p-2.5 text-center text-slate-400 font-bold">{{ $defMax }}</td>
+                                            <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">{{ $grd ?? 'B' }}</span></td>
                                         </tr>
                                     @endforeach
                                 @else
                                     <tr class="hover:bg-slate-800/20">
-                                        <td class="p-2.5 text-indigo-300 font-semibold">REG20260001</td>
-                                        <td class="p-2.5 text-center font-bold text-emerald-400">425</td>
-                                        <td class="p-2.5 text-center text-slate-400">500</td>
-                                        <td class="p-2.5 text-center"><span
-                                                class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Pass</span>
-                                        </td>
+                                        <td class="p-2.5 text-indigo-300 font-semibold">REG-RBW-3001</td>
+                                        <td class="p-2.5 text-slate-400">RAINBOW 3</td>
+                                        <td class="p-2.5 text-center font-bold text-emerald-400">36</td>
+                                        <td class="p-2.5 text-center text-slate-400 font-bold">40</td>
+                                        <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">A+</span></td>
                                     </tr>
                                     <tr class="hover:bg-slate-800/20">
-                                        <td class="p-2.5 text-indigo-300 font-semibold">REG20260002</td>
-                                        <td class="p-2.5 text-center font-bold text-emerald-400">380</td>
-                                        <td class="p-2.5 text-center text-slate-400">500</td>
-                                        <td class="p-2.5 text-center"><span
-                                                class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Pass</span>
-                                        </td>
+                                        <td class="p-2.5 text-indigo-300 font-semibold">REG-PLN-5001</td>
+                                        <td class="p-2.5 text-slate-400">PLANET</td>
+                                        <td class="p-2.5 text-center font-bold text-emerald-400">45</td>
+                                        <td class="p-2.5 text-center text-slate-400 font-bold">50</td>
+                                        <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">A+</span></td>
                                     </tr>
                                     <tr class="hover:bg-slate-800/20">
-                                        <td class="p-2.5 text-indigo-300 font-semibold">REG20260003</td>
-                                        <td class="p-2.5 text-center font-bold text-rose-400">140</td>
-                                        <td class="p-2.5 text-center text-slate-400">500</td>
-                                        <td class="p-2.5 text-center"><span
-                                                class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Fail</span>
-                                        </td>
+                                        <td class="p-2.5 text-indigo-300 font-semibold">REG-GLX-9001</td>
+                                        <td class="p-2.5 text-slate-400">GALAXY HS</td>
+                                        <td class="p-2.5 text-center font-bold text-emerald-400">52</td>
+                                        <td class="p-2.5 text-center text-slate-400 font-bold">60</td>
+                                        <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">A+</span></td>
                                     </tr>
                                 @endif
                             </tbody>

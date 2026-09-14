@@ -288,3 +288,42 @@ document.addEventListener('submit', function(e) {
         });
     }
 }, true); // Capture phase is critical to run before the inline onsubmit handler!
+
+// Global Click confirmation interceptor for buttons/links with inline confirm in onclick
+document.addEventListener('click', function(e) {
+    const el = e.target.closest('button, a, input[type="submit"]');
+    if (!el) return;
+
+    if (el.dataset.confirmed === 'true') {
+        delete el.dataset.confirmed;
+        return;
+    }
+
+    const onclickAttr = el.getAttribute('onclick');
+    if (onclickAttr && onclickAttr.includes('confirm(') && !onclickAttr.includes('confirmDialog(')) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        let message = 'Are you sure you want to perform this action?';
+        const match = onclickAttr.match(/confirm\(['"](.*?)['"]\)/);
+        if (match && match[1]) {
+            message = match[1];
+        }
+
+        showCustomConfirm(message, function(confirmed) {
+            if (confirmed) {
+                el.dataset.confirmed = 'true';
+                if (el.form && el.type === 'submit') {
+                    el.form.dataset.confirmed = 'true';
+                    el.form.submit();
+                } else if (el.href) {
+                    window.location.href = el.href;
+                } else {
+                    el.click();
+                }
+            }
+        });
+    }
+}, true);
+

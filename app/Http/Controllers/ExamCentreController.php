@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\School;
-use App\Models\Student;
-use App\Models\Examination;
 use App\Models\CategoryMaster;
 use App\Models\ClassMaster;
+use App\Models\Examination;
+use App\Models\School;
+use App\Models\Student;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
 class ExamCentreController extends Controller
@@ -27,10 +27,10 @@ class ExamCentreController extends Controller
 
         if ($request->filled('search')) {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('zone', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('zone', 'like', "%{$search}%");
             });
         }
         $centres = $query->latest()->paginate(10, ['*'], 'centres_page');
@@ -39,9 +39,9 @@ class ExamCentreController extends Controller
         $schoolsQuery = School::query();
         if ($request->filled('school_search')) {
             $sSearch = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->school_search);
-            $schoolsQuery->where(function($q) use ($sSearch) {
+            $schoolsQuery->where(function ($q) use ($sSearch) {
                 $q->where('name', 'like', "%{$sSearch}%")
-                  ->orWhere('code', 'like', "%{$sSearch}%");
+                    ->orWhere('code', 'like', "%{$sSearch}%");
             });
         }
         $allSchools = $schoolsQuery->latest()->paginate(10, ['*'], 'schools_page');
@@ -122,11 +122,11 @@ class ExamCentreController extends Controller
         if ($request->filled('gender')) {
             $reqGender = strtolower(trim($request->gender));
             if (in_array($reqGender, ['male', 'm'])) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['male', 'm']);
                 });
             } elseif (in_array($reqGender, ['female', 'f'])) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['female', 'f']);
                 });
             } else {
@@ -146,19 +146,19 @@ class ExamCentreController extends Controller
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%");
             });
         }
 
         // Calculate statistics based on current filter or selected exam before applying order by
         $statsQuery = clone $query;
         $totalStudents = (clone $statsQuery)->count();
-        
-        $maleCount = (clone $statsQuery)->where(function($q) {
+
+        $maleCount = (clone $statsQuery)->where(function ($q) {
             $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['male', 'm']);
         })->count();
-        $femaleCount = (clone $statsQuery)->where(function($q) {
+        $femaleCount = (clone $statsQuery)->where(function ($q) {
             $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['female', 'f']);
         })->count();
         $otherGenderCount = $totalStudents - ($maleCount + $femaleCount);
@@ -182,7 +182,7 @@ class ExamCentreController extends Controller
                     'percentage' => $totalStudents > 0 ? round(($item->total / $totalStudents) * 100, 1) : 0,
                 ];
             })
-            ->sortBy(fn($item) => $this->getCategoryOrderWeight($item['name']))
+            ->sortBy(fn ($item) => $this->getCategoryOrderWeight($item['name']))
             ->values();
 
         // Origin schools breakdown
@@ -279,11 +279,11 @@ class ExamCentreController extends Controller
         if ($request->filled('gender')) {
             $reqGender = strtolower(trim($request->gender));
             if (in_array($reqGender, ['male', 'm'])) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['male', 'm']);
                 });
             } elseif (in_array($reqGender, ['female', 'f'])) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['female', 'f']);
                 });
             } else {
@@ -303,8 +303,8 @@ class ExamCentreController extends Controller
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%");
             });
         }
 
@@ -332,30 +332,32 @@ class ExamCentreController extends Controller
                     return (int) $b->registration_number <=> (int) $a->registration_number;
                 case 'school_asc':
                     $sch = strcasecmp($a->school?->name ?? '', $b->school?->name ?? '');
+
                     return $sch !== 0 ? $sch : ((int) $a->registration_number <=> (int) $b->registration_number);
                 case 'reg_asc':
                 case 'category_asc':
                 default:
-                    $regA = is_numeric($a->registration_number) ? (int)$a->registration_number : $a->registration_number;
-                    $regB = is_numeric($b->registration_number) ? (int)$b->registration_number : $b->registration_number;
+                    $regA = is_numeric($a->registration_number) ? (int) $a->registration_number : $a->registration_number;
+                    $regB = is_numeric($b->registration_number) ? (int) $b->registration_number : $b->registration_number;
+
                     return $regA <=> $regB;
             }
         })->values();
 
         // Group students by category preserving the custom sequence
-        $groupedStudents = $students->groupBy(fn($s) => $s->category?->name ?? 'General')
-            ->sortBy(fn($group, $catName) => $this->getCategoryOrderWeight($catName));
+        $groupedStudents = $students->groupBy(fn ($s) => $s->category?->name ?? 'General')
+            ->sortBy(fn ($group, $catName) => $this->getCategoryOrderWeight($catName));
 
         // Summary metrics for PDF header
         $totalCount = $students->count();
-        $maleCount = $students->filter(fn($s) => in_array(strtolower(trim($s->gender ?? '')), ['male', 'm']))->count();
-        $femaleCount = $students->filter(fn($s) => in_array(strtolower(trim($s->gender ?? '')), ['female', 'f']))->count();
+        $maleCount = $students->filter(fn ($s) => in_array(strtolower(trim($s->gender ?? '')), ['male', 'm']))->count();
+        $femaleCount = $students->filter(fn ($s) => in_array(strtolower(trim($s->gender ?? '')), ['female', 'f']))->count();
         $otherCount = $totalCount - ($maleCount + $femaleCount);
 
-        $categoryCounts = $groupedStudents->map(fn($group) => $group->count());
+        $categoryCounts = $groupedStudents->map(fn ($group) => $group->count());
 
-        $examination = $request->filled('examination_id') 
-            ? Examination::find($request->examination_id) 
+        $examination = $request->filled('examination_id')
+            ? Examination::find($request->examination_id)
             : $students->first()?->examination;
 
         $category = $request->filled('category_id') ? CategoryMaster::find($request->category_id) : null;
@@ -377,8 +379,8 @@ class ExamCentreController extends Controller
         $pdf->setPaper('a4', 'landscape');
         $pdf->setOption('isRemoteEnabled', false);
 
-        $cleanCentreCode = !empty($school->code) ? preg_replace('/[^A-Za-z0-9_\-]/', '_', $school->code) : 'CENTRE_' . $school->id;
-        $fileName = "exam_centre_students_{$cleanCentreCode}_" . date('Ymd_His') . ".pdf";
+        $cleanCentreCode = ! empty($school->code) ? preg_replace('/[^A-Za-z0-9_\-]/', '_', $school->code) : 'CENTRE_'.$school->id;
+        $fileName = "exam_centre_students_{$cleanCentreCode}_".date('Ymd_His').'.pdf';
 
         activity()
             ->performedOn($school)
@@ -413,11 +415,11 @@ class ExamCentreController extends Controller
         if ($request->filled('gender')) {
             $reqGender = strtolower(trim($request->gender));
             if (in_array($reqGender, ['male', 'm'])) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['male', 'm']);
                 });
             } elseif (in_array($reqGender, ['female', 'f'])) {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->whereRaw('LOWER(TRIM(gender)) IN (?, ?)', ['female', 'f']);
                 });
             } else {
@@ -437,8 +439,8 @@ class ExamCentreController extends Controller
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%")
-                  ->orWhere('hall_ticket_number', 'like', "%{$search}%");
+                    ->orWhere('registration_number', 'like', "%{$search}%")
+                    ->orWhere('hall_ticket_number', 'like', "%{$search}%");
             });
         }
 
@@ -466,12 +468,14 @@ class ExamCentreController extends Controller
                     return (int) $b->registration_number <=> (int) $a->registration_number;
                 case 'school_asc':
                     $sch = strcasecmp($a->school?->name ?? '', $b->school?->name ?? '');
+
                     return $sch !== 0 ? $sch : ((int) $a->registration_number <=> (int) $b->registration_number);
                 case 'reg_asc':
                 case 'category_asc':
                 default:
-                    $regA = is_numeric($a->registration_number) ? (int)$a->registration_number : $a->registration_number;
-                    $regB = is_numeric($b->registration_number) ? (int)$b->registration_number : $b->registration_number;
+                    $regA = is_numeric($a->registration_number) ? (int) $a->registration_number : $a->registration_number;
+                    $regB = is_numeric($b->registration_number) ? (int) $b->registration_number : $b->registration_number;
+
                     return $regA <=> $regB;
             }
         })->values();
@@ -479,8 +483,8 @@ class ExamCentreController extends Controller
         // Chunk students into pages of EXACTLY 33 students per A4 page (3 cols x 11 rows)
         $studentChunks = $students->chunk(33);
 
-        $examination = $request->filled('examination_id') 
-            ? Examination::find($request->examination_id) 
+        $examination = $request->filled('examination_id')
+            ? Examination::find($request->examination_id)
             : $students->first()?->examination;
 
         $category = $request->filled('category_id') ? CategoryMaster::find($request->category_id) : null;
@@ -498,8 +502,8 @@ class ExamCentreController extends Controller
         $pdf->setPaper('a4', 'portrait');
         $pdf->setOption('isRemoteEnabled', false);
 
-        $cleanCentreCode = !empty($school->code) ? preg_replace('/[^A-Za-z0-9_\-]/', '_', $school->code) : 'CENTRE_' . $school->id;
-        $fileName = "seat_planner_33perpage_{$cleanCentreCode}_" . date('Ymd_His') . ".pdf";
+        $cleanCentreCode = ! empty($school->code) ? preg_replace('/[^A-Za-z0-9_\-]/', '_', $school->code) : 'CENTRE_'.$school->id;
+        $fileName = "seat_planner_33perpage_{$cleanCentreCode}_".date('Ymd_His').'.pdf';
 
         activity()
             ->performedOn($school)
@@ -513,7 +517,7 @@ class ExamCentreController extends Controller
      */
     public function toggle(School $school)
     {
-        $school->is_centre = !$school->is_centre;
+        $school->is_centre = ! $school->is_centre;
         $school->save();
 
         $statusStr = $school->is_centre ? 'designated as an Exam Centre' : 'removed from Exam Centres';
@@ -537,7 +541,7 @@ class ExamCentreController extends Controller
         ]);
 
         $centre = School::where('id', $request->centre_id)->where('is_centre', true)->first();
-        if (!$centre) {
+        if (! $centre) {
             return back()->with('error', 'The selected school is not designated as an Exam Centre.');
         }
 
@@ -588,7 +592,7 @@ class ExamCentreController extends Controller
         ]);
 
         $centre = School::where('id', $request->centre_id)->where('is_centre', true)->first();
-        if (!$centre) {
+        if (! $centre) {
             return back()->with('error', 'The selected school is not designated as an Exam Centre.');
         }
 
@@ -608,7 +612,7 @@ class ExamCentreController extends Controller
     public function schoolShow(Request $request)
     {
         $school = Auth::user()->school;
-        if (!$school || !$school->is_centre) {
+        if (! $school || ! $school->is_centre) {
             abort(403, 'Your institution is not designated as an Exam Centre venue.');
         }
 
@@ -621,7 +625,7 @@ class ExamCentreController extends Controller
     public function schoolStudentsPdf(Request $request)
     {
         $school = Auth::user()->school;
-        if (!$school || !$school->is_centre) {
+        if (! $school || ! $school->is_centre) {
             abort(403, 'Your institution is not designated as an Exam Centre venue.');
         }
 
@@ -634,7 +638,7 @@ class ExamCentreController extends Controller
     public function schoolSeatPlannerPdf(Request $request)
     {
         $school = Auth::user()->school;
-        if (!$school || !$school->is_centre) {
+        if (! $school || ! $school->is_centre) {
             abort(403, 'Your institution is not designated as an Exam Centre venue.');
         }
 
@@ -646,13 +650,13 @@ class ExamCentreController extends Controller
      */
     protected function authorizeCentreAccess(School $school): void
     {
-        if (!$school->is_centre) {
+        if (! $school->is_centre) {
             abort(404, 'The selected school is not designated as an Exam Centre.');
         }
 
         $user = Auth::user();
         if ($user && $user->hasRole('school-admin')) {
-            if (!$user->school_id || (int) $user->school_id !== (int) $school->id) {
+            if (! $user->school_id || (int) $user->school_id !== (int) $school->id) {
                 abort(403, 'Unauthorized access to another examination centre.');
             }
         }
@@ -664,7 +668,7 @@ class ExamCentreController extends Controller
      */
     protected function getCategoryOrderWeight(?string $categoryName): int
     {
-        if (!$categoryName) {
+        if (! $categoryName) {
             return 999;
         }
 
@@ -687,7 +691,7 @@ class ExamCentreController extends Controller
             return 4;
         }
         // 5. GALAXY HS (Secondary, strictly not Higher Secondary)
-        if (str_contains($norm, 'GALAXY HS') || (str_contains($norm, 'GALAXY') && str_contains($norm, 'HS') && !str_contains($norm, 'HSS'))) {
+        if (str_contains($norm, 'GALAXY HS') || (str_contains($norm, 'GALAXY') && str_contains($norm, 'HS') && ! str_contains($norm, 'HSS'))) {
             return 5;
         }
         // 6. GALAXY HSS (ARTS)

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\School;
+use App\Rules\VirusFree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use App\Models\School;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
@@ -26,6 +26,7 @@ class ProfileController extends Controller
         }
 
         $school = $user->school;
+
         return view('school-admin.profile', compact('user', 'school'));
     }
 
@@ -40,7 +41,7 @@ class ProfileController extends Controller
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'email', 'max:255', "unique:users,email,{$user->id}"],
-                'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
+                'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new VirusFree],
             ]);
 
             if ($request->hasFile('profile_image')) {
@@ -66,7 +67,7 @@ class ProfileController extends Controller
 
         // School Admin flow
         $school = $user->school;
-        if (!$school) {
+        if (! $school) {
             return back()->with('error', 'No school profile found for this account.');
         }
 
@@ -79,7 +80,7 @@ class ProfileController extends Controller
             'state' => ['required', 'string', 'max:100'],
             'contact_person' => ['required', 'string', 'max:255'],
             'mobile_number' => ['required', 'string', 'max:20'],
-            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new \App\Rules\VirusFree],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048', new VirusFree],
         ]);
 
         $userData = [

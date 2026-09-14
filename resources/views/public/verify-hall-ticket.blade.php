@@ -614,11 +614,7 @@
 
 <body>
 
-    <div class="bg-wrap">
-        <div class="bg-grid"></div>
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-    </div>
+    <x-public-background />
 
     <div class="page">
 
@@ -826,11 +822,8 @@
             </div>
         </main>
 
-        <!-- FOOTER -->
-        <footer class="footer">
-            &copy; {{ date('Y') }} YASIN EDUCATION SERVICES INDIA FOUNDATION &nbsp;·&nbsp; All rights reserved
-        </footer>
-
+        <!-- Official ERMS Public Footer Component -->
+        <x-public-footer page="verify" />
     </div>
 
 </body>

@@ -271,6 +271,10 @@
             <a href="{{ route('gallery') }}" class="nav-link {{ $isGallery ? 'active' : '' }}">Gallery<span></span></a>
             <a href="{{ $isHome ? '#portals' : '/#portals' }}" class="nav-link">Portals<span></span></a>
             <a href="{{ route('results.check-form') }}" class="nav-link">Result<span></span></a>
+            <a href="{{ route('online-exam.login') }}" class="nav-link {{ request()->routeIs('online-exam.*') ? 'active' : '' }}" style="display:inline-flex;align-items:center;gap:6px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;display:inline-block;"></span>
+                Online Exam<span></span>
+            </a>
         </div>
 
         <div style="display:flex;align-items:center;gap:10px;">
@@ -326,6 +330,10 @@
         <a href="{{ route('gallery') }}" class="{{ $isGallery ? 'active' : '' }}" @click="menuOpen = false">Gallery</a>
         <a href="{{ $isHome ? '#utilities' : '/#utilities' }}" @click="menuOpen = false">Hall Ticket Verify</a>
         <a href="{{ route('results.check-form') }}" @click="menuOpen = false">Results Portal</a>
+        <a href="{{ route('online-exam.login') }}" @click="menuOpen = false" style="color:#a5b4fc;font-weight:700;display:flex;align-items:center;gap:6px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+            Online Exam Portal ↗
+        </a>
         <a href="{{ $isHome ? '#portals' : '/#portals' }}" @click="menuOpen = false">Portals</a>
         @auth
             <a href="{{ $dashUrl }}" class="nav-cta">Dashboard →</a>

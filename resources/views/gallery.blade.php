@@ -573,11 +573,7 @@
 </head>
 
 <body>
-    <div class="bg-wrap">
-        <div class="bg-grid"></div>
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-    </div>
+    <x-public-background />
 
     <div class="page" x-data="{
     menuOpen: false,
