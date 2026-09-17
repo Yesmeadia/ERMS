@@ -112,7 +112,7 @@
                     <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Question Time Limit (Seconds) *</label>
                     <input type="number" name="default_question_time_limit" value="{{ old('default_question_time_limit', 60) }}" min="5" max="600" required
                            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                    <span class="text-[11px] text-slate-500">Timer per question countdown</span>
+                    <span class="text-[11px] text-slate-500">Default timer per question (individual overrides can be set per-question).</span>
                 </div>
 
                 <div>
@@ -264,26 +264,39 @@
                 </label>
             </div>
 
-            <div x-show="speedBonusEnabled" x-transition class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Formula</label>
-                    <select name="speed_bonus_formula" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
-                        <option value="linear">Linear Degradation</option>
-                        <option value="tier">Tier-Based Slabs</option>
-                        <option value="percentage">Percentage of Base Marks</option>
-                    </select>
+            <div x-show="speedBonusEnabled" x-transition class="space-y-4 pt-2">
+                <!-- Formula info note -->
+                <div class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-300/80 leading-relaxed">
+                    <span class="font-semibold text-amber-300 block mb-1">&#9889; How Speed Bonus Works</span>
+                    When a student submits a correct answer <strong>before</strong> the question timer expires, they earn a bonus.
+                    Example with <em>"Remaining Seconds &divide; 100"</em>: if the timer is <strong>50s</strong> and the student answers at
+                    the <strong>20s</strong> mark (30s remaining), the bonus = <strong>30 &divide; 100 = +0.30 marks</strong>.
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Formula</label>
+                        <select name="speed_bonus_formula" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                            <option value="remaining_seconds" {{ old('speed_bonus_formula') == 'remaining_seconds' ? 'selected' : '' }}>Remaining Seconds &divide; 100 (Recommended)</option>
+                            <option value="linear" {{ old('speed_bonus_formula') == 'linear' ? 'selected' : '' }}>Linear Degradation</option>
+                            <option value="tier" {{ old('speed_bonus_formula') == 'tier' ? 'selected' : '' }}>Tier-Based Slabs</option>
+                            <option value="percentage" {{ old('speed_bonus_formula') == 'percentage' ? 'selected' : '' }}>Percentage of Base Marks</option>
+                        </select>
+                        <span class="text-[11px] text-slate-500">"Remaining Seconds &divide; 100" matches the user example above.</span>
+                    </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Bonus Per Question</label>
-                    <input type="number" step="0.05" name="max_bonus_per_question" value="{{ old('max_bonus_per_question', 0.50) }}" min="0" max="5"
-                           class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
-                </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Bonus Per Question</label>
+                        <input type="number" step="0.05" name="max_bonus_per_question" value="{{ old('max_bonus_per_question', 0.50) }}" min="0" max="5"
+                               class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                        <span class="text-[11px] text-slate-500">Cap per question (ignored by Remaining Seconds formula).</span>
+                    </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Total Exam Bonus Cap</label>
-                    <input type="number" step="0.5" name="max_total_bonus" value="{{ old('max_total_bonus', 10.00) }}" min="0" max="50"
-                           class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Total Exam Bonus Cap</label>
+                        <input type="number" step="0.5" name="max_total_bonus" value="{{ old('max_total_bonus', 10.00) }}" min="0" max="50"
+                               class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                        <span class="text-[11px] text-slate-500">Maximum total bonus a student can earn across all questions.</span>
+                    </div>
                 </div>
             </div>
         </div>

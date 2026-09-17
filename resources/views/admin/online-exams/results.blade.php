@@ -105,7 +105,11 @@
                         <th class="py-3 px-4">School</th>
                         <th class="py-3 px-4 text-center">Attempted</th>
                         <th class="py-3 px-4 text-center">Accuracy</th>
-                        <th class="py-3 px-4 text-right">Score</th>
+                        <th class="py-3 px-4 text-right">Exam Mark</th>
+                        @if($exam->enable_speed_bonus)
+                        <th class="py-3 px-4 text-right">Time Bonus</th>
+                        @endif
+                        <th class="py-3 px-4 text-right">Total Mark</th>
                         <th class="py-3 px-4 text-center">%</th>
                         <th class="py-3 px-4 text-center">Grade</th>
                         <th class="py-3 px-6 text-center">Result</th>
@@ -123,20 +127,36 @@
                         </td>
                         <td class="py-3 px-4 text-slate-400">{{ $res->student->school->name ?? 'N/A' }}</td>
                         <td class="py-3 px-4 text-center font-mono">
-                            {{ $res->attempted_questions_count }} / {{ $res->total_questions }}
+                            <div>{{ $res->attempted_questions_count }} / {{ $res->total_questions }}</div>
+                            <span class="text-[10px] text-slate-500 font-normal block" title="Total Answered Time">{{ $res->time_taken_formatted }}</span>
                         </td>
                         <td class="py-3 px-4 text-center font-mono">
                             <span class="text-emerald-400">{{ $res->correct_answers_count }}C</span>
                             <span class="text-slate-500">/</span>
                             <span class="text-rose-400">{{ $res->wrong_answers_count }}W</span>
                         </td>
-                        <td class="py-3 px-4 text-right font-mono font-bold text-white">
-                            {{ number_format($res->final_score, 2) }}
-                            @if($res->speed_bonus_points > 0)
-                                <span class="text-[10px] text-amber-400 font-normal block">+{{ $res->speed_bonus_points }} bonus</span>
+                        {{-- Exam (Objective) Marks --}}
+                        <td class="py-3 px-4 text-right font-mono text-slate-300">
+                            {{ number_format((float)$res->objective_marks, 2) }}
+                            @if((float)$res->negative_marks > 0)
+                                <span class="text-[10px] text-rose-400 font-normal block">-{{ number_format((float)$res->negative_marks, 2) }} neg</span>
                             @endif
                         </td>
-                        <td class="py-3 px-4 text-center font-mono">{{ number_format($res->percentage, 1) }}%</td>
+                        @if($exam->enable_speed_bonus)
+                        {{-- Speed Bonus --}}
+                        <td class="py-3 px-4 text-right font-mono">
+                            @if((float)$res->speed_bonus_marks > 0)
+                                <span class="text-amber-400 font-semibold">+{{ number_format((float)$res->speed_bonus_marks, 2) }}</span>
+                            @else
+                                <span class="text-slate-600">—</span>
+                            @endif
+                        </td>
+                        @endif
+                        {{-- Total Score --}}
+                        <td class="py-3 px-4 text-right font-mono font-bold text-white">
+                            {{ number_format((float)$res->final_score, 2) }}
+                        </td>
+                        <td class="py-3 px-4 text-center font-mono">{{ number_format((float)$res->percentage, 1) }}%</td>
                         <td class="py-3 px-4 text-center font-mono font-bold text-indigo-300">{{ $res->grade ?: '-' }}</td>
                         <td class="py-3 px-6 text-center">
                             @if($res->is_passed)
@@ -152,7 +172,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="py-8 text-center text-slate-500">
+                        <td colspan="{{ $exam->enable_speed_bonus ? 10 : 9 }}" class="py-8 text-center text-slate-500">
                             No finalized examination results found.
                         </td>
                     </tr>
@@ -190,7 +210,7 @@
                     <tr class="hover:bg-slate-800/30 transition-colors">
                         <td class="py-3 px-6 text-center font-mono text-slate-400">{{ $item['sort_order'] }}</td>
                         <td class="py-3 px-4 max-w-md truncate text-white">
-                            {!! strip_tags($item['question_text']) !!}
+                            {{ strip_tags($item['question_text']) }}
                         </td>
                         <td class="py-3 px-4 text-center font-mono text-[11px] text-slate-400">{{ $item['type'] }}</td>
                         <td class="py-3 px-4 text-center font-mono">{{ $item['marks'] }}</td>

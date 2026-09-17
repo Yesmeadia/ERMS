@@ -239,7 +239,58 @@
             </div>
         </div>
 
-        <!-- 5. Instructions -->
+        <!-- 5. Speed Bonus Engine (Optional) -->
+        <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-violet-500"></span>
+                    Speed Bonus Engine (Optional)
+                </h2>
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="enable_speed_bonus" value="1" x-model="speedBonusEnabled"
+                           class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                    Enable Speed Bonus
+                </label>
+            </div>
+
+            <div x-show="speedBonusEnabled" x-transition class="space-y-4 pt-2">
+                <!-- Formula info note -->
+                <div class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-300/80 leading-relaxed">
+                    <span class="font-semibold text-amber-300 block mb-1">&#9889; How Speed Bonus Works</span>
+                    When a student submits a correct answer <strong>before</strong> the question timer expires, they earn a bonus.
+                    Example with <em>"Remaining Seconds &divide; 100"</em>: if the timer is <strong>50s</strong> and the student answers at
+                    the <strong>20s</strong> mark (30s remaining), the bonus = <strong>30 &divide; 100 = +0.30 marks</strong>.
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Formula</label>
+                        <select name="speed_bonus_formula" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                            <option value="remaining_seconds" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'remaining_seconds' ? 'selected' : '' }}>Remaining Seconds &divide; 100 (Recommended)</option>
+                            <option value="linear" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'linear' ? 'selected' : '' }}>Linear Degradation</option>
+                            <option value="tier" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'tier' ? 'selected' : '' }}>Tier-Based Slabs</option>
+                            <option value="percentage" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'percentage' ? 'selected' : '' }}>Percentage of Base Marks</option>
+                        </select>
+                        <span class="text-[11px] text-slate-500">"Remaining Seconds &divide; 100" matches the user rule.</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Bonus Per Question</label>
+                        <input type="number" step="0.05" name="max_bonus_per_question" value="{{ old('max_bonus_per_question', $exam->max_bonus_per_question) }}" min="0" max="5"
+                               class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                        <span class="text-[11px] text-slate-500">Cap per question (ignored by Remaining Seconds formula).</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Total Exam Bonus Cap</label>
+                        <input type="number" step="0.5" name="max_total_bonus" value="{{ old('max_total_bonus', $exam->max_total_bonus) }}" min="0" max="50"
+                               class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                        <span class="text-[11px] text-slate-500">Maximum total bonus a student can earn across all questions.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Instructions -->
         <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-3">
             <h2 class="text-base font-semibold text-white border-b border-slate-800/80 pb-3 flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-sky-500"></span>
@@ -261,5 +312,36 @@
             </button>
         </div>
     </form>
+
+    @can('delete', $exam)
+    <!-- Danger Zone Card -->
+    <div class="mt-8 bg-rose-950/20 border border-rose-900/40 rounded-2xl p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <h3 class="text-sm font-semibold text-rose-400 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Danger Zone: Delete Examination
+                </h3>
+                <p class="text-xs text-slate-400">
+                    Permanently delete this examination. All student attempt sessions, marks/results, answer evaluations, proctoring events, and video recordings will be permanently destroyed.
+                </p>
+            </div>
+            <form method="POST" action="{{ route('admin.online-exams.destroy', $exam) }}" class="shrink-0"
+                  onsubmit="return confirm('PERMANENT ACTION: Are you absolutely sure you want to delete this examination \'{{ addslashes($exam->name) }}\'?\n\nAll student attempts, marks/results, events, and recordings will be permanently removed. This action cannot be undone.')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" 
+                        class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    Delete Examination
+                </button>
+            </form>
+        </div>
+    </div>
+    @endcan
 </div>
 @endsection

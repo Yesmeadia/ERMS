@@ -54,7 +54,9 @@ class StudentOnlineExamController extends Controller
         $result = $this->sessionService->validateStudentLogin(
             $request->input('registration_number'),
             $request->input('dob'),
-            $request->input('device_fingerprint')
+            $request->input('device_fingerprint'),
+            $request->ip(),
+            $request->userAgent()
         );
 
         if (! $result['success']) {
@@ -74,13 +76,13 @@ class StudentOnlineExamController extends Controller
             $request->input('device_fingerprint')
         );
 
+        // Regenerate session ID to prevent Session Fixation (OWASP A07)
+        $request->session()->regenerate();
+
         // Store secure session token in Laravel session
         $request->session()->put('online_exam_session_token', $session->session_token);
 
-        if ($session->status === ExamSessionStatus::READY) {
-            return redirect()->route('online-exam.instructions');
-        }
-
+        // Direct to take route where onboarding and examination run in a seamless single page
         return redirect()->route('online-exam.take');
     }
 
@@ -89,13 +91,7 @@ class StudentOnlineExamController extends Controller
      */
     public function instructions(Request $request)
     {
-        /** @var OnlineExamSession $session */
-        $session = $request->attributes->get('exam_session');
-        $exam = $session->exam;
-
-        return response()
-            ->view('student-exam.instructions', compact('session', 'exam'))
-            ->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
+        return redirect()->route('online-exam.take');
     }
 
     /**
@@ -118,7 +114,26 @@ class StudentOnlineExamController extends Controller
             if ($firstQuestionId) {
                 $session->update($updateData);
                 $this->questionService->startQuestion($session, $firstQuestionId);
+                $session->refresh();
             }
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            $currentQuestionId = $session->current_question_id;
+            $currentQuestion = $currentQuestionId ? OnlineQuestion::with(['options', 'images'])->find($currentQuestionId) : null;
+            $examQuestion = $currentQuestionId ? $session->exam->examQuestions()->where('question_id', $currentQuestionId)->first() : null;
+            $payload = ($currentQuestion && $examQuestion)
+                ? $this->questionService->buildSafeQuestionPayload($currentQuestion, $examQuestion, $session)
+                : null;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Exam started successfully.',
+                'started_at' => now()->toIso8601String(),
+                'remaining_ms' => $this->timerService->getRemainingMilliseconds($session->current_question_deadline_at),
+                'exam_remaining_ms' => $this->timerService->getRemainingMilliseconds($session->exam_deadline_at),
+                'payload' => $payload,
+            ]);
         }
 
         return redirect()->route('online-exam.take');
@@ -133,11 +148,6 @@ class StudentOnlineExamController extends Controller
         $session = $request->attributes->get('exam_session');
         $exam = $session->exam;
 
-        // If not started yet, redirect to instructions
-        if ($session->status === ExamSessionStatus::READY) {
-            return redirect()->route('online-exam.instructions');
-        }
-
         // Check if overall exam has expired
         if ($session->hasExamExpired()) {
             $this->sessionService->finishExam($session, true);
@@ -145,29 +155,33 @@ class StudentOnlineExamController extends Controller
             return redirect()->route('online-exam.result');
         }
 
-        // If current question not set or needs starting
+        // Determine current question to render
         $currentQuestionId = $session->current_question_id;
         if (! $currentQuestionId) {
             $questionOrder = $session->question_order ?: [];
             $firstQuestionId = ! empty($questionOrder) ? $questionOrder[0] : null;
 
             if ($firstQuestionId) {
-                $this->questionService->startQuestion($session, $firstQuestionId);
-                $session->refresh();
+                if ($session->status !== ExamSessionStatus::READY) {
+                    $this->questionService->startQuestion($session, $firstQuestionId);
+                    $session->refresh();
+                }
+                $currentQuestionId = $firstQuestionId;
             }
         }
 
-        $currentQuestion = OnlineQuestion::with(['options', 'images'])->find($session->current_question_id);
-        $examQuestion = $exam->examQuestions()->where('question_id', $session->current_question_id)->first();
+        $currentQuestion = OnlineQuestion::with(['options', 'images'])->find($currentQuestionId);
+        $examQuestion = $exam->examQuestions()->where('question_id', $currentQuestionId)->first();
 
         if (! $currentQuestion || ! $examQuestion) {
             return redirect()->route('online-exam.result');
         }
 
         $payload = $this->questionService->buildSafeQuestionPayload($currentQuestion, $examQuestion, $session);
+        $isReady = ($session->status === ExamSessionStatus::READY);
 
         return response()
-            ->view('student-exam.take', compact('session', 'exam', 'payload'))
+            ->view('student-exam.take', compact('session', 'exam', 'payload', 'isReady'))
             ->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
     }
 
@@ -185,6 +199,7 @@ class StudentOnlineExamController extends Controller
             'selected_option_ids' => ['nullable', 'array'],
             'selected_option_ids.*' => ['integer'],
             'text_answer' => ['nullable', 'string', 'max:5000'],
+            'time_spent_ms' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $result = $this->questionService->submitAnswer(
@@ -193,7 +208,8 @@ class StudentOnlineExamController extends Controller
             $validated['selected_option_ids'] ?? null,
             $validated['text_answer'] ?? null,
             $request->ip(),
-            $request->userAgent()
+            $request->userAgent(),
+            isset($validated['time_spent_ms']) ? (int) $validated['time_spent_ms'] : null
         );
 
         return response()->json($result);

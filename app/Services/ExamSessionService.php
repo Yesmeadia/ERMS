@@ -6,6 +6,7 @@ use App\Models\OnlineExam;
 use App\Models\OnlineExamStudent;
 use App\Models\OnlineExamSession;
 use App\Models\OnlineExamResult;
+use App\Models\OnlineExamFailedLogin;
 use App\Models\Student;
 use App\Models\User;
 use App\Enums\ExamStatus;
@@ -32,9 +33,13 @@ class ExamSessionService
     public function validateStudentLogin(
         string $registrationNumber,
         string $dobInput,
-        ?string $deviceFingerprint = null
+        ?string $deviceFingerprint = null,
+        ?string $ip = null,
+        ?string $userAgent = null
     ): array {
         $regNumber = trim($registrationNumber);
+        $ip = $ip ?? request()->ip();
+        $userAgent = $userAgent ?? request()->userAgent();
 
         // 1. Registration number exists
         $student = Student::with(['category', 'school'])
@@ -42,6 +47,7 @@ class ExamSessionService
             ->first();
 
         if (!$student) {
+            $this->logFailedLogin($regNumber, 'Student record not found', $ip, $userAgent, $dobInput);
             return [
                 'success' => false,
                 'message' => 'No student record found with this Registration Number.',
@@ -57,6 +63,7 @@ class ExamSessionService
         }
 
         if (!$dobParsed || !$student->dob || $student->dob->format('Y-m-d') !== $dobParsed) {
+            $this->logFailedLogin($regNumber, 'Date of birth mismatch', $ip, $userAgent, $dobInput);
             return [
                 'success' => false,
                 'message' => 'The Date of Birth provided does not match our records.',
@@ -74,6 +81,7 @@ class ExamSessionService
             ->first();
 
         if (!$enrollment || !$enrollment->exam) {
+            $this->logFailedLogin($regNumber, 'Not enrolled in any active exam', $ip, $userAgent, null);
             return [
                 'success' => false,
                 'message' => 'You are not currently enrolled in any active online examination.',
@@ -84,6 +92,7 @@ class ExamSessionService
 
         // 4. Student belongs to the correct category
         if ($exam->category_id !== $student->category_id) {
+            $this->logFailedLogin($regNumber, 'Student category mismatch', $ip, $userAgent, null);
             return [
                 'success' => false,
                 'message' => 'Your student category does not match this examination category.',
@@ -93,37 +102,60 @@ class ExamSessionService
         // 5. Exam is available today
         $today = now()->format('Y-m-d');
         if ($exam->exam_date->format('Y-m-d') !== $today && !app()->environment('testing', 'local')) {
+            $this->logFailedLogin($regNumber, 'Exam not scheduled for today', $ip, $userAgent, null);
             return [
                 'success' => false,
                 'message' => "This examination is scheduled for {$exam->exam_date->format('d M Y')}.",
             ];
         }
 
-        // 6. Check existing session and enforce: One Registration Number = One Active Login
+        // 6. Check existing results: Enforce strictly 1 attempt per student
+        $existingResult = OnlineExamResult::where('online_exam_id', $exam->id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        if ($existingResult) {
+            $this->logFailedLogin($regNumber, 'Already submitted — 1-attempt enforced', $ip, $userAgent, null);
+            return [
+                'success' => false,
+                'message' => 'You have already completed this examination. Students are only permitted to enter the exam once.',
+            ];
+        }
+
+        // 7. Check existing session and enforce: One Registration Number = One Active Entry
         $existingSession = OnlineExamSession::where('online_exam_id', $exam->id)
             ->where('student_id', $student->id)
             ->first();
 
         if ($existingSession) {
-            // Already completed or terminated
+            // Check if overall exam deadline has expired for this session
+            if (! $existingSession->status->isFinal() && $existingSession->hasExamExpired()) {
+                $this->finishExam($existingSession, true);
+                $existingSession->refresh();
+            }
+
+            // Already completed, expired, or terminated
             if ($existingSession->status === ExamSessionStatus::SUBMITTED) {
+                $this->logFailedLogin($regNumber, 'Session already SUBMITTED — 1-attempt enforced', $ip, $userAgent, null);
                 return [
                     'success' => false,
-                    'message' => 'You have already completed and submitted this examination.',
+                    'message' => 'You have already completed and submitted this examination. Only 1 entry is permitted.',
                 ];
             }
 
             if ($existingSession->status === ExamSessionStatus::TERMINATED) {
+                $this->logFailedLogin($regNumber, 'Session TERMINATED — 1-attempt enforced', $ip, $userAgent, null);
                 return [
                     'success' => false,
-                    'message' => 'Your examination session was terminated due to rule violations.',
+                    'message' => 'Your examination session was terminated due to rule violations. Only 1 entry is permitted.',
                 ];
             }
 
             if ($existingSession->status === ExamSessionStatus::EXPIRED) {
+                $this->logFailedLogin($regNumber, 'Session EXPIRED — 1-attempt enforced', $ip, $userAgent, null);
                 return [
                     'success' => false,
-                    'message' => 'Your examination session has expired.',
+                    'message' => 'Your examination session has expired. Only 1 entry is permitted.',
                 ];
             }
 
@@ -136,6 +168,7 @@ class ExamSessionService
                 $existingSession->device_fingerprint_hash !== hash('sha256', $deviceFingerprint);
 
             if ($hasRecentHeartbeat && $isDifferentDevice) {
+                $this->logFailedLogin($regNumber, 'Concurrent device detected — two-browser block', $ip, $userAgent, null);
                 return [
                     'success' => false,
                     'message' => 'This examination is already active on another device.',
@@ -147,8 +180,33 @@ class ExamSessionService
             'success' => true,
             'student' => $student,
             'exam' => $exam,
-            'existingSession' => $existingSession,
+            'existingSession' => $existingSession ?? null,
         ];
+    }
+
+    /**
+     * Persist a failed student login attempt for forensic/audit purposes.
+     * Deliberately non-throwing — a logging failure must never block the login response.
+     */
+    private function logFailedLogin(
+        string $registrationNumber,
+        string $reason,
+        ?string $ip,
+        ?string $userAgent,
+        ?string $dobAttempted
+    ): void {
+        try {
+            OnlineExamFailedLogin::create([
+                'registration_number' => $registrationNumber,
+                'failure_reason'      => $reason,
+                'ip_address'          => $ip,
+                'user_agent'          => $userAgent ? substr($userAgent, 0, 512) : null,
+                'dob_attempted'       => $dobAttempted ? substr($dobAttempted, 0, 20) : null,
+                'attempted_at'        => now(),
+            ]);
+        } catch (\Throwable) {
+            // Silently swallow — logging must never disrupt the auth flow
+        }
     }
 
     /**

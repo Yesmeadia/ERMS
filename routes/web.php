@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\OnlineExamStudentController;
 use App\Http\Controllers\Admin\OnlineExamLiveMonitoringController;
 use App\Http\Controllers\Admin\OnlineExamReportController;
 use App\Http\Controllers\OnlineExamWebRTCController;
+use App\Http\Controllers\OnlineExamProctoringController;
 
 
 // Public Homepage Route (accessible to all — guests and authenticated users)
@@ -113,21 +114,25 @@ Route::prefix('online-exam')->name('online-exam.')->group(function () {
     Route::get('/terminated', [StudentOnlineExamController::class, 'terminated'])->name('terminated');
 
     // Protected by online exam session token
-    Route::middleware('online_exam_session')->group(function () {
+    Route::middleware(\App\Http\Middleware\OnlineExamSessionMiddleware::class)->group(function () {
         Route::get('/instructions', [StudentOnlineExamController::class, 'instructions'])->name('instructions');
-        Route::post('/start', [StudentOnlineExamController::class, 'startExam'])->name('start');
+        Route::post('/start', [StudentOnlineExamController::class, 'startExam'])->name('start')->middleware('throttle:30,1');
         Route::get('/take', [StudentOnlineExamController::class, 'take'])->name('take');
-        Route::post('/submit-answer', [StudentOnlineExamController::class, 'submitAnswer'])->name('submit-answer');
-        Route::post('/next-question', [StudentOnlineExamController::class, 'nextQuestion'])->name('next-question');
-        Route::post('/previous-question', [StudentOnlineExamController::class, 'previousQuestion'])->name('previous-question');
-        Route::post('/heartbeat', [StudentOnlineExamController::class, 'heartbeat'])->name('heartbeat');
-        Route::post('/event', [StudentOnlineExamController::class, 'recordEvent'])->name('event');
-        Route::post('/finish', [StudentOnlineExamController::class, 'finish'])->name('finish');
+        Route::post('/submit-answer', [StudentOnlineExamController::class, 'submitAnswer'])->name('submit-answer')->middleware('throttle:60,1');
+        Route::post('/next-question', [StudentOnlineExamController::class, 'nextQuestion'])->name('next-question')->middleware('throttle:60,1');
+        Route::post('/previous-question', [StudentOnlineExamController::class, 'previousQuestion'])->name('previous-question')->middleware('throttle:60,1');
+        Route::post('/heartbeat', [StudentOnlineExamController::class, 'heartbeat'])->name('heartbeat')->middleware('throttle:60,1');
+        Route::post('/event', [StudentOnlineExamController::class, 'recordEvent'])->name('event')->middleware('throttle:60,1');
+        Route::match(['get', 'post'], '/finish', [StudentOnlineExamController::class, 'finish'])->name('finish');
         Route::get('/result', [StudentOnlineExamController::class, 'result'])->name('result');
 
         // WebRTC Signaling
-        Route::get('/webrtc/signals', [OnlineExamWebRTCController::class, 'getStudentSignals'])->name('webrtc.signals');
-        Route::post('/webrtc/signal', [OnlineExamWebRTCController::class, 'sendStudentSignal'])->name('webrtc.signal');
+        Route::get('/webrtc/signals', [OnlineExamWebRTCController::class, 'getStudentSignals'])->name('webrtc.signals')->middleware('throttle:120,1');
+        Route::post('/webrtc/signal', [OnlineExamWebRTCController::class, 'sendStudentSignal'])->name('webrtc.signal')->middleware('throttle:120,1');
+
+        // Proctoring Video Recording & Live Snapshots
+        Route::post('/proctoring/record-chunk', [OnlineExamProctoringController::class, 'recordChunk'])->name('proctoring.record-chunk')->middleware('throttle:30,1');
+        Route::post('/proctoring/snapshot', [OnlineExamProctoringController::class, 'snapshot'])->name('proctoring.snapshot')->middleware('throttle:60,1');
     });
 });
 
@@ -382,7 +387,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/{online_exam}/questions', [OnlineExamQuestionController::class, 'index'])->name('questions.index');
             Route::post('/{online_exam}/questions/assign', [OnlineExamQuestionController::class, 'assign'])->name('questions.assign');
             Route::post('/{online_exam}/questions/settings', [OnlineExamQuestionController::class, 'updateSettings'])->name('questions.update-settings');
-            Route::post('/{online_exam}/questions/update-settings', [OnlineExamQuestionController::class, 'updateSettings'])->name('questions.settings');
             Route::delete('/{online_exam}/questions/{question}', [OnlineExamQuestionController::class, 'remove'])->name('questions.remove');
 
             // Student Enrollment
@@ -397,6 +401,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/{online_exam}/live/events/{session}', [OnlineExamLiveMonitoringController::class, 'sessionEvents'])->name('live.events');
             Route::post('/{online_exam}/live/webrtc/{session}/signal', [OnlineExamWebRTCController::class, 'sendAdminSignal'])->name('live.webrtc.signal');
             Route::get('/{online_exam}/live/webrtc/{session}/signals', [OnlineExamWebRTCController::class, 'getAdminSignals'])->name('live.webrtc.signals');
+            Route::get('/{online_exam}/live/snapshot/{session}', [OnlineExamLiveMonitoringController::class, 'streamSnapshot'])->name('live.snapshot');
+            Route::get('/{online_exam}/live/recordings/{session}', [OnlineExamLiveMonitoringController::class, 'recordingsList'])->name('live.recordings');
+            Route::get('/{online_exam}/live/recordings/{session}/{recording}', [OnlineExamLiveMonitoringController::class, 'streamRecording'])->name('live.recording.stream');
 
             // Results & Reports
             Route::get('/{online_exam}/results', [OnlineExamReportController::class, 'index'])->name('results');

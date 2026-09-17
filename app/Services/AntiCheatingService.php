@@ -56,7 +56,7 @@ class AntiCheatingService
                 $event->update(['metadata' => $meta]);
 
                 $maxAllowed = (int) $session->exam->max_fullscreen_violations;
-                if ($session->violations_count >= $maxAllowed && !$session->status->isFinal()) {
+                if ($maxAllowed > 0 && $session->violations_count >= $maxAllowed && !$session->status->isFinal()) {
                     $this->terminateSessionDueToViolations($session, $maxAllowed);
                 }
             } else {
@@ -162,12 +162,12 @@ class AntiCheatingService
         }
 
         if ($prev !== $normalized) {
-            $eventType = match ($normalized) {
-                'ACTIVE' => ExamEventType::CAMERA_RECONNECTED,
-                'STOPPED' => ExamEventType::CAMERA_STOPPED,
-                'INTERRUPTED' => ExamEventType::CAMERA_INTERRUPTED,
-                default => null,
-            };
+            $eventType = null;
+            if ($prev === 'ACTIVE' && in_array($normalized, ['STOPPED', 'INTERRUPTED'], true)) {
+                $eventType = $normalized === 'STOPPED' ? ExamEventType::CAMERA_STOPPED : ExamEventType::CAMERA_INTERRUPTED;
+            } elseif ($normalized === 'ACTIVE' && $prev !== 'ACTIVE') {
+                $eventType = ExamEventType::CAMERA_RECONNECTED;
+            }
 
             if ($eventType) {
                 $this->recordEvent($session, $eventType, ['previous' => $prev, 'current' => $cameraStatus]);

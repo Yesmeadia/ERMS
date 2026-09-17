@@ -84,7 +84,7 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <div class="text-white font-medium line-clamp-2">
-                                            {!! strip_tags($eq->question->question_text) !!}
+                                            {{ strip_tags($eq->question->question_text) }}
                                         </div>
                                         @if($eq->question->images->count() > 0)
                                             <span class="text-[11px] text-indigo-400 mt-0.5 inline-block">&bull; Image attached</span>
@@ -187,7 +187,7 @@
                                             <input type="checkbox" name="question_ids[]" value="{{ $bq->id }}" class="bank-q-checkbox w-4 h-4 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
                                         </td>
                                         <td class="px-5 py-3.5">
-                                            <div class="text-white font-medium line-clamp-2">{!! strip_tags($bq->question_text) !!}</div>
+                                            <div class="text-white font-medium line-clamp-2">{{ strip_tags($bq->question_text) }}</div>
                                             <div class="text-xs text-slate-500 mt-0.5">
                                                 @if($bq->subject) {{ $bq->subject }} &bull; @endif
                                                 {{ $bq->options->count() }} options

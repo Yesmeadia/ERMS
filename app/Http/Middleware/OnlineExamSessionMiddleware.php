@@ -16,8 +16,7 @@ class OnlineExamSessionMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->session()->get('online_exam_session_token') 
-            ?: $request->header('X-Exam-Session-Token')
-            ?: $request->input('session_token');
+            ?: $request->header('X-Exam-Session-Token');
 
         if (!$token) {
             if ($request->expectsJson()) {

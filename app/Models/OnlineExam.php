@@ -71,6 +71,7 @@ class OnlineExam extends Model
         'max_eligible_students' => 'integer',
         'status' => ExamStatus::class,
         'published_at' => 'datetime',
+        'created_by' => 'integer',
     ];
 
     /**
@@ -140,6 +141,14 @@ class OnlineExam extends Model
     public function results(): HasMany
     {
         return $this->hasMany(OnlineExamResult::class, 'online_exam_id');
+    }
+
+    /**
+     * Proctoring video recordings for this exam.
+     */
+    public function recordings(): HasMany
+    {
+        return $this->hasMany(OnlineExamRecording::class, 'online_exam_id');
     }
 
     /**

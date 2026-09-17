@@ -89,15 +89,21 @@ class SecurityShieldMiddleware
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
 
-        // Add Content Security Policy (CSP)
+        // Add Content Security Policy (CSP) with nonce support
+        $nonce = app()->has('csp-nonce') ? app('csp-nonce') : '';
+        $nonceDirective = $nonce ? "'nonce-{$nonce}' " : "'unsafe-inline' ";
+        // Note: 'unsafe-inline' is only used as a fallback when no nonce is available (e.g. non-exam pages).
+        // On exam pages the @nonce Blade directive is used, making 'unsafe-inline' inert in modern browsers
+        // (nonce presence causes browsers to ignore 'unsafe-inline' per CSP Level 3 spec).
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
+               "script-src 'self' {$nonceDirective}'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com; " .
+               "script-src-attr 'unsafe-inline'; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                "img-src 'self' data: https://* http://*; " .
                "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; " .

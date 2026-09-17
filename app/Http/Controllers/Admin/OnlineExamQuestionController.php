@@ -16,6 +16,8 @@ class OnlineExamQuestionController extends Controller
      */
     public function index(OnlineExam $online_exam)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         $exam = $online_exam->load(['category', 'examQuestions.question.options', 'examQuestions.question.images']);
         $assignedQuestionIds = $exam->examQuestions->pluck('question_id')->toArray();
 
@@ -38,6 +40,8 @@ class OnlineExamQuestionController extends Controller
      */
     public function assign(Request $request, OnlineExam $online_exam)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         if ($online_exam->status !== ExamStatus::DRAFT) {
             return back()->with('error', 'Cannot modify questions on a published or completed examination.');
         }
@@ -79,6 +83,8 @@ class OnlineExamQuestionController extends Controller
      */
     public function remove(OnlineExam $online_exam, OnlineQuestion $question)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         if ($online_exam->status !== ExamStatus::DRAFT) {
             return back()->with('error', 'Cannot remove questions from a published or completed examination.');
         }
@@ -99,6 +105,8 @@ class OnlineExamQuestionController extends Controller
      */
     public function updateSettings(Request $request, OnlineExam $online_exam)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         if ($online_exam->status !== ExamStatus::DRAFT) {
             return back()->with('error', 'Cannot update question settings on a published examination.');
         }

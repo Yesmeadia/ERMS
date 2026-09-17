@@ -37,6 +37,7 @@ class OnlineExamSession extends Model
         'termination_reason',
         'ip_address',
         'user_agent',
+        'total_recording_bytes',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class OnlineExamSession extends Model
         'locked_at' => 'datetime',
         'fullscreen_status' => 'boolean',
         'violations_count' => 'integer',
+        'total_recording_bytes' => 'integer',
     ];
 
     public function exam(): BelongsTo
@@ -84,6 +86,11 @@ class OnlineExamSession extends Model
     public function result(): HasOne
     {
         return $this->hasOne(OnlineExamResult::class, 'online_exam_session_id');
+    }
+
+    public function recordings(): HasMany
+    {
+        return $this->hasMany(OnlineExamRecording::class, 'online_exam_session_id')->orderBy('chunk_index');
     }
 
     /**

@@ -95,8 +95,14 @@ class ExamQuestionService
             ->where('question_id', $question->id)
             ->first();
 
-        $remainingMs = $this->timerService->getRemainingMilliseconds($session->current_question_deadline_at);
-        $examRemainingMs = $this->timerService->getRemainingMilliseconds($session->exam_deadline_at);
+        $qLimitSec = $examQuestion->time_limit_seconds ?: $exam->default_question_time_limit;
+        $remainingMs = $session->current_question_deadline_at
+            ? $this->timerService->getRemainingMilliseconds($session->current_question_deadline_at)
+            : ($qLimitSec * 1000);
+
+        $examRemainingMs = $session->exam_deadline_at
+            ? $this->timerService->getRemainingMilliseconds($session->exam_deadline_at)
+            : ($exam->duration_minutes * 60 * 1000);
 
         return [
             'question_id' => (int) $question->id,
@@ -134,32 +140,36 @@ class ExamQuestionService
         ?array $selectedOptionIds,
         ?string $textAnswer,
         ?string $ip = null,
-        ?string $userAgent = null
+        ?string $userAgent = null,
+        ?int $clientTimeSpentMs = null
     ): array {
-        if ($session->status->isFinal()) {
-            throw new AccessDeniedHttpException('This examination session has already been completed.');
-        }
+        return DB::transaction(function () use ($session, $questionId, $selectedOptionIds, $textAnswer, $ip, $userAgent, $clientTimeSpentMs) {
+            // Row-level lock on the session prevents concurrent answer submissions
+            $lockedSession = OnlineExamSession::where('id', $session->id)->lockForUpdate()->firstOrFail();
 
-        if ($session->hasExamExpired()) {
-            throw new AccessDeniedHttpException('Examination overall time has expired.');
-        }
+            if ($lockedSession->status->isFinal()) {
+                throw new AccessDeniedHttpException('This examination session has already been completed.');
+            }
 
-        // Idempotency guard: If this question answer has already been submitted and locked, return safely
-        $existingAnswer = OnlineExamAnswer::where('online_exam_session_id', $session->id)
-            ->where('question_id', $questionId)
-            ->where('is_locked', true)
-            ->first();
+            if ($lockedSession->hasExamExpired()) {
+                throw new AccessDeniedHttpException('Examination overall time has expired.');
+            }
 
-        if ($existingAnswer) {
-            return [
-                'success' => true,
-                'message' => 'Answer already saved.',
-                'question_id' => $questionId,
-                'is_last_question' => $session->current_question_index >= (count($session->question_order ?: []) - 1),
-            ];
-        }
+            // Idempotency check: if answer already submitted and locked, return safely
+            $existingAnswer = OnlineExamAnswer::where('online_exam_session_id', $lockedSession->id)
+                ->where('question_id', $questionId)
+                ->where('is_locked', true)
+                ->first();
 
-        return DB::transaction(function () use ($session, $questionId, $selectedOptionIds, $textAnswer, $ip, $userAgent) {
+            if ($existingAnswer) {
+                return [
+                    'success' => true,
+                    'message' => 'Answer already saved.',
+                    'question_id' => $questionId,
+                    'time_spent_ms' => $existingAnswer->time_spent_milliseconds,
+                    'is_last_question' => $lockedSession->current_question_index >= (count($lockedSession->question_order ?: []) - 1),
+                ];
+            }
             $exam = $session->exam;
             $examQuestion = OnlineExamQuestion::where('online_exam_id', $exam->id)
                 ->where('question_id', $questionId)
@@ -169,7 +179,17 @@ class ExamQuestionService
 
             $now = now();
             $startedAt = $session->current_question_started_at ?: $now;
-            $timeSpentMs = $this->timerService->calculateTimeSpentMilliseconds($startedAt, $now);
+            $serverTimeSpentMs = $this->timerService->calculateTimeSpentMilliseconds($startedAt, $now);
+
+            $limitSeconds = $examQuestion->time_limit_seconds ?: $exam->default_question_time_limit;
+            $limitMs = $limitSeconds * 1000;
+
+            // Prioritize student's exact client answered time if within allowable timer limits; fallback to server timer
+            if ($clientTimeSpentMs !== null && $clientTimeSpentMs >= 0) {
+                $timeSpentMs = min($limitMs, $clientTimeSpentMs);
+            } else {
+                $timeSpentMs = min($limitMs, $serverTimeSpentMs);
+            }
 
             // Accumulated speed bonus so far
             $currentTotalBonus = (float) $session->answers()->sum('speed_bonus_awarded');
@@ -185,7 +205,7 @@ class ExamQuestionService
                 $currentTotalBonus
             );
 
-            // Persist locked answer
+            // Persist locked answer with exact answered time
             $answer = OnlineExamAnswer::updateOrCreate(
                 [
                     'online_exam_session_id' => $session->id,
@@ -215,6 +235,8 @@ class ExamQuestionService
             $this->antiCheatingService->recordEvent($session, ExamEventType::ANSWER_SAVED, [
                 'question_id' => $questionId,
                 'time_spent_ms' => $timeSpentMs,
+                'answered_time_seconds' => round($timeSpentMs / 1000, 1),
+                'submitted_at' => $now->toDateTimeString(),
             ], $ip, $userAgent);
 
             $this->antiCheatingService->recordEvent($session, ExamEventType::ANSWER_SUBMITTED, [
@@ -225,6 +247,8 @@ class ExamQuestionService
                 'success' => true,
                 'message' => 'Answer Saved Successfully',
                 'question_id' => $questionId,
+                'time_spent_ms' => $timeSpentMs,
+                'answered_time_seconds' => round($timeSpentMs / 1000, 1),
                 'is_last_question' => $session->current_question_index >= (count($session->question_order ?: []) - 1),
             ];
         });

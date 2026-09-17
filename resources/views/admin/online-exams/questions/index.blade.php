@@ -109,7 +109,7 @@
                             <tr class="hover:bg-slate-800/30 transition-colors">
                                 <td class="px-5 py-4 max-w-md">
                                     <div class="font-medium text-white line-clamp-2">
-                                        {!! strip_tags($q->question_text) !!}
+                                        {{ strip_tags($q->question_text) }}
                                     </div>
                                     <div class="flex items-center gap-2 mt-1 text-xs text-slate-500">
                                         @if($q->subject) <span>{{ $q->subject }}</span> &bull; @endif
