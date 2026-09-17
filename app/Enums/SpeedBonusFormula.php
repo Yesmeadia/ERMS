@@ -7,6 +7,7 @@ enum SpeedBonusFormula: string
     case LINEAR = 'linear';
     case TIER = 'tier';
     case PERCENTAGE = 'percentage';
+    case REMAINING_SECONDS = 'remaining_seconds';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum SpeedBonusFormula: string
             self::LINEAR => 'Linear Degradation',
             self::TIER => 'Tier-Based Slabs',
             self::PERCENTAGE => 'Percentage of Base Marks',
+            self::REMAINING_SECONDS => 'Remaining Seconds ÷ 100 (e.g. 30s left = +0.30)',
         };
     }
 }

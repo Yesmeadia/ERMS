@@ -46,12 +46,16 @@
                 <th style="width: 70px;">Reg No</th>
                 <th>Candidate Name</th>
                 <th>Institution / School</th>
-                <th class="text-center" style="width: 50px;">Attempted</th>
-                <th class="text-center" style="width: 45px;">Correct</th>
-                <th class="text-right" style="width: 45px;">Score</th>
-                <th class="text-center" style="width: 40px;">%</th>
-                <th class="text-center" style="width: 40px;">Grade</th>
-                <th class="text-center" style="width: 45px;">Status</th>
+                <th class="text-center" style="width: 45px;">Attempted</th>
+                <th class="text-center" style="width: 40px;">Correct</th>
+                <th class="text-right" style="width: 48px;">Exam Mark</th>
+                @if($exam->enable_speed_bonus)
+                <th class="text-right" style="width: 48px;">Time Bonus</th>
+                @endif
+                <th class="text-right" style="width: 50px;">Total Mark</th>
+                <th class="text-center" style="width: 38px;">%</th>
+                <th class="text-center" style="width: 38px;">Grade</th>
+                <th class="text-center" style="width: 42px;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -61,8 +65,15 @@
                 <td class="font-bold">{{ $res->student->registration_number }}</td>
                 <td>{{ $res->student->name }}</td>
                 <td>{{ $res->student->school->name ?? 'N/A' }}</td>
-                <td class="text-center">{{ $res->attempted_questions_count }} / {{ $res->total_questions }}</td>
+                <td class="text-center">
+                    {{ $res->attempted_questions_count }} / {{ $res->total_questions }}
+                    <div style="font-size: 8px; color: #64748b;">{{ $res->time_taken_formatted }}</div>
+                </td>
                 <td class="text-center">{{ $res->correct_answers_count }}</td>
+                <td class="text-right">{{ number_format($res->objective_marks, 2) }}</td>
+                @if($exam->enable_speed_bonus)
+                <td class="text-right">+{{ number_format($res->speed_bonus_marks, 2) }}</td>
+                @endif
                 <td class="text-right font-bold">{{ number_format($res->final_score, 2) }}</td>
                 <td class="text-center">{{ number_format($res->percentage, 1) }}%</td>
                 <td class="text-center font-bold">{{ $res->grade ?: '-' }}</td>
@@ -74,7 +85,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="10" class="text-center" style="padding: 15px;">No candidate results available for this examination.</td>
+                <td colspan="{{ $exam->enable_speed_bonus ? 12 : 11 }}" class="text-center" style="padding: 15px;">No candidate results available for this examination.</td>
             </tr>
             @endforelse
         </tbody>

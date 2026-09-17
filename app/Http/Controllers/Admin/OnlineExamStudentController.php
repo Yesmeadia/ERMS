@@ -22,6 +22,8 @@ class OnlineExamStudentController extends Controller
      */
     public function index(Request $request, OnlineExam $online_exam)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         $exam = $online_exam->load('category');
 
         // Currently enrolled students
@@ -67,6 +69,8 @@ class OnlineExamStudentController extends Controller
      */
     public function enroll(Request $request, OnlineExam $online_exam)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         if ($online_exam->status !== ExamStatus::DRAFT) {
             return back()->with('error', 'Cannot modify student enrollments on a published examination.');
         }
@@ -90,6 +94,8 @@ class OnlineExamStudentController extends Controller
      */
     public function remove(OnlineExam $online_exam, Student $student)
     {
+        $this->authorize('manageSubResource', $online_exam);
+
         if ($online_exam->status !== ExamStatus::DRAFT) {
             return back()->with('error', 'Cannot remove students from a published examination.');
         }

@@ -190,7 +190,8 @@ class OnlineQuestionBankController extends Controller
             // Handle Question Image Upload
             if ($request->hasFile('question_image')) {
                 $file = $request->file('question_image');
-                $filename = 'q_'.$question->id.'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
+                $ext = $file->guessExtension() ?: 'jpg';
+                $filename = 'q_'.$question->id.'_'.Str::random(10).'.'.$ext;
                 $path = $file->storeAs('online-exam/questions', $filename, 'public');
 
                 OnlineQuestionImage::create([
@@ -357,7 +358,8 @@ class OnlineQuestionBankController extends Controller
             // Save new image if uploaded
             if ($request->hasFile('question_image')) {
                 $file = $request->file('question_image');
-                $filename = 'q_'.$online_question->id.'_'.Str::random(10).'.'.$file->getClientOriginalExtension();
+                $ext = $file->guessExtension() ?: 'jpg';
+                $filename = 'q_'.$online_question->id.'_'.Str::random(10).'.'.$ext;
                 $path = $file->storeAs('online-exam/questions', $filename, 'public');
 
                 OnlineQuestionImage::create([
@@ -380,6 +382,10 @@ class OnlineQuestionBankController extends Controller
      */
     public function destroy(OnlineQuestion $online_question)
     {
+        if ($online_question->exams()->exists()) {
+            return back()->with('error', 'Cannot delete a question that is currently assigned to examinations.');
+        }
+
         $online_question->delete();
 
         return redirect()->route('admin.online-questions.index')

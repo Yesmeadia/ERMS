@@ -50,4 +50,17 @@ class OnlineExamAnswer extends Model
     {
         return $this->belongsTo(OnlineQuestion::class, 'question_id');
     }
+
+    public function getTimeSpentSecondsAttribute(): float
+    {
+        return round(($this->time_spent_milliseconds ?: 0) / 1000, 1);
+    }
+
+    public function getAnsweredTimeFormattedAttribute(): string
+    {
+        $sec = (int) round(($this->time_spent_milliseconds ?: 0) / 1000);
+        $m = intdiv($sec, 60);
+        $s = $sec % 60;
+        return sprintf('%02d:%02ds', $m, $s);
+    }
 }

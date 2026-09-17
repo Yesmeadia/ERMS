@@ -208,6 +208,8 @@ class AuthController extends Controller
     {
         if ($user->hasRole('super-admin')) {
             return redirect()->intended(route('admin.dashboard'));
+        } elseif ($user->hasRole('exam-admin')) {
+            return redirect()->intended(route('admin.online-exams.dashboard'));
         } elseif ($user->hasRole('school-admin')) {
             return redirect()->intended(route('school.dashboard'));
         } elseif ($user->hasRole('invigilator')) {

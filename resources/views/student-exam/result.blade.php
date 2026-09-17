@@ -126,6 +126,108 @@
             </div>
         </div>
 
+        @if($exam->show_result_immediately && $result)
+        <!-- Score Breakdown Card (shown immediately after submission) -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/60 space-y-5">
+            <!-- Pass / Fail Status Banner -->
+            @if($result->is_passed)
+            <div class="flex items-center justify-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <p class="text-sm font-bold text-emerald-400">Congratulations — You Passed!</p>
+                    <p class="text-[11px] text-emerald-300/70">You have successfully cleared the qualifying marks.</p>
+                </div>
+            </div>
+            @else
+            <div class="flex items-center justify-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <div>
+                    <p class="text-sm font-bold text-rose-400">Result: Not Qualified</p>
+                    <p class="text-[11px] text-rose-300/70">You did not reach the required qualifying marks.</p>
+                </div>
+            </div>
+            @endif
+
+            <!-- Score Breakdown Title -->
+            <div class="border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+                    Score Breakdown
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Your final result is computed from exam marks and any earned speed bonus.</p>
+            </div>
+
+            <!-- Score Rows -->
+            <div class="space-y-3">
+                <!-- Exam Mark -->
+                <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-2xl px-5 py-4">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-300">Exam Mark</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Based on {{ $result->total_correct }} correct, {{ $result->total_wrong }} wrong answers</p>
+                    </div>
+                    <span class="font-mono text-xl font-bold text-indigo-400">{{ number_format((float)$result->objective_marks, 2) }}</span>
+                </div>
+
+                @if($exam->enable_speed_bonus && (float)$result->speed_bonus_marks > 0)
+                <!-- Time Bonus Mark -->
+                <div class="flex items-center justify-between bg-amber-500/5 border border-amber-500/20 rounded-2xl px-5 py-4">
+                    <div>
+                        <p class="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                            Time Bonus Mark
+                        </p>
+                        <p class="text-[11px] text-amber-400/60 mt-0.5">Earned by answering questions faster than the question timer</p>
+                    </div>
+                    <span class="font-mono text-xl font-bold text-amber-400">+{{ number_format((float)$result->speed_bonus_marks, 2) }}</span>
+                </div>
+                @elseif($exam->enable_speed_bonus)
+                <!-- Time Bonus Mark (zero) -->
+                <div class="flex items-center justify-between bg-slate-950/40 border border-slate-800/50 rounded-2xl px-5 py-4 opacity-60">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400">Time Bonus Mark</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">No time bonus earned this session</p>
+                    </div>
+                    <span class="font-mono text-xl font-bold text-slate-500">+0.00</span>
+                </div>
+                @endif
+
+                @if((float)$result->negative_marks > 0)
+                <!-- Negative Marks -->
+                <div class="flex items-center justify-between bg-rose-500/5 border border-rose-500/20 rounded-2xl px-5 py-4">
+                    <div>
+                        <p class="text-xs font-semibold text-rose-300">Negative Marks Deducted</p>
+                        <p class="text-[11px] text-rose-400/60 mt-0.5">Deducted for {{ $result->total_wrong }} incorrect answers</p>
+                    </div>
+                    <span class="font-mono text-xl font-bold text-rose-400">-{{ number_format((float)$result->negative_marks, 2) }}</span>
+                </div>
+                @endif
+
+                <!-- Divider -->
+                <div class="border-t border-slate-700/60 my-1"></div>
+
+                <!-- Total Mark -->
+                <div class="flex items-center justify-between bg-gradient-to-r from-indigo-600/10 to-emerald-600/10 border border-indigo-500/30 rounded-2xl px-5 py-5">
+                    <div>
+                        <p class="text-sm font-bold text-white">Total Mark</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Exam Mark + Time Bonus Mark{{ (float)$result->negative_marks > 0 ? ' - Negative Marks' : '' }} &bull; Out of {{ number_format((float)($exam->total_marks), 2) }} marks &bull; {{ number_format((float)$result->percentage, 1) }}% &bull; Grade: <span class="font-bold text-indigo-300">{{ $result->grade ?: '-' }}</span></p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-mono text-3xl font-bold text-white">{{ number_format((float)$result->final_score, 2) }}</span>
+                        @if($exam->show_rank && $result->rank)
+                        <p class="text-[11px] text-indigo-300 font-mono mt-1">Rank #{{ $result->rank }}</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Action Button -->
         <div class="text-center pt-2">
             <a href="{{ route('home') }}"

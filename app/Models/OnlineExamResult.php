@@ -70,6 +70,62 @@ class OnlineExamResult extends Model
         return (int) $this->total_attempted;
     }
 
+    public function getRawScoreAttribute(): float
+    {
+        return (float) $this->objective_marks;
+    }
+
+    public function getSpeedBonusPointsAttribute(): float
+    {
+        return (float) $this->speed_bonus_marks;
+    }
+
+    public function getUnansweredCountAttribute(): int
+    {
+        return (int) $this->total_unanswered;
+    }
+
+    public function getTimeTakenSecondsAttribute(): int
+    {
+        if ($this->session && $this->session->exam_started_at && $this->session->completed_at) {
+            return (int) $this->session->exam_started_at->diffInSeconds($this->session->completed_at);
+        }
+
+        if ($this->session) {
+            $sumMs = (int) $this->session->answers()->sum('time_spent_milliseconds');
+            if ($sumMs > 0) {
+                return (int) round($sumMs / 1000);
+            }
+        }
+
+        return 0;
+    }
+
+    public function getTimeTakenFormattedAttribute(): string
+    {
+        $sec = $this->time_taken_seconds;
+        if ($sec <= 0) {
+            return '-';
+        }
+        $h = intdiv($sec, 3600);
+        $m = intdiv($sec % 3600, 60);
+        $s = $sec % 60;
+        if ($h > 0) {
+            return sprintf('%dh %02dm %02ds', $h, $m, $s);
+        }
+        return sprintf('%02dm %02ds', $m, $s);
+    }
+
+    public function scopePassed($query)
+    {
+        return $query->where('status', 'PASS');
+    }
+
+    public function scopeFailed($query)
+    {
+        return $query->where('status', 'FAIL');
+    }
+
     public function session(): BelongsTo
     {
         return $this->belongsTo(OnlineExamSession::class, 'online_exam_session_id');

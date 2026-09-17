@@ -48,50 +48,56 @@
         </div>
 
         <!-- Live Statistics Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
             <div onclick="setFilter('ALL')" 
-                 class="bg-slate-900/80 border border-slate-800 hover:border-slate-600 rounded-2xl p-4 cursor-pointer transition-all hover:bg-slate-800/40">
+                 class="bg-slate-900/80 border border-slate-800 hover:border-slate-600 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
                 <span class="text-[11px] uppercase tracking-wider text-slate-400 block mb-1">Enrolled</span>
                 <span id="statEnrolled"
-                    class="text-2xl font-bold text-white font-mono">{{ $stats['total_enrolled'] ?? $totalEnrolled }}</span>
+                    class="text-xl sm:text-2xl font-bold text-white font-mono">{{ $stats['total_enrolled'] ?? $totalEnrolled }}</span>
+            </div>
+            <div onclick="setFilter('ATTENDED')" 
+                 class="bg-slate-900/80 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
+                <span class="text-[11px] uppercase tracking-wider text-sky-400 font-semibold block mb-1">All Attended</span>
+                <span id="statAttended"
+                    class="text-xl sm:text-2xl font-bold text-sky-400 font-mono">{{ $stats['attended'] ?? 0 }}</span>
             </div>
             <div onclick="setFilter('IN_PROGRESS')" 
-                 class="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-4 cursor-pointer transition-all hover:bg-slate-800/40">
+                 class="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold block">Active Now</span>
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 </div>
                 <span id="statActive"
-                    class="text-2xl font-bold text-emerald-400 font-mono">{{ $stats['in_progress'] ?? 0 }}</span>
+                    class="text-xl sm:text-2xl font-bold text-emerald-400 font-mono">{{ $stats['in_progress'] ?? 0 }}</span>
+            </div>
+            <div onclick="setFilter('COMPLETED')" 
+                 class="bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
+                <span class="text-[11px] uppercase tracking-wider text-indigo-400 block mb-1">Completed</span>
+                <span id="statCompleted"
+                    class="text-xl sm:text-2xl font-bold text-indigo-400 font-mono">{{ $stats['completed'] ?? 0 }}</span>
             </div>
             <div onclick="setFilter('TIMED_OUT')" 
-                 class="bg-slate-900/80 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-4 cursor-pointer transition-all hover:bg-slate-800/40">
+                 class="bg-slate-900/80 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-[11px] uppercase tracking-wider text-orange-400 font-semibold block">Timed Out</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-orange-400/80" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-orange-400/80" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <span id="statTimedOut"
-                    class="text-2xl font-bold text-orange-400 font-mono">{{ $stats['timed_out'] ?? 0 }}</span>
-            </div>
-            <div onclick="setFilter('COMPLETED')" 
-                 class="bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-4 cursor-pointer transition-all hover:bg-slate-800/40">
-                <span class="text-[11px] uppercase tracking-wider text-indigo-400 block mb-1">Completed</span>
-                <span id="statCompleted"
-                    class="text-2xl font-bold text-indigo-400 font-mono">{{ $stats['completed'] ?? 0 }}</span>
+                    class="text-xl sm:text-2xl font-bold text-orange-400 font-mono">{{ $stats['timed_out'] ?? 0 }}</span>
             </div>
             <div onclick="setFilter('TERMINATED')" 
-                 class="bg-slate-900/80 border border-slate-800 hover:border-rose-500/50 rounded-2xl p-4 cursor-pointer transition-all hover:bg-slate-800/40">
+                 class="bg-slate-900/80 border border-slate-800 hover:border-rose-500/50 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
                 <span class="text-[11px] uppercase tracking-wider text-rose-400 block mb-1">Terminated</span>
                 <span id="statTerminated"
-                    class="text-2xl font-bold text-rose-400 font-mono">{{ $stats['terminated'] ?? 0 }}</span>
+                    class="text-xl sm:text-2xl font-bold text-rose-400 font-mono">{{ $stats['terminated'] ?? 0 }}</span>
             </div>
             <div onclick="setFilter('VIOLATIONS')" 
-                 class="bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 cursor-pointer transition-all hover:bg-slate-800/40">
-                <span class="text-[11px] uppercase tracking-wider text-amber-400 block mb-1">Violations Logged</span>
+                 class="bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 cursor-pointer transition-all hover:bg-slate-800/40">
+                <span class="text-[11px] uppercase tracking-wider text-amber-400 block mb-1">Violations</span>
                 <span id="statViolations"
-                    class="text-2xl font-bold text-amber-400 font-mono">{{ $stats['violations_total'] ?? 0 }}</span>
+                    class="text-xl sm:text-2xl font-bold text-amber-400 font-mono">{{ $stats['violations_total'] ?? 0 }}</span>
             </div>
         </div>
 
@@ -104,22 +110,34 @@
                     <span>All Candidates</span>
                     <span id="badgeTabAll" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono font-bold">0</span>
                 </button>
+                <button type="button" onclick="setFilter('ATTENDED')" data-status="ATTENDED"
+                    class="filter-tab-btn px-3 py-1.5 rounded-xl font-medium border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                    <span>All Attended</span>
+                    <span id="badgeTabAttended" class="px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-400 text-[10px] font-mono font-bold">0</span>
+                </button>
                 <button type="button" onclick="setFilter('IN_PROGRESS')" data-status="IN_PROGRESS"
                     class="filter-tab-btn px-3 py-1.5 rounded-xl font-medium border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     <span>Active Now</span>
                     <span id="badgeTabActive" class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold">0</span>
                 </button>
-                <button type="button" onclick="setFilter('TIMED_OUT')" data-status="TIMED_OUT"
+                <button type="button" onclick="setFilter('NOT_STARTED')" data-status="NOT_STARTED"
                     class="filter-tab-btn px-3 py-1.5 rounded-xl font-medium border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-                    <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-                    <span>Timed Out</span>
-                    <span id="badgeTabTimedOut" class="px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-mono font-bold">0</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                    <span>Not Started</span>
+                    <span id="badgeTabNotStarted" class="px-1.5 py-0.2 rounded-full bg-slate-700/40 text-slate-300 text-[10px] font-mono font-bold">0</span>
                 </button>
                 <button type="button" onclick="setFilter('COMPLETED')" data-status="COMPLETED"
                     class="filter-tab-btn px-3 py-1.5 rounded-xl font-medium border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
                     <span>Completed</span>
                     <span id="badgeTabCompleted" class="px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-mono font-bold">0</span>
+                </button>
+                <button type="button" onclick="setFilter('TIMED_OUT')" data-status="TIMED_OUT"
+                    class="filter-tab-btn px-3 py-1.5 rounded-xl font-medium border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                    <span>Timed Out</span>
+                    <span id="badgeTabTimedOut" class="px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-mono font-bold">0</span>
                 </button>
                 <button type="button" onclick="setFilter('TERMINATED')" data-status="TERMINATED"
                     class="filter-tab-btn px-3 py-1.5 rounded-xl font-medium border transition-all bg-slate-900 text-slate-400 border-slate-800 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
@@ -143,10 +161,12 @@
                 </div>
                 <select id="statusFilter" onchange="filterSessionsTable()"
                     class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                    <option value="ALL">All Statuses</option>
+                    <option value="ALL">All Candidates</option>
+                    <option value="ATTENDED">All Attended Students</option>
                     <option value="IN_PROGRESS">Active / In Progress</option>
-                    <option value="TIMED_OUT">Timed Out (Exam Expired)</option>
+                    <option value="NOT_STARTED">Not Started (Awaiting Login)</option>
                     <option value="COMPLETED">Completed (Submitted)</option>
+                    <option value="TIMED_OUT">Timed Out (Exam Expired)</option>
                     <option value="TERMINATED">Terminated</option>
                     <option value="OFFLINE">Offline / Inactive</option>
                     <option value="VIOLATIONS">With Violations</option>
@@ -427,6 +447,57 @@
         </div>
     </div>
 
+    <!-- Hashed Video Recordings Modal -->
+    <div id="recordingsModal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-white">Recorded Proctoring Video Chunks</h3>
+                        <span id="recordingsCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            0 Chunks
+                        </span>
+                    </div>
+                    <p id="recordingsModalMeta" class="text-xs text-slate-400 font-mono mt-0.5"></p>
+                </div>
+                <button type="button" onclick="closeRecordingsModal()"
+                        class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                        title="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Active Chunk Video Player -->
+            <div id="recordingPlayerContainer" class="rounded-2xl overflow-hidden border border-slate-800 bg-black aspect-video flex items-center justify-center">
+                <video id="recordingVideoPlayer" controls class="w-full h-full object-contain hidden"></video>
+                <div id="recordingPlayerPlaceholder" class="text-center p-6 text-slate-500 text-xs">
+                    Select a recorded chunk below to stream playback.
+                </div>
+            </div>
+
+            <!-- Chunks List -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 uppercase tracking-wider font-semibold px-1">
+                    <span>Hashed Video Chunks (Private Storage)</span>
+                    <span id="recordingsTotalSize" class="font-mono text-indigo-300"></span>
+                </div>
+                <div id="recordingsList" class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                    <!-- Populated via AJAX -->
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end pt-2 border-t border-slate-800">
+                <button type="button" onclick="closeRecordingsModal()"
+                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script @nonce>
         const POLL_URL = "{{ route('admin.online-exams.live.poll', $exam) }}";
         const CSRF_TOKEN = "{{ csrf_token() }}";
@@ -437,16 +508,25 @@
         async function fetchLiveStats() {
             try {
                 const res = await fetch(POLL_URL, {
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
                 });
+                if (!res.ok) {
+                    console.warn('[LiveMonitor] Poll returned HTTP', res.status, '- session may have expired.');
+                    return;
+                }
                 const data = await res.json();
                 if (data.success) {
                     updateStatsCards(data.stats);
-                    allSessions = data.sessions;
+                    allSessions = data.sessions || [];
                     filterSessionsTable();
+                } else {
+                    console.warn('[LiveMonitor] Poll returned success:false', data);
                 }
             } catch (err) {
-                console.warn('Polling error:', err);
+                console.warn('[LiveMonitor] Polling error:', err);
             }
         }
 
@@ -458,6 +538,7 @@
 
         function updateStatsCards(stats) {
             if (document.getElementById('statEnrolled')) document.getElementById('statEnrolled').textContent = stats.total_enrolled;
+            if (document.getElementById('statAttended')) document.getElementById('statAttended').textContent = stats.attended ?? (allSessions.filter(s => s.status !== 'NOT_STARTED').length);
             if (document.getElementById('statActive')) document.getElementById('statActive').textContent = stats.in_progress;
             if (document.getElementById('statTimedOut')) document.getElementById('statTimedOut').textContent = stats.timed_out ?? 0;
             if (document.getElementById('statCompleted')) document.getElementById('statCompleted').textContent = stats.completed;
@@ -468,17 +549,21 @@
 
         function updateTabBadges() {
             const total = allSessions.length;
+            const attended = allSessions.filter(s => s.status !== 'NOT_STARTED').length;
+            const notStarted = allSessions.filter(s => s.status === 'NOT_STARTED').length;
             const active = allSessions.filter(s => ['READY', 'IN_PROGRESS', 'QUESTION_ACTIVE', 'ANSWERED'].includes(s.status)).length;
             const timedOut = allSessions.filter(s => ['EXPIRED', 'QUESTION_TIMEOUT'].includes(s.status) || s.is_timed_out).length;
             const completed = allSessions.filter(s => ['SUBMITTED', 'EXPIRED', 'COMPLETED'].includes(s.status) || s.is_completed).length;
             const terminated = allSessions.filter(s => s.status === 'TERMINATED').length;
-            const offline = allSessions.filter(s => !s.is_online && !['SUBMITTED', 'COMPLETED', 'TERMINATED', 'EXPIRED'].includes(s.status)).length;
+            const offline = allSessions.filter(s => !s.is_online && !['SUBMITTED', 'COMPLETED', 'TERMINATED', 'EXPIRED', 'NOT_STARTED'].includes(s.status)).length;
 
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
                 if (el) el.textContent = val;
             };
             setVal('badgeTabAll', total);
+            setVal('badgeTabAttended', attended);
+            setVal('badgeTabNotStarted', notStarted);
             setVal('badgeTabActive', active);
             setVal('badgeTabTimedOut', timedOut);
             setVal('badgeTabCompleted', completed);
@@ -487,8 +572,10 @@
         }
 
         function filterSessionsTable() {
-            const query = document.getElementById('liveSearchInput').value.toLowerCase();
-            const status = document.getElementById('statusFilter').value;
+            const searchEl = document.getElementById('liveSearchInput');
+            const filterEl = document.getElementById('statusFilter');
+            const query = searchEl ? searchEl.value.toLowerCase() : '';
+            const status = filterEl ? filterEl.value : 'ALL';
 
             // Highlight active quick-filter tab
             document.querySelectorAll('.filter-tab-btn').forEach(btn => {
@@ -504,7 +591,11 @@
             const filtered = allSessions.filter(s => {
                 const matchesQuery = s.student_name.toLowerCase().includes(query) || s.registration_number.toLowerCase().includes(query);
                 let matchesStatus = true;
-                if (status === 'IN_PROGRESS') {
+                if (status === 'ATTENDED') {
+                    matchesStatus = s.status !== 'NOT_STARTED';
+                } else if (status === 'NOT_STARTED') {
+                    matchesStatus = s.status === 'NOT_STARTED';
+                } else if (status === 'IN_PROGRESS') {
                     matchesStatus = ['READY', 'IN_PROGRESS', 'QUESTION_ACTIVE', 'ANSWERED'].includes(s.status);
                 } else if (status === 'TIMED_OUT') {
                     matchesStatus = ['EXPIRED', 'QUESTION_TIMEOUT'].includes(s.status) || s.is_timed_out;
@@ -513,7 +604,7 @@
                 } else if (status === 'TERMINATED') {
                     matchesStatus = s.status === 'TERMINATED';
                 } else if (status === 'OFFLINE') {
-                    matchesStatus = !s.is_online && !['SUBMITTED', 'COMPLETED', 'TERMINATED', 'EXPIRED'].includes(s.status);
+                    matchesStatus = !s.is_online && !['SUBMITTED', 'COMPLETED', 'TERMINATED', 'EXPIRED', 'NOT_STARTED'].includes(s.status);
                 } else if (status === 'VIOLATIONS') {
                     matchesStatus = s.violations_count > 0;
                 }
@@ -611,6 +702,14 @@
                         </td>
                         <td class="py-3 px-4 text-right">
                             <div class="flex items-center justify-end gap-1.5">
+                                ${s.recordings_count > 0 ? `
+                                    <button type="button" onclick="openRecordingsModal(${s.session_id}, '${safeName}', '${s.registration_number}')"
+                                            class="px-2 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 text-[10px] font-semibold transition-colors flex items-center gap-1"
+                                            title="View ${s.recordings_count} Recorded Video Chunks">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                                        Rec (${s.recordings_count})
+                                    </button>
+                                ` : ''}
                                 ${!isFinished ? `
                                     <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                             class="px-2.5 py-1 rounded-lg ${isCamActive ? 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'} text-[10px] font-semibold transition-colors flex items-center gap-1">
@@ -655,6 +754,8 @@
                 const isCamStopped = !isFinished && (s.camera_status === 'STOPPED' || s.camera_status === 'inactive');
                 const safeName = (s.student_name || '').replace(/'/g, "\\'");
                 const safeSchool = (s.school_name || '').replace(/'/g, "\\'");
+                const hasSnapshot = Boolean(s.has_snapshot);
+                const recCount = s.recordings_count || 0;
 
                 const statusBadge = isCamActive 
                     ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE</span>`
@@ -676,14 +777,31 @@
                         <!-- Video Stream Preview / Camera State Container -->
                         <div class="relative bg-black aspect-video flex items-center justify-center overflow-hidden">
                             <div class="w-full h-full flex items-center justify-center bg-slate-950">
-                                ${isCamActive ? `
+                                ${hasSnapshot ? `
+                                    <div class="relative w-full h-full">
+                                        <img src="${s.snapshot_url}&_cb=${Date.now()}"
+                                             alt="${s.student_name}"
+                                             class="w-full h-full object-cover"
+                                             loading="lazy" />
+                                        <div class="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-xs text-emerald-400 border border-emerald-500/40 shadow-sm">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE FEED
+                                            </span>
+                                            ${recCount > 0 ? `
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-950/90 text-rose-300 border border-rose-600/40 shadow-sm" title="${recCount} hashed chunks recorded">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>REC (${recCount})
+                                                </span>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                ` : (isCamActive ? `
                                     <div class="flex flex-col items-center justify-center p-4 text-center space-y-2">
                                         <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
                                             </svg>
                                         </div>
-                                        <span class="text-[10px] text-emerald-400 font-mono">WebRTC Feed Ready</span>
+                                        <span class="text-[10px] text-emerald-400 font-mono">Camera Connecting...</span>
                                     </div>
                                 ` : (isCamStopped ? `
                                     <div class="flex flex-col items-center justify-center p-4 text-center space-y-1">
@@ -699,7 +817,7 @@
                                         </svg>
                                         <span class="text-[10px]">${s.status_label}</span>
                                     </div>
-                                `)}
+                                `))}
                             </div>
 
                             <!-- Click to Inspect Overlay Button -->
@@ -722,10 +840,15 @@
                                 <span class="text-white font-bold">${isFinished ? '-' : `${s.current_question_index} / ${TOTAL_QUESTIONS}`}</span>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <span class="px-1.5 py-0.5 rounded text-[10px] ${s.violations_count > 0 ? 'bg-rose-500/20 text-rose-400 font-bold' : 'text-slate-500'}">
-                                    ${s.violations_count} viol.
-                                </span>
+                            <div class="flex items-center gap-1.5">
+                                ${recCount > 0 ? `
+                                    <button type="button" onclick="openRecordingsModal(${s.session_id}, '${safeName}', '${s.registration_number}')"
+                                            class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold transition-colors flex items-center gap-1"
+                                            title="View Hashed Video Recordings">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                                        Rec (${recCount})
+                                    </button>
+                                ` : ''}
                                 ${!isFinished ? `
                                     <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                             class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white text-[10px] font-semibold transition-colors">
@@ -737,6 +860,89 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        async function openRecordingsModal(sessionId, studentName, regNo) {
+            document.getElementById('recordingsModalMeta').textContent = `${studentName} (${regNo})`;
+            document.getElementById('recordingsCountBadge').textContent = 'Loading...';
+            document.getElementById('recordingsTotalSize').textContent = '';
+            const listEl = document.getElementById('recordingsList');
+            listEl.innerHTML = '<p class="text-center py-4 text-slate-500 text-xs">Loading recorded chunks...</p>';
+
+            const player = document.getElementById('recordingVideoPlayer');
+            const placeholder = document.getElementById('recordingPlayerPlaceholder');
+            player.pause();
+            player.src = '';
+            player.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+
+            document.getElementById('recordingsModal').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`/admin/online-exams/{{ $exam->id }}/live/recordings/${sessionId}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (!data.success || !data.recordings || data.recordings.length === 0) {
+                    listEl.innerHTML = '<p class="text-center py-4 text-slate-500 text-xs">No video chunks recorded yet for this session.</p>';
+                    document.getElementById('recordingsCountBadge').textContent = '0 Chunks';
+                    return;
+                }
+
+                document.getElementById('recordingsCountBadge').textContent = `${data.total_chunks} Chunks`;
+                const totalMb = (data.total_size_bytes / (1024 * 1024)).toFixed(2);
+                document.getElementById('recordingsTotalSize').textContent = `Total: ${totalMb} MB`;
+
+                listEl.innerHTML = data.recordings.map(r => `
+                    <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between gap-3 text-xs hover:border-slate-700 transition-colors">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 font-bold font-mono text-[10px] flex items-center justify-center shrink-0">
+                                #${r.chunk_index}
+                            </span>
+                            <div class="truncate">
+                                <div class="font-mono text-[11px] text-white flex items-center gap-1.5 truncate">
+                                    <span>Chunk ${r.chunk_index}</span>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">${r.file_size_human}</span>
+                                    ${r.is_final ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400">Final</span>' : ''}
+                                </div>
+                                <div class="font-mono text-[9px] text-slate-500 truncate" title="SHA-256: ${r.sha256_hash}">
+                                    SHA-256: ${r.sha256_hash.substring(0, 16)}...
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="playRecordingChunk('${r.stream_url}')"
+                                class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-semibold transition-colors shrink-0 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                            </svg>
+                            <span>Play</span>
+                        </button>
+                    </div>
+                `).join('');
+
+                // Auto-play first chunk
+                if (data.recordings.length > 0) {
+                    playRecordingChunk(data.recordings[0].stream_url);
+                }
+            } catch (err) {
+                listEl.innerHTML = '<p class="text-center py-4 text-rose-400 text-xs">Failed loading recordings.</p>';
+            }
+        }
+
+        function playRecordingChunk(streamUrl) {
+            const player = document.getElementById('recordingVideoPlayer');
+            const placeholder = document.getElementById('recordingPlayerPlaceholder');
+            player.src = streamUrl;
+            player.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            player.play().catch(console.warn);
+        }
+
+        function closeRecordingsModal() {
+            const player = document.getElementById('recordingVideoPlayer');
+            player.pause();
+            player.src = '';
+            document.getElementById('recordingsModal').classList.add('hidden');
         }
 
         // ==========================================
@@ -791,8 +997,9 @@
             const pc = inspectorPeerConnection;
             inspectorBufferedCandidates = [];
 
-            // Add receiver transceiver for video
+            // Add receiver transceiver for video and audio
             pc.addTransceiver('video', { direction: 'recvonly' });
+            pc.addTransceiver('audio', { direction: 'recvonly' });
 
             pc.ontrack = (event) => {
                 const video = document.getElementById('inspectorVideo');
@@ -827,7 +1034,7 @@
             };
 
             try {
-                const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: false });
+                const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
                 await pc.setLocalDescription(offer);
 
                 await sendAdminWebRtcSignal(sessionId, 'offer', pc.localDescription);
@@ -1040,17 +1247,46 @@
         }
 
         async function openEventsModal(sessionId, studentLabel) {
-            document.getElementById('eventModalStudent').textContent = studentLabel;
+            document.getElementById('eventModalStudent').textContent = studentLabel || 'Candidate';
             const container = document.getElementById('eventsListContainer');
             container.innerHTML = '<p class="text-slate-500 text-center py-4">Loading audit trail...</p>';
             document.getElementById('eventsModal').classList.remove('hidden');
+
+            // Handle uninitiated or null sessions gracefully without failing network request
+            if (!sessionId || sessionId === 'null' || sessionId === 'undefined' || sessionId === 0) {
+                const violHeader = document.getElementById('eventModalViolationsBadge');
+                if (violHeader) {
+                    violHeader.textContent = '0 Violations';
+                    violHeader.className = 'px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-slate-800 text-slate-400';
+                }
+                container.innerHTML = `
+                    <div class="text-center py-8 space-y-2">
+                        <div class="inline-flex p-3 rounded-2xl bg-slate-800/80 text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium text-slate-300">Candidate Not Started</p>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto">This student has not logged in or begun the exam yet. Session events and security logs will appear here once examination starts.</p>
+                    </div>
+                `;
+                return;
+            }
 
             try {
                 const res = await fetch(`/admin/online-exams/{{ $exam->id }}/live/events/${sessionId}`, {
                     headers: { 'Accept': 'application/json' }
                 });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => null);
+                    const errMsg = (errData && errData.message) ? errData.message : `HTTP ${res.status}: Failed to load events`;
+                    container.innerHTML = `<p class="text-rose-400 text-center py-4">${errMsg}</p>`;
+                    return;
+                }
+
                 const data = await res.json();
-                if (data.success && data.events.length > 0) {
+                if (data.success && Array.isArray(data.events) && data.events.length > 0) {
                     const violHeader = document.getElementById('eventModalViolationsBadge');
                     if (violHeader && data.violations_count !== undefined) {
                         violHeader.textContent = `${data.violations_count} / ${data.max_violations} Violations`;
@@ -1059,9 +1295,15 @@
 
                     container.innerHTML = data.events.map(e => {
                         const isViolation = e.is_violation;
-                        const isDebounced = e.metadata && e.metadata.is_debounced;
+                        let meta = e.metadata;
+                        if (typeof meta === 'string') {
+                            try { meta = JSON.parse(meta); } catch (ignore) { meta = {}; }
+                        }
+                        meta = meta || {};
+
+                        const isDebounced = meta.is_debounced;
                         const isStrike = isViolation && !isDebounced;
-                        const strikeNum = (e.metadata && e.metadata.strike_number) ? `#${e.metadata.strike_number}` : '';
+                        const strikeNum = meta.strike_number ? `#${meta.strike_number}` : '';
 
                         let badgeHtml = '';
                         let borderClass = 'border-slate-800';
@@ -1083,12 +1325,26 @@
                             titleColor = 'text-amber-300';
                             badgeHtml = `
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     DEBOUNCED (Alt+Tab)
                                 </span>
                             `;
+                        }
+
+                        let metaDisplay = '';
+                        try {
+                            metaDisplay = meta && Object.keys(meta).length ? JSON.stringify(meta) : '';
+                        } catch (ignore) {}
+
+                        let timeDisplay = '';
+                        if (e.event_time) {
+                            try {
+                                timeDisplay = new Date(e.event_time).toLocaleTimeString();
+                            } catch (ignore) {
+                                timeDisplay = e.event_time;
+                            }
                         }
 
                         return `
@@ -1098,20 +1354,23 @@
                                         <span class="font-bold ${titleColor}">${e.event_type}</span>
                                         ${badgeHtml}
                                     </div>
-                                    <div class="text-[10px] text-slate-400 font-mono mt-1">${e.metadata ? JSON.stringify(e.metadata) : ''}</div>
+                                    ${metaDisplay ? `<div class="text-[10px] text-slate-400 font-mono mt-1">${metaDisplay}</div>` : ''}
                                 </div>
-                                <span class="text-[10px] text-slate-500 font-mono shrink-0">${e.event_time ? new Date(e.event_time).toLocaleTimeString() : ''}</span>
+                                <span class="text-[10px] text-slate-500 font-mono shrink-0">${timeDisplay}</span>
                             </div>
                         `;
                     }).join('');
 
                     // Refresh stats in background so main table reflects verified count immediately
                     fetchLiveStats();
+                } else if (data.success) {
+                    container.innerHTML = '<p class="text-slate-500 text-center py-4">No events recorded yet for this session.</p>';
                 } else {
-                    container.innerHTML = '<p class="text-slate-500 text-center py-4">No events recorded yet.</p>';
+                    container.innerHTML = `<p class="text-rose-400 text-center py-4">${data.message || 'Error loading events.'}</p>`;
                 }
             } catch (err) {
-                container.innerHTML = '<p class="text-rose-400 text-center py-4">Error loading events.</p>';
+                console.error('Error loading events:', err);
+                container.innerHTML = `<p class="text-rose-400 text-center py-4">Error loading events: ${err.message || 'Network error'}</p>`;
             }
         }
 

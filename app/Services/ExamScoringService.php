@@ -241,13 +241,24 @@ class ExamScoringService
             ->orderByDesc('speed_bonus_marks')
             ->orderByDesc('total_correct')
             ->orderBy('id')
-            ->get();
+            ->pluck('id');
 
-        $currentRank = 1;
-        foreach ($results as $res) {
-            $res->update(['rank' => $currentRank]);
-            $currentRank++;
+        if ($results->isEmpty()) {
+            return;
         }
+
+        // Build a single CASE statement update — O(1) queries regardless of student count
+        $cases = [];
+        $ids   = [];
+        foreach ($results as $rank => $id) {
+            $cases[] = 'WHEN '.((int) $id).' THEN '.($rank + 1);
+            $ids[]   = (int) $id;
+        }
+
+        $caseExpr = 'CASE id '.implode(' ', $cases).' END';
+        DB::table('online_exam_results')
+            ->whereIn('id', $ids)
+            ->update(['rank' => DB::raw($caseExpr)]);
     }
 
     /**

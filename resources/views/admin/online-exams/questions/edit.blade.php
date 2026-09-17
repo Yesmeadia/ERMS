@@ -110,6 +110,14 @@
                             value="{{ old('negative_marks', $question->negative_marks) }}" min="0" max="10"
                             class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
                     </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Question Timer (Seconds)</label>
+                        <input type="number" name="time_limit_seconds" value="{{ old('time_limit_seconds', $question->time_limit_seconds) }}"
+                            min="5" max="600" placeholder="e.g. 50 (optional)"
+                            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <span class="text-[11px] text-slate-500">Individual timer (5-600s). Overrides exam default.</span>
+                    </div>
                 </div>
             </div>
 

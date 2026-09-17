@@ -22,6 +22,8 @@ class OnlineExamReportController extends Controller
      */
     public function index(Request $request, OnlineExam $online_exam)
     {
+        $this->authorize('view', $online_exam);
+
         $exam = $online_exam->load('category');
 
         $query = OnlineExamResult::with(['student.school', 'student.class'])
@@ -29,9 +31,9 @@ class OnlineExamReportController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'pass') {
-                $query->where('is_passed', true);
+                $query->where('status', 'PASS');
             } elseif ($request->status === 'fail') {
-                $query->where('is_passed', false);
+                $query->where('status', 'FAIL');
             }
         }
 
@@ -47,7 +49,7 @@ class OnlineExamReportController extends Controller
 
         // Calculate summary metrics
         $totalCandidates = OnlineExamResult::where('online_exam_id', $exam->id)->count();
-        $passedCount = OnlineExamResult::where('online_exam_id', $exam->id)->where('is_passed', true)->count();
+        $passedCount = OnlineExamResult::where('online_exam_id', $exam->id)->where('status', 'PASS')->count();
         $avgScore = OnlineExamResult::where('online_exam_id', $exam->id)->avg('final_score') ?: 0;
         $highestScore = OnlineExamResult::where('online_exam_id', $exam->id)->max('final_score') ?: 0;
 
@@ -94,6 +96,8 @@ class OnlineExamReportController extends Controller
      */
     public function recalculateRanks(OnlineExam $online_exam)
     {
+        $this->authorize('update', $online_exam);
+
         $this->scoringService->recalculateRanks($online_exam);
 
         return back()->with('success', 'Candidate merit ranks recalculated and updated successfully.');
@@ -104,8 +108,10 @@ class OnlineExamReportController extends Controller
      */
     public function exportCsv(OnlineExam $online_exam): StreamedResponse
     {
+        $this->authorize('view', $online_exam);
+
         $exam = $online_exam;
-        $results = OnlineExamResult::with(['student.school'])
+        $results = OnlineExamResult::with(['student.school', 'session'])
             ->where('online_exam_id', $exam->id)
             ->orderBy('rank')
             ->orderByDesc('final_score')
@@ -133,11 +139,11 @@ class OnlineExamReportController extends Controller
                 'Correct',
                 'Wrong',
                 'Unanswered',
-                'Raw Score',
+                'Exam Mark',
                 'Negative Marks',
-                'Speed Bonus',
-                'Final Score',
-                'Total Marks',
+                'Time Bonus Mark',
+                'Total Mark',
+                'Max Marks',
                 'Percentage',
                 'Grade',
                 'Result Status',
@@ -145,12 +151,23 @@ class OnlineExamReportController extends Controller
                 'Violations Count',
             ]);
 
+            $sanitizeCsv = function ($value) {
+                if (is_null($value)) {
+                    return '';
+                }
+                $str = (string) $value;
+                if (strlen($str) > 0 && in_array(substr($str, 0, 1), ['=', '+', '-', '@', "\t", "\r"])) {
+                    return "'".$str;
+                }
+                return $str;
+            };
+
             foreach ($results as $res) {
                 fputcsv($handle, [
                     $res->rank ?: '-',
-                    $res->student->registration_number,
-                    $res->student->name,
-                    $res->student->school->name ?? 'N/A',
+                    $sanitizeCsv($res->student->registration_number),
+                    $sanitizeCsv($res->student->name),
+                    $sanitizeCsv($res->student->school->name ?? 'N/A'),
                     $res->total_questions,
                     $res->attempted_questions_count,
                     $res->correct_answers_count,
@@ -178,6 +195,8 @@ class OnlineExamReportController extends Controller
      */
     public function exportPdf(OnlineExam $online_exam)
     {
+        $this->authorize('view', $online_exam);
+
         $exam = $online_exam->load(['category', 'creator']);
         $results = OnlineExamResult::with(['student.school'])
             ->where('online_exam_id', $exam->id)

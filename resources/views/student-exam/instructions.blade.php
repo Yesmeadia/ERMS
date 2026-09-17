@@ -8,6 +8,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Outfit', sans-serif; }</style>
+    <script @nonce>window.location.replace("{{ route('online-exam.take') }}");</script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between antialiased relative">
     <x-public-background />
@@ -37,7 +38,7 @@
             <!-- Left 2 Cols: Exam Specs & Integrity Rules -->
             <div class="lg:col-span-2 space-y-6">
                 <!-- Exam Metrics Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-center">
                         <span class="text-[11px] uppercase tracking-wider text-slate-400 block mb-1">Total Questions</span>
                         <span class="text-2xl font-bold text-white font-mono">{{ $exam->examQuestions()->count() }}</span>
@@ -45,10 +46,6 @@
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-center">
                         <span class="text-[11px] uppercase tracking-wider text-slate-400 block mb-1">Total Marks</span>
                         <span class="text-2xl font-bold text-indigo-400 font-mono">{{ $exam->total_marks }}</span>
-                    </div>
-                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-center">
-                        <span class="text-[11px] uppercase tracking-wider text-slate-400 block mb-1">Passing Marks</span>
-                        <span class="text-2xl font-bold text-emerald-400 font-mono">{{ $exam->pass_marks }}</span>
                     </div>
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-center">
                         <span class="text-[11px] uppercase tracking-wider text-slate-400 block mb-1">Exam Duration</span>
@@ -93,7 +90,7 @@
                     <div class="mt-4 pt-4 border-t border-slate-800">
                         <h3 class="text-xs uppercase tracking-wider font-semibold text-slate-400 mb-2">Examiner's Specific Instructions</h3>
                         <div class="prose prose-invert prose-xs max-w-none text-slate-300">
-                            {!! $exam->instructions !!}
+                            {!! preg_replace('/\s*on\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', strip_tags($exam->instructions, '<p><br><b><strong><i><em><u><s><ul><ol><li><span><div>')) !!}
                         </div>
                     </div>
                     @endif
@@ -116,7 +113,7 @@
                         <div class="flex items-center justify-between text-xs">
                             <span class="font-semibold text-slate-300 flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse" id="cameraDot"></span>
-                                Web Camera Proctor
+                                Web Camera & Microphone
                             </span>
                             <span id="cameraStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Verifying...</span>
                         </div>
@@ -127,7 +124,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
                                 </svg>
                                 <button type="button" id="allowCameraBtn" class="text-xs px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/20 transition-all cursor-pointer">
-                                    Allow Camera Access
+                                    Allow Camera & Mic Access
                                 </button>
                                 <p id="cameraErrorMessage" class="hidden text-xs text-rose-300 mt-2.5 px-3 py-2 rounded-xl bg-rose-950/60 border border-rose-800/60 text-center leading-relaxed"></p>
                             </div>
@@ -182,31 +179,41 @@
         const requiresCamera = {{ $exam->enable_camera ? 'true' : 'false' }};
         const requiresFullscreen = {{ $exam->enable_fullscreen ? 'true' : 'false' }};
 
-        // Resilient camera stream resolver with progressive fallback
+        // Resilient camera & microphone stream resolver with progressive fallback
         async function getCameraStream(idealWidth = 640, idealHeight = 480) {
             // Check modern mediaDevices
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                // Tier 1: Ideal user-facing camera
+                // Tier 1: Ideal user-facing camera with audio
                 try {
                     return await navigator.mediaDevices.getUserMedia({
                         video: { width: { ideal: idealWidth }, height: { ideal: idealHeight }, facingMode: 'user' },
-                        audio: false
+                        audio: true
                     });
                 } catch (e1) {
-                    console.warn('Tier 1 constraints (facingMode: user) failed, attempting Tier 2:', e1.name, e1.message);
+                    console.warn('Tier 1 constraints (facingMode: user + audio) failed, attempting Tier 2:', e1.name, e1.message);
                 }
 
-                // Tier 2: Specific resolution without facingMode (essential for desktop/USB webcams)
+                // Tier 2: Specific resolution without facingMode with audio (essential for desktop/USB webcams)
                 try {
                     return await navigator.mediaDevices.getUserMedia({
                         video: { width: { ideal: idealWidth }, height: { ideal: idealHeight } },
-                        audio: false
+                        audio: true
                     });
                 } catch (e2) {
-                    console.warn('Tier 2 constraints (resolution) failed, attempting Tier 3:', e2.name, e2.message);
+                    console.warn('Tier 2 constraints (resolution + audio) failed, attempting Tier 3:', e2.name, e2.message);
                 }
 
-                // Tier 3: Bare minimum video
+                // Tier 3: Bare minimum video with audio
+                try {
+                    return await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    });
+                } catch (e3) {
+                    console.warn('Tier 3 constraints (audio) failed, falling back to video only:', e3.name, e3.message);
+                }
+
+                // Tier 4: Fallback to video only if microphone is missing or denied
                 return await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: false
@@ -217,7 +224,9 @@
             const legacyNav = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
             if (legacyNav) {
                 return new Promise((resolve, reject) => {
-                    legacyNav.call(navigator, { video: true, audio: false }, resolve, reject);
+                    legacyNav.call(navigator, { video: true, audio: true }, resolve, (err) => {
+                        legacyNav.call(navigator, { video: true, audio: false }, resolve, reject);
+                    });
                 });
             }
 
