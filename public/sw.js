@@ -1,4 +1,4 @@
-const CACHE_NAME = 'erms-v1.0.0';
+const CACHE_NAME = 'erms-v1.0.2';
 const STATIC_ASSETS = [
     '/',
     '/manifest.json',
@@ -9,11 +9,9 @@ const STATIC_ASSETS = [
 
 // ─── Install Event ─────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing service worker...');
+    console.log('[SW] Installing service worker v1.0.2...');
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Caching static assets');
-            // Cache assets individually to avoid install failure on missing files
             return Promise.allSettled(
                 STATIC_ASSETS.map(url =>
                     cache.add(url).catch(err => console.warn('[SW] Failed to cache:', url, err))
@@ -26,7 +24,7 @@ self.addEventListener('install', (event) => {
 
 // ─── Activate Event ────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating service worker...');
+    console.log('[SW] Activating service worker v1.0.2...');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
@@ -47,7 +45,19 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Skip non-GET requests
+    // ── STRICT BYPASS: Never touch ANY /admin, /poll, /events or live monitoring requests ──
+    if (
+        url.pathname.startsWith('/admin') ||
+        url.pathname.includes('/live') ||
+        url.pathname.includes('/poll') ||
+        url.pathname.includes('/events') ||
+        url.pathname.includes('/webrtc') ||
+        url.pathname.includes('/debugger')
+    ) {
+        return; // Always bypass SW completely and go straight to network
+    }
+
+    // Skip non-GET requests (POST, PUT, DELETE etc. go straight to network)
     if (request.method !== 'GET') return;
 
     // Skip cross-origin requests (CDN, APIs, etc.)
@@ -56,7 +66,25 @@ self.addEventListener('fetch', (event) => {
     // Skip Vite HMR & development endpoints
     if (url.pathname.startsWith('/@') || url.pathname.startsWith('/vite')) return;
 
-    // Strategy: Network-first for HTML pages, Cache-first for assets
+    // ── CRITICAL: Never cache API / JSON / XHR / poll / admin dynamic routes ──
+    // These include live monitor polls, WebRTC signals, AJAX endpoints.
+    const isApiRequest =
+        url.pathname.includes('/poll') ||
+        url.pathname.includes('/signals') ||
+        url.pathname.includes('/signal') ||
+        url.pathname.includes('/live/') ||
+        url.pathname.includes('/debugger') ||
+        url.pathname.includes('/api/') ||
+        url.pathname.startsWith('/admin/') ||
+        request.headers.get('accept')?.includes('application/json') ||
+        request.headers.get('x-requested-with') === 'XMLHttpRequest';
+
+    if (isApiRequest) {
+        // Network-only for all admin/API/AJAX/JSON requests — never cache these
+        return;
+    }
+
+    // Strategy: Network-first for HTML pages, Cache-first for static assets only
     if (request.headers.get('accept')?.includes('text/html')) {
         // Network-first for HTML pages
         event.respondWith(
@@ -71,13 +99,20 @@ self.addEventListener('fetch', (event) => {
                 .catch(() => {
                     return caches.match(request).then(cached => {
                         if (cached) return cached;
-                        // Fallback to root page
                         return caches.match('/');
                     });
                 })
         );
     } else {
-        // Cache-first for static assets (CSS, JS, images, fonts)
+        // Cache-first ONLY for static assets (CSS, JS, fonts, images)
+        // Only cache files with a known static extension
+        const isStaticAsset = /\.(css|js|woff2?|ttf|eot|png|jpg|jpeg|gif|svg|ico|webp)$/i.test(url.pathname);
+
+        if (!isStaticAsset) {
+            // Unknown type — use network-only to be safe
+            return;
+        }
+
         event.respondWith(
             caches.match(request).then(cached => {
                 if (cached) return cached;

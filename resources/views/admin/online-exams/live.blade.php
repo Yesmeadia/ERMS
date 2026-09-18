@@ -514,6 +514,15 @@
     </div>
 
     <script @nonce>
+        // Force unregister any Service Worker on the Live Proctoring Monitor to guarantee fresh network data
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (var r of registrations) {
+                    r.unregister();
+                }
+            });
+        }
+
         const POLL_URL = "{{ route('admin.online-exams.live.poll', $exam) }}";
         const CSRF_TOKEN = "{{ csrf_token() }}";
         const TOTAL_QUESTIONS = {{ $totalQuestions }};
@@ -523,10 +532,14 @@
         async function fetchLiveStats() {
             const pollStatusEl = document.getElementById('pollStatusIndicator');
             try {
-                const res = await fetch(POLL_URL, {
+                const bustUrl = POLL_URL + (POLL_URL.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+                const res = await fetch(bustUrl, {
+                    cache: 'no-store',
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
                     }
                 });
                 if (!res.ok) {

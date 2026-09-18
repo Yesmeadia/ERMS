@@ -58,6 +58,7 @@ class OnlineExamLiveMonitoringController extends Controller
             'stats' => $monitoringData['stats'],
             'sessions' => $monitoringData['sessions'],
             'uninitiated_students_count' => $monitoringData['uninitiated_students_count'],
+            'debug_errors' => $monitoringData['debug_errors'] ?? [],
             'timestamp' => now()->toIso8601String(),
         ]);
     }
@@ -67,6 +68,8 @@ class OnlineExamLiveMonitoringController extends Controller
      */
     protected function buildMonitoringData(OnlineExam $exam): array
     {
+        $debugErrors = [];
+
         // Try to join recordings count; gracefully degrade if table doesn't exist yet.
         try {
             $sessions = OnlineExamSession::with(['student.school', 'currentQuestion'])
@@ -176,7 +179,8 @@ class OnlineExamLiveMonitoringController extends Controller
                     'recordings_count' => (int) ($s->recordings_count ?? 0),
                 ];
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error("LiveMonitor: Failed to process session {$s->id}: " . $e->getMessage());
+                \Illuminate\Support\Facades\Log::error("LiveMonitor: Failed to process session {$s->id}: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
+                $debugErrors[] = "Session #{$s->id}: " . $e->getMessage() . " [" . class_basename($e->getFile()) . ":{$e->getLine()}]";
                 // Fallback: still add the session with basic details so stats and cards never zero out
                 $activeSessions[] = [
                     'session_id' => $s->id,
@@ -296,6 +300,7 @@ class OnlineExamLiveMonitoringController extends Controller
             'stats'                       => $stats,
             'sessions'                    => $activeSessions,
             'uninitiated_students_count'  => $trueNotStarted->count(),
+            'debug_errors'               => $debugErrors,
         ];
     }
 

@@ -755,15 +755,25 @@
     <!-- PWA Service Worker Registration & Form Confirmation -->
     <script @nonce>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function () {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                    .then(function (reg) {
-                        console.log('[PWA] Service Worker registered:', reg.scope);
-                    })
-                    .catch(function (err) {
-                        console.warn('[PWA] Service Worker registration failed:', err);
-                    });
-            });
+            // Admin portal must ALWAYS be live and never intercepted by service worker cache
+            if (window.location.pathname.startsWith('/admin')) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (var i = 0; i < registrations.length; i++) {
+                        registrations[i].unregister();
+                        console.log('[PWA] Unregistered service worker on admin route:', registrations[i].scope);
+                    }
+                });
+            } else {
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                        .then(function (reg) {
+                            console.log('[PWA] Service Worker registered:', reg.scope);
+                        })
+                        .catch(function (err) {
+                            console.warn('[PWA] Service Worker registration failed:', err);
+                        });
+                });
+            }
         }
 
         document.addEventListener('submit', function (e) {
