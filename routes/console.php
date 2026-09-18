@@ -14,3 +14,8 @@ Artisan::command('inspire', function () {
     ->everyMinute()
     ->withoutOverlapping();
 
+// Pre-warm and rotate WebRTC TURN credentials daily to prevent credential expiry
+\Illuminate\Support\Facades\Schedule::command('webrtc:warmup-turn-credentials')
+    ->daily();
+
+

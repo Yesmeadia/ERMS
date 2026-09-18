@@ -115,12 +115,13 @@ class OnlineExamLiveMonitoringController extends Controller
                     $this->antiCheatingService->syncViolationsCountWithLog($s);
                 } catch (\Throwable) {}
 
-                $isOnline = $s->last_heartbeat_at && $now->diffInSeconds($s->last_heartbeat_at) <= $thresholdSeconds;
                 $isCompleted = in_array($s->status, [ExamSessionStatus::SUBMITTED, ExamSessionStatus::EXPIRED], true)
                     || (!empty($s->completed_at) && $s->status !== ExamSessionStatus::TERMINATED);
+                $isTerminated = $s->status === ExamSessionStatus::TERMINATED;
+                $isOnline = ! $isCompleted && ! $isTerminated && $s->last_heartbeat_at && $now->diffInSeconds($s->last_heartbeat_at) <= $thresholdSeconds;
                 $isTimedOut = in_array($s->status, [ExamSessionStatus::EXPIRED, ExamSessionStatus::QUESTION_TIMEOUT], true);
 
-                if ($s->status === ExamSessionStatus::TERMINATED) {
+                if ($isTerminated) {
                     $stats['terminated']++;
                 } elseif ($s->status === ExamSessionStatus::SUBMITTED
                     || (!empty($s->completed_at) && $s->status !== ExamSessionStatus::TERMINATED)) {
@@ -141,6 +142,8 @@ class OnlineExamLiveMonitoringController extends Controller
 
                 $stats['violations_total'] += (int) $s->violations_count;
 
+                $cameraStatus = ($isCompleted || $isTerminated) ? 'DISCONNECTED' : ($s->camera_status ?? 'unknown');
+
                 $activeSessions[] = [
                     'session_id' => $s->id,
                     'student_id' => $s->student_id,
@@ -155,9 +158,9 @@ class OnlineExamLiveMonitoringController extends Controller
                     'is_online' => (bool) $isOnline,
                     'is_timed_out' => (bool) $isTimedOut,
                     'is_completed' => (bool) $isCompleted,
-                    'last_heartbeat_ago' => $s->last_heartbeat_at ? $s->last_heartbeat_at->diffForHumans(null, true) : 'Never',
-                    'camera_status' => $s->camera_status ?? 'unknown',
-                    'fullscreen_status' => (bool) $s->fullscreen_status,
+                    'last_heartbeat_ago' => ($isCompleted || $isTerminated) ? 'Submitted' : ($s->last_heartbeat_at ? $s->last_heartbeat_at->diffForHumans(null, true) : 'Never'),
+                    'camera_status' => $cameraStatus,
+                    'fullscreen_status' => ($isCompleted || $isTerminated) ? false : (bool) $s->fullscreen_status,
                     'started_at' => $s->exam_started_at ? $s->exam_started_at->format('H:i:s') : null,
                     'finished_at' => $s->completed_at ? $s->completed_at->format('H:i:s') : null,
                     'termination_reason' => $s->termination_reason,

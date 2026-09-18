@@ -529,6 +529,25 @@
                     updateStatsCards(data.stats);
                     allSessions = data.sessions || [];
                     filterSessionsTable();
+
+                    // Auto-close inspector if monitored candidate has submitted or finished
+                    if (currentInspectorSessionId) {
+                        const inspectedSession = allSessions.find(s => s.session_id === currentInspectorSessionId);
+                        if (inspectedSession && (inspectedSession.is_completed || ['SUBMITTED', 'COMPLETED', 'TERMINATED', 'EXPIRED'].includes(inspectedSession.status))) {
+                            const overlay = document.getElementById('inspectorLoadingOverlay');
+                            const subtext = document.getElementById('inspectorLoadingSubtext');
+                            const badge = document.getElementById('inspectorLiveBadge');
+                            const badgeText = document.getElementById('inspectorLiveText');
+                            if (overlay) overlay.classList.remove('hidden');
+                            if (subtext) subtext.innerHTML = `<span class="text-indigo-400 font-semibold">Candidate has ${inspectedSession.status_label.toLowerCase()} the examination.</span><br><span class="text-slate-400 text-xs">Live session closed. Returning to dashboard...</span>`;
+                            if (badge) badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/10 border border-slate-500/30 text-slate-400';
+                            if (badgeText) badgeText.textContent = 'Session Closed';
+                            cleanupInspectorPeer();
+                            setTimeout(() => {
+                                closeCameraInspector();
+                            }, 2500);
+                        }
+                    }
                 } else {
                     console.warn('[LiveMonitor] Poll returned success:false', data);
                 }
@@ -791,9 +810,15 @@
                                              class="w-full h-full object-cover"
                                              loading="lazy" />
                                         <div class="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-xs text-emerald-400 border border-emerald-500/40 shadow-sm">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE FEED
-                                            </span>
+                                            ${!isFinished ? `
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-xs text-emerald-400 border border-emerald-500/40 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE FEED
+                                                </span>
+                                            ` : `
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-950/90 backdrop-blur-xs text-slate-300 border border-slate-700 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>EXAM SUBMITTED
+                                                </span>
+                                            `}
                                             ${recCount > 0 ? `
                                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-950/90 text-rose-300 border border-rose-600/40 shadow-sm" title="${recCount} hashed chunks recorded">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>REC (${recCount})
@@ -955,9 +980,7 @@
             document.getElementById('recordingsModal').classList.add('hidden');
         }
 
-        // ==========================================
-        // WebRTC Live Camera Inspector & Evidence
-        // ==========================================
+        const WEBRTC_ICE_SERVERS_URL = "{{ route('admin.online-exams.live.webrtc.ice-servers', $exam) }}";
         const RTC_CONFIG = {
             iceServers: @json(\App\Http\Controllers\OnlineExamWebRTCController::getIceServersConfig())
         };
@@ -989,7 +1012,7 @@
             const video = document.getElementById('inspectorVideo');
 
             overlay.classList.remove('hidden');
-            document.getElementById('inspectorLoadingSubtext').textContent = "Establishing WebRTC connection with student's device...";
+            document.getElementById('inspectorLoadingSubtext').textContent = "Discovering network routes (ICE gathering)... this may take up to 5 seconds.";
             badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400';
             badgeText.textContent = 'Connecting P2P...';
             document.getElementById('inspectorIceState').textContent = 'ICE: starting';
@@ -1039,11 +1062,11 @@
                 }
             };
 
-            pc.onicecandidate = (event) => {
-                if (event.candidate && currentInspectorSessionId === sessionId) {
-                    sendAdminWebRtcSignal(sessionId, 'candidate', event.candidate);
-                }
-            };
+            // NOTE: We use vanilla (non-trickle) ICE — no separate candidate signals.
+            // On shared-hosting HTTP polling (1.5s delay), trickle candidates arrive
+            // too late and the peer connection times out. Instead we wait for ICE
+            // gathering to complete so all candidates are bundled inside the offer SDP.
+            pc.onicecandidate = () => {}; // intentionally no-op; gathering handled below
 
             pc.oniceconnectionstatechange = () => {
                 const el = document.getElementById('inspectorIceState');
@@ -1059,9 +1082,26 @@
                 const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
                 await pc.setLocalDescription(offer);
 
+                // Wait for ICE gathering to complete (vanilla ICE)
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') return resolve();
+                    const checkDone = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            pc.removeEventListener('icegatheringstatechange', checkDone);
+                            resolve();
+                        }
+                    };
+                    pc.addEventListener('icegatheringstatechange', checkDone);
+                    // Safety timeout: proceed after 4s even if gathering stalls
+                    setTimeout(resolve, 4000);
+                });
+
+                if (currentInspectorSessionId !== sessionId) return; // inspector was closed during gathering
+
+                // Send the complete SDP (with all candidates embedded)
                 await sendAdminWebRtcSignal(sessionId, 'offer', pc.localDescription);
 
-                // Start polling signals from this student
+                // Start polling for answer from student
                 if (inspectorPollInterval) clearInterval(inspectorPollInterval);
                 pollStudentWebRtcSignals(sessionId);
                 inspectorPollInterval = setInterval(() => pollStudentWebRtcSignals(sessionId), 1500);
@@ -1118,24 +1158,16 @@
 
             if (sig.type === 'answer') {
                 try {
+                    // The student answer also uses vanilla ICE — all candidates are
+                    // embedded in the SDP, so no separate candidate signals are needed.
                     await pc.setRemoteDescription(new RTCSessionDescription(sig.payload));
-                    // Flush buffered candidates
-                    for (const cand of inspectorBufferedCandidates) {
-                        try {
-                            await pc.addIceCandidate(new RTCIceCandidate(cand));
-                        } catch (e) { console.warn(e); }
-                    }
-                    inspectorBufferedCandidates = [];
                 } catch (err) {
                     console.error('[WebRTC Admin] Failed setting remote answer:', err);
                 }
             } else if (sig.type === 'candidate') {
+                // Kept for backwards-compat but vanilla ICE makes these redundant.
                 if (pc.remoteDescription && pc.remoteDescription.type) {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(sig.payload));
-                    } catch (e) {
-                        console.warn('[WebRTC Admin] Add candidate error:', e);
-                    }
+                    try { await pc.addIceCandidate(new RTCIceCandidate(sig.payload)); } catch (e) {}
                 } else {
                     inspectorBufferedCandidates.push(sig.payload);
                 }

@@ -150,11 +150,7 @@ class OnlineExamWebRTCController extends Controller
 
         $targetAdminId = $validated['admin_id'] ?? null;
         if ($targetAdminId) {
-            $isValidAdmin = User::where('id', $targetAdminId)
-                ->whereHas('roles', function ($q) {
-                    $q->whereIn('name', ['super-admin', 'exam-admin']);
-                })
-                ->exists();
+            $isValidAdmin = User::where('id', $targetAdminId)->exists();
 
             if (! $isValidAdmin) {
                 return response()->json(['success' => false, 'message' => 'Invalid recipient administrator.'], 403);
@@ -179,28 +175,34 @@ class OnlineExamWebRTCController extends Controller
 
     /**
      * Get configured ICE servers (STUN + optional TURN).
+     * Delegates to IceServerService for unified provider management and credential caching.
      */
     public static function getIceServersConfig(): array
     {
-        $iceServers = [
-            ['urls' => 'stun:stun.l.google.com:19302'],
-            ['urls' => 'stun:stun1.l.google.com:19302'],
-        ];
+        return app(\App\Services\WebRTC\IceServerService::class)->getIceServers();
+    }
 
-        $turnUrl = config('services.webrtc.turn_url') ?: env('TURN_URL');
-        if ($turnUrl) {
-            $turnConfig = ['urls' => $turnUrl];
-            $turnUser = config('services.webrtc.turn_username') ?: env('TURN_USERNAME');
-            $turnPass = config('services.webrtc.turn_credential') ?: env('TURN_PASSWORD');
-            if ($turnUser) {
-                $turnConfig['username'] = $turnUser;
-            }
-            if ($turnPass) {
-                $turnConfig['credential'] = $turnPass;
-            }
-            $iceServers[] = $turnConfig;
-        }
+    /**
+     * Dedicated secure endpoint for students to retrieve ICE configuration.
+     * Protected by student online_exam_session middleware.
+     */
+    public function getStudentIceServers(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'iceServers' => self::getIceServersConfig(),
+        ]);
+    }
 
-        return $iceServers;
+    /**
+     * Dedicated secure endpoint for admin live monitoring to retrieve ICE configuration.
+     * Protected by auth and admin role middleware.
+     */
+    public function getAdminIceServers(Request $request, OnlineExam $online_exam)
+    {
+        return response()->json([
+            'success' => true,
+            'iceServers' => self::getIceServersConfig(),
+        ]);
     }
 }

@@ -553,6 +553,7 @@
         const RESULT_URL = "{{ route('online-exam.result') }}";
         const WEBRTC_SIGNALS_URL = "{{ route('online-exam.webrtc.signals') }}";
         const WEBRTC_SIGNAL_URL = "{{ route('online-exam.webrtc.signal') }}";
+        const WEBRTC_ICE_SERVERS_URL = "{{ route('online-exam.webrtc.ice-servers') }}";
         const PROCTORING_RECORD_CHUNK_URL = "{{ route('online-exam.proctoring.record-chunk') }}";
         const PROCTORING_SNAPSHOT_URL = "{{ route('online-exam.proctoring.snapshot') }}";
         const EXAM_SESSION_TOKEN = "{{ $session->session_token }}";
@@ -857,12 +858,10 @@
             const pc = new RTCPeerConnection(RTC_CONFIG);
             activePeer = pc;
 
-            // Send ICE candidates to admin
-            pc.onicecandidate = (event) => {
-                if (event.candidate && currentAdminId === adminId) {
-                    sendWebRtcSignal('candidate', adminId, event.candidate);
-                }
-            };
+            // NOTE: vanilla (non-trickle) ICE — candidates are embedded in the answer SDP.
+            // On shared-hosting HTTP polling the 1.5-2s round-trip makes trickle ICE
+            // unreliable; bundling all candidates in the answer SDP fixes this.
+            pc.onicecandidate = () => {}; // intentionally no-op; gathering handled below
 
             // Stream camera tracks to the peer connection
             mediaStream.getTracks().forEach(track => {
@@ -878,21 +877,30 @@
             };
 
             try {
+                // The incoming offer already contains all admin candidates (vanilla ICE),
+                // so setRemoteDescription immediately gives us usable remote info.
                 await pc.setRemoteDescription(new RTCSessionDescription(offerPayload));
-
-                // Process buffered ICE candidates
-                for (const cand of bufferedCandidates) {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(cand));
-                    } catch (e) {
-                        console.warn('[WebRTC Student] Buffered candidate error:', e);
-                    }
-                }
-                bufferedCandidates = [];
 
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
 
+                // Wait for ICE gathering to complete before sending the answer
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') return resolve();
+                    const checkDone = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            pc.removeEventListener('icegatheringstatechange', checkDone);
+                            resolve();
+                        }
+                    };
+                    pc.addEventListener('icegatheringstatechange', checkDone);
+                    // Safety timeout: proceed after 4s even if gathering stalls
+                    setTimeout(resolve, 4000);
+                });
+
+                if (currentAdminId !== adminId) return; // admin inspector closed during gathering
+
+                // Send the complete answer SDP (all candidates embedded)
                 sendWebRtcSignal('answer', adminId, pc.localDescription);
             } catch (err) {
                 console.error('[WebRTC Student] Failed processing admin offer:', err);
@@ -901,14 +909,11 @@
         }
 
         async function processAdminCandidate(adminId, candidatePayload) {
+            // Kept for backwards-compat; vanilla ICE makes this a no-op in normal flow.
             if (currentAdminId !== adminId || !activePeer) return;
             const pc = activePeer;
             if (pc.remoteDescription && pc.remoteDescription.type) {
-                try {
-                    await pc.addIceCandidate(new RTCIceCandidate(candidatePayload));
-                } catch (err) {
-                    console.warn('[WebRTC Student] Candidate add failed:', err);
-                }
+                try { await pc.addIceCandidate(new RTCIceCandidate(candidatePayload)); } catch (e) {}
             } else {
                 bufferedCandidates.push(candidatePayload);
             }
@@ -956,23 +961,33 @@
         function initProctoringVideoRecording() {
             if (!requiresCamera || !mediaStream || !window.MediaRecorder) return;
 
-            // Determine best supported MIME type
-            let mimeType = 'video/webm;codecs=vp8,opus';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                if (MediaRecorder.isTypeSupported('video/webm')) {
+            const hasAudio = mediaStream.getAudioTracks && mediaStream.getAudioTracks().length > 0;
+
+            // Determine best supported MIME type based on track availability
+            let mimeType = '';
+            if (hasAudio) {
+                if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+                    mimeType = 'video/webm;codecs=vp8,opus';
+                } else if (MediaRecorder.isTypeSupported('video/webm')) {
                     mimeType = 'video/webm';
                 } else if (MediaRecorder.isTypeSupported('video/mp4')) {
                     mimeType = 'video/mp4';
-                } else {
-                    mimeType = '';
+                }
+            } else {
+                if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+                    mimeType = 'video/webm;codecs=vp8';
+                } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                    mimeType = 'video/webm';
+                } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                    mimeType = 'video/mp4';
                 }
             }
 
-            // Start periodic lightweight snapshot sender (every 6 seconds) for the live admin grid
+            // Start periodic lightweight snapshot sender for the live admin grid
             startSnapshotBroadcaster();
 
-            // Start segmented video recorder (every 20 seconds)
-            startSegmentedVideoRecorder(mimeType);
+            // Start segmented video recorder (every 10 seconds)
+            startSegmentedVideoRecorder(mimeType, hasAudio);
         }
 
         function startSnapshotBroadcaster() {
@@ -981,7 +996,10 @@
             async function captureAndSendSnapshot() {
                 if (!mediaStream || isTerminated) return;
                 const video = document.getElementById('proctorWebcam');
-                if (!video || !video.videoWidth) return;
+                if (!video) return;
+
+                const width = video.videoWidth || 320;
+                const height = video.videoHeight || 240;
 
                 try {
                     const canvas = document.createElement('canvas');
@@ -991,6 +1009,7 @@
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                     const base64Jpeg = canvas.toDataURL('image/jpeg', 0.65);
+                    if (!base64Jpeg || base64Jpeg.length < 100) return;
 
                     await fetch(PROCTORING_SNAPSHOT_URL, {
                         method: 'POST',
@@ -1000,29 +1019,44 @@
                             'X-Exam-Session-Token': EXAM_SESSION_TOKEN,
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({ snapshot: base64Jpeg })
+                        body: JSON.stringify({ snapshot: base64Jpeg }),
+                        keepalive: true
                     });
                 } catch (err) {
                     // Non-blocking snapshot upload
                 }
             }
 
-            // Initial capture after 2 seconds, then every 6 seconds
-            setTimeout(captureAndSendSnapshot, 2000);
-            proctorSnapshotInterval = setInterval(captureAndSendSnapshot, 6000);
+            // Initial capture after 1.5 seconds, then every 5 seconds
+            setTimeout(captureAndSendSnapshot, 1500);
+            proctorSnapshotInterval = setInterval(captureAndSendSnapshot, 5000);
         }
 
-        function startSegmentedVideoRecorder(mimeType) {
+        function startSegmentedVideoRecorder(mimeType, hasAudio) {
             try {
-                const options = {
-                    videoBitsPerSecond: 250000, // 250 kbps: lightweight, high clarity for faces, low storage
-                    audioBitsPerSecond: 64000   // 64 kbps: clear voice recording
-                };
+                const options = {};
                 if (mimeType) {
                     options.mimeType = mimeType;
                 }
+                options.videoBitsPerSecond = 250000; // 250 kbps: lightweight, clear for faces
+                if (hasAudio) {
+                    options.audioBitsPerSecond = 64000; // 64 kbps: voice recording
+                }
 
-                proctorMediaRecorder = new MediaRecorder(mediaStream, options);
+                try {
+                    proctorMediaRecorder = new MediaRecorder(mediaStream, options);
+                } catch (e1) {
+                    console.warn('[Proctoring Recorder] Options error, falling back:', e1);
+                    if (mimeType) {
+                        try {
+                            proctorMediaRecorder = new MediaRecorder(mediaStream, { mimeType });
+                        } catch (e2) {
+                            proctorMediaRecorder = new MediaRecorder(mediaStream);
+                        }
+                    } else {
+                        proctorMediaRecorder = new MediaRecorder(mediaStream);
+                    }
+                }
 
                 proctorMediaRecorder.ondataavailable = async (event) => {
                     if (event.data && event.data.size > 0) {
@@ -1030,8 +1064,8 @@
                     }
                 };
 
-                // Time slice: triggers ondataavailable every 20 seconds
-                proctorMediaRecorder.start(20000);
+                // Time slice: triggers ondataavailable every 10 seconds
+                proctorMediaRecorder.start(10000);
             } catch (err) {
                 console.warn('[Proctoring Recorder] MediaRecorder initialization failed:', err);
             }
@@ -1044,7 +1078,7 @@
                 const formData = new FormData();
                 formData.append('video_chunk', blob, `chunk_${index}.webm`);
                 formData.append('chunk_index', index);
-                formData.append('duration', 20.0);
+                formData.append('duration', 10.0);
                 formData.append('is_final', isFinal ? 1 : 0);
 
                 await fetch(PROCTORING_RECORD_CHUNK_URL, {
@@ -1054,7 +1088,8 @@
                         'X-Exam-Session-Token': EXAM_SESSION_TOKEN,
                         'Accept': 'application/json'
                     },
-                    body: formData
+                    body: formData,
+                    keepalive: true
                 });
             } catch (err) {
                 console.warn('[Proctoring Recorder] Chunk upload failed:', err);
@@ -1072,6 +1107,64 @@
                     proctorMediaRecorder.requestData();
                     proctorMediaRecorder.stop();
                 } catch (e) {}
+            }
+        }
+
+        async function finalizeAndUploadLastChunk() {
+            if (proctorSnapshotInterval) {
+                clearInterval(proctorSnapshotInterval);
+                proctorSnapshotInterval = null;
+            }
+
+            if (!proctorMediaRecorder || proctorMediaRecorder.state === 'inactive') {
+                return;
+            }
+
+            return new Promise((resolve) => {
+                let resolved = false;
+                const safeResolve = () => {
+                    if (!resolved) {
+                        resolved = true;
+                        resolve();
+                    }
+                };
+
+                // 2-second safety timeout so form submission is never blocked
+                const timeoutId = setTimeout(safeResolve, 2000);
+
+                proctorMediaRecorder.ondataavailable = async (event) => {
+                    if (event.data && event.data.size > 0) {
+                        try {
+                            await uploadRecordedChunk(event.data, proctorChunkIndex++, true);
+                        } catch (e) {
+                            console.warn('Final chunk upload error:', e);
+                        }
+                    }
+                    clearTimeout(timeoutId);
+                    safeResolve();
+                };
+
+                try {
+                    proctorMediaRecorder.stop();
+                } catch (e) {
+                    clearTimeout(timeoutId);
+                    safeResolve();
+                }
+            });
+        }
+
+        function stopCameraTracks() {
+            if (mediaStream) {
+                try {
+                    mediaStream.getTracks().forEach(track => {
+                        try { track.stop(); } catch (e) {}
+                    });
+                } catch (e) {}
+                mediaStream = null;
+            }
+            const video = document.getElementById('proctorWebcam');
+            if (video) {
+                video.srcObject = null;
             }
         }
 
@@ -1095,8 +1188,11 @@
                 if (examRemainingMs <= 0 && !isTransitioning) {
                     isTransitioning = true;
                     clearInterval(timerInterval);
-                    sendHeartbeat().finally(() => {
-                        window.location.href = RESULT_URL;
+                    finalizeAndUploadLastChunk().finally(() => {
+                        stopCameraTracks();
+                        sendHeartbeat().finally(() => {
+                            window.location.href = RESULT_URL;
+                        });
                     });
                 }
             }, 1000);
@@ -1735,9 +1831,42 @@
             }
 
             const finishForm = document.querySelector('#finishModal form');
+            let isFinishSubmitting = false;
             if (finishForm) {
-                finishForm.addEventListener('submit', () => {
-                    stopProctoringRecording(true);
+                finishForm.addEventListener('submit', async (e) => {
+                    if (isFinishSubmitting) return;
+                    e.preventDefault();
+                    isFinishSubmitting = true;
+
+                    const submitBtn = finishForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = `
+                            <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Submitting...
+                        `;
+                    }
+
+                    // 1. Finalize and flush final video chunk
+                    try {
+                        await finalizeAndUploadLastChunk();
+                    } catch (err) {
+                        console.warn('Final chunk flush error:', err);
+                    }
+
+                    // 2. Send WebRTC close signal to proctor
+                    try {
+                        await sendWebRtcSignal('close', currentAdminId, { reason: 'exam_submitted' });
+                    } catch (err) {}
+
+                    // 3. Stop camera and microphone hardware tracks
+                    stopCameraTracks();
+
+                    // 4. Submit the form
+                    finishForm.submit();
                 });
             }
 
@@ -1902,6 +2031,7 @@
                 if (webrtcSignalingInterval) clearInterval(webrtcSignalingInterval);
                 closeAdminPeer();
                 stopProctoringRecording(true);
+                stopCameraTracks();
             });
         });
     </script>

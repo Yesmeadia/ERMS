@@ -48,7 +48,7 @@ Route::get('/', function () {
         ->map(fn($group) => $group->take(3)->values());
 
     $releaseUtc = AppSetting::resultReleaseDatetime();
-    $released   = AppSetting::resultsReleased();
+    $released = AppSetting::resultsReleased();
     $releaseIso = $releaseUtc->toIso8601String();
     $releaseIst = $releaseUtc->copy()->setTimezone('Asia/Kolkata')->format('d M Y, h:i A');
 
@@ -126,9 +126,10 @@ Route::prefix('online-exam')->name('online-exam.')->group(function () {
         Route::match(['get', 'post'], '/finish', [StudentOnlineExamController::class, 'finish'])->name('finish');
         Route::get('/result', [StudentOnlineExamController::class, 'result'])->name('result');
 
-        // WebRTC Signaling
+        // WebRTC Signaling & ICE Configuration
         Route::get('/webrtc/signals', [OnlineExamWebRTCController::class, 'getStudentSignals'])->name('webrtc.signals')->middleware('throttle:120,1');
         Route::post('/webrtc/signal', [OnlineExamWebRTCController::class, 'sendStudentSignal'])->name('webrtc.signal')->middleware('throttle:120,1');
+        Route::get('/webrtc/ice-servers', [OnlineExamWebRTCController::class, 'getStudentIceServers'])->name('webrtc.ice-servers')->middleware('throttle:60,1');
 
         // Proctoring Video Recording & Live Snapshots
         Route::post('/proctoring/record-chunk', [OnlineExamProctoringController::class, 'recordChunk'])->name('proctoring.record-chunk')->middleware('throttle:30,1');
@@ -401,6 +402,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{online_exam}/live/events/{session}', [OnlineExamLiveMonitoringController::class, 'sessionEvents'])->name('live.events');
             Route::post('/{online_exam}/live/webrtc/{session}/signal', [OnlineExamWebRTCController::class, 'sendAdminSignal'])->name('live.webrtc.signal');
             Route::get('/{online_exam}/live/webrtc/{session}/signals', [OnlineExamWebRTCController::class, 'getAdminSignals'])->name('live.webrtc.signals');
+            Route::get('/{online_exam}/live/webrtc/ice-servers', [OnlineExamWebRTCController::class, 'getAdminIceServers'])->name('live.webrtc.ice-servers');
             Route::get('/{online_exam}/live/snapshot/{session}', [OnlineExamLiveMonitoringController::class, 'streamSnapshot'])->name('live.snapshot');
             Route::get('/{online_exam}/live/recordings/{session}', [OnlineExamLiveMonitoringController::class, 'recordingsList'])->name('live.recordings');
             Route::get('/{online_exam}/live/recordings/{session}/{recording}', [OnlineExamLiveMonitoringController::class, 'streamRecording'])->name('live.recording.stream');

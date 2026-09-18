@@ -349,7 +349,25 @@ class ExamSessionService
             $session->update([
                 'status' => $status,
                 'completed_at' => now(),
+                'camera_status' => 'DISCONNECTED',
+                'fullscreen_status' => false,
             ]);
+
+            // Notify active proctoring live inspector sessions to cleanly close
+            try {
+                \App\Models\OnlineExamWebrtcSignal::create([
+                    'online_exam_session_id' => $session->id,
+                    'admin_id' => null,
+                    'sender_type' => 'student',
+                    'recipient_type' => 'admin',
+                    'type' => 'close',
+                    'payload' => [
+                        'reason' => 'Examination submitted and closed',
+                        'status' => $status->value,
+                    ],
+                    'is_consumed' => false,
+                ]);
+            } catch (\Throwable) {}
 
             // Finalize result and rankings
             $result = $this->scoringService->finalizeResult($session);
@@ -377,7 +395,24 @@ class ExamSessionService
                 'status' => ExamSessionStatus::TERMINATED,
                 'termination_reason' => "Terminated by Administrator ({$admin->name}): {$reason}",
                 'completed_at' => now(),
+                'camera_status' => 'DISCONNECTED',
+                'fullscreen_status' => false,
             ]);
+
+            try {
+                \App\Models\OnlineExamWebrtcSignal::create([
+                    'online_exam_session_id' => $session->id,
+                    'admin_id' => null,
+                    'sender_type' => 'student',
+                    'recipient_type' => 'admin',
+                    'type' => 'close',
+                    'payload' => [
+                        'reason' => 'Examination terminated by admin',
+                        'status' => ExamSessionStatus::TERMINATED->value,
+                    ],
+                    'is_consumed' => false,
+                ]);
+            } catch (\Throwable) {}
 
             $this->scoringService->finalizeResult($session);
 
