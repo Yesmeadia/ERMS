@@ -144,6 +144,13 @@ class OnlineExamLiveMonitoringController extends Controller
 
                 $cameraStatus = ($isCompleted || $isTerminated) ? 'DISCONNECTED' : ($s->camera_status ?? 'unknown');
 
+                $hasSnapshot = false;
+                $snapshotUrl = null;
+                try {
+                    $hasSnapshot = $this->recordingService->getLatestSnapshotPath($s) !== null;
+                    $snapshotUrl = route('admin.online-exams.live.snapshot', ['online_exam' => $exam->id, 'session' => $s->id]);
+                } catch (\Throwable) {}
+
                 $activeSessions[] = [
                     'session_id' => $s->id,
                     'student_id' => $s->student_id,
@@ -164,13 +171,37 @@ class OnlineExamLiveMonitoringController extends Controller
                     'started_at' => $s->exam_started_at ? $s->exam_started_at->format('H:i:s') : null,
                     'finished_at' => $s->completed_at ? $s->completed_at->format('H:i:s') : null,
                     'termination_reason' => $s->termination_reason,
-                    'has_snapshot' => $this->recordingService->getLatestSnapshotPath($s) !== null,
-                    'snapshot_url' => route('admin.online-exams.live.snapshot', ['online_exam' => $exam->id, 'session' => $s->id]),
+                    'has_snapshot' => $hasSnapshot,
+                    'snapshot_url' => $snapshotUrl,
                     'recordings_count' => (int) ($s->recordings_count ?? 0),
                 ];
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error("LiveMonitor: Failed to process session {$s->id}: " . $e->getMessage());
-                // Skip this session rather than crashing the entire JSON response
+                // Fallback: still add the session with basic details so stats and cards never zero out
+                $activeSessions[] = [
+                    'session_id' => $s->id,
+                    'student_id' => $s->student_id,
+                    'student_name' => $s->student?->name ?? 'Candidate #' . $s->student_id,
+                    'registration_number' => $s->student?->registration_number ?? '-',
+                    'school_name' => $s->student?->school?->name ?? 'N/A',
+                    'status' => $s->status?->value ?? 'SUBMITTED',
+                    'status_label' => $s->status?->label() ?? 'Submitted',
+                    'status_color' => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+                    'current_question_index' => 0,
+                    'violations_count' => (int) ($s->violations_count ?? 0),
+                    'is_online' => false,
+                    'is_timed_out' => false,
+                    'is_completed' => true,
+                    'last_heartbeat_ago' => 'Submitted',
+                    'camera_status' => 'DISCONNECTED',
+                    'fullscreen_status' => false,
+                    'started_at' => null,
+                    'finished_at' => null,
+                    'termination_reason' => null,
+                    'has_snapshot' => false,
+                    'snapshot_url' => null,
+                    'recordings_count' => 0,
+                ];
             }
         }
 

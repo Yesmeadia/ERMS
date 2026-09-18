@@ -24,6 +24,7 @@ enum ExamEventType: string
     case EXAM_SUBMITTED = 'EXAM_SUBMITTED';
     case EXAM_AUTO_SUBMITTED = 'EXAM_AUTO_SUBMITTED';
     case EXAM_TERMINATED = 'EXAM_TERMINATED';
+    case KEYBOARD_SHORTCUT = 'KEYBOARD_SHORTCUT';
 
     public function isViolation(): bool
     {
@@ -33,6 +34,7 @@ enum ExamEventType: string
             self::TAB_SWITCH,
             self::CAMERA_STOPPED,
             self::CAMERA_INTERRUPTED,
+            self::KEYBOARD_SHORTCUT,
         ], true);
     }
 }

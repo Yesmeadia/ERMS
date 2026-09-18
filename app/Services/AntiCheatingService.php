@@ -37,11 +37,12 @@ class AntiCheatingService
                 ->where('id', '!=', $event->id)
                 ->where('event_time', '>=', now()->subSeconds(2))
                 ->whereIn('event_type', [
-                    ExamEventType::FULLSCREEN_EXIT,
-                    ExamEventType::WINDOW_BLUR,
-                    ExamEventType::TAB_SWITCH,
-                    ExamEventType::CAMERA_STOPPED,
-                    ExamEventType::CAMERA_INTERRUPTED,
+                    ExamEventType::FULLSCREEN_EXIT->value,
+                    ExamEventType::WINDOW_BLUR->value,
+                    ExamEventType::TAB_SWITCH->value,
+                    ExamEventType::CAMERA_STOPPED->value,
+                    ExamEventType::CAMERA_INTERRUPTED->value,
+                    ExamEventType::KEYBOARD_SHORTCUT->value,
                 ])
                 ->exists();
 
@@ -78,11 +79,12 @@ class AntiCheatingService
     public function countViolationsFromLog(OnlineExamSession $session): int
     {
         $violationTypes = [
-            ExamEventType::FULLSCREEN_EXIT,
-            ExamEventType::WINDOW_BLUR,
-            ExamEventType::TAB_SWITCH,
-            ExamEventType::CAMERA_STOPPED,
-            ExamEventType::CAMERA_INTERRUPTED,
+            ExamEventType::FULLSCREEN_EXIT->value,
+            ExamEventType::WINDOW_BLUR->value,
+            ExamEventType::TAB_SWITCH->value,
+            ExamEventType::CAMERA_STOPPED->value,
+            ExamEventType::CAMERA_INTERRUPTED->value,
+            ExamEventType::KEYBOARD_SHORTCUT->value,
         ];
 
         $events = OnlineExamSessionEvent::where('online_exam_session_id', $session->id)

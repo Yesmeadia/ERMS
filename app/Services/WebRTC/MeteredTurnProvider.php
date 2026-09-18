@@ -44,8 +44,8 @@ class MeteredTurnProvider implements TurnProviderInterface
      */
     public function isAvailable(): bool
     {
-        $enabled = (bool) config('webrtc.metered.enabled', false);
-        $domain = config('webrtc.metered.domain');
+        $enabled = (bool) config('webrtc.metered.enabled', config('webrtc.turn.enabled', false));
+        $domain = $this->getCleanDomain();
         $hasKey = ! empty(config('webrtc.metered.secret_key')) || ! empty(config('webrtc.metered.project_api_key'));
 
         return $enabled && ! empty($domain) && $hasKey;
@@ -75,16 +75,18 @@ class MeteredTurnProvider implements TurnProviderInterface
         $domain = $this->getCleanDomain();
         $secretKey = config('webrtc.metered.secret_key');
         $apiKey = config('webrtc.metered.project_api_key');
-        $effectiveKey = $apiKey ?: $secretKey;
         $expirySeconds = (int) config('webrtc.metered.credential_expiry', 172800);
 
-        // Method 1: GET /api/v1/turn/credentials?apiKey={effectiveKey}
-        // Note: Metered's GET credentials endpoint specifically requires the 'apiKey' query parameter
+        // Method 1: GET /api/v1/turn/credentials?apiKey={projectApiKey}
+        // The GET endpoint ONLY accepts 'apiKey' which is the per-credential API Key
+        // from the Metered dashboard (DIFFERENT from the Secret Key).
+        // Only attempt GET if a dedicated METERED_PROJECT_API_KEY is configured.
+        if (! empty($apiKey)) {
         try {
             $getUrl = "https://{$domain}/api/v1/turn/credentials";
             $response = Http::timeout(6)
                 ->acceptJson()
-                ->get($getUrl, ['apiKey' => $effectiveKey]);
+                ->get($getUrl, ['apiKey' => $apiKey]);
 
             if ($response->successful()) {
                 $rawServers = $response->json();
@@ -103,7 +105,7 @@ class MeteredTurnProvider implements TurnProviderInterface
                     }
                 }
             } else {
-                Log::warning('[Metered TURN] GET /credentials returned non-200.', [
+                Log::warning('[Metered TURN] GET /credentials returned non-200. Check METERED_PROJECT_API_KEY is the API Key (not the Secret Key).', [
                     'status' => $response->status(),
                     'body' => $response->json() ?? $response->body(),
                 ]);
@@ -113,9 +115,11 @@ class MeteredTurnProvider implements TurnProviderInterface
                 'error' => $e->getMessage(),
             ]);
         }
+        } // end if (!empty($apiKey))
 
         // Method 2: POST /api/v1/turn/credential?secretKey={secretKey}
-        // If GET failed and a secret key is available, generate/rotate credentials via Metered REST API
+        // The Secret Key is used ONLY here to create/rotate credentials server-side.
+        // This is the only correct use of METERED_SECRET_KEY.
         if (! empty($secretKey)) {
             try {
                 $postUrl = "https://{$domain}/api/v1/turn/credential?secretKey=" . urlencode($secretKey);
@@ -200,7 +204,7 @@ class MeteredTurnProvider implements TurnProviderInterface
      *
      * @return string
      */
-    protected function getCleanDomain(): string
+    public function getCleanDomain(): string
     {
         $domain = trim((string) config('webrtc.metered.domain'));
 

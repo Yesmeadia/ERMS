@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\OnlineExamQuestionController;
 use App\Http\Controllers\Admin\OnlineExamStudentController;
 use App\Http\Controllers\Admin\OnlineExamLiveMonitoringController;
 use App\Http\Controllers\Admin\OnlineExamReportController;
+use App\Http\Controllers\Admin\OnlineExamDebuggerController;
 use App\Http\Controllers\OnlineExamWebRTCController;
 use App\Http\Controllers\OnlineExamProctoringController;
 
@@ -127,9 +128,10 @@ Route::prefix('online-exam')->name('online-exam.')->group(function () {
         Route::get('/result', [StudentOnlineExamController::class, 'result'])->name('result');
 
         // WebRTC Signaling & ICE Configuration
-        Route::get('/webrtc/signals', [OnlineExamWebRTCController::class, 'getStudentSignals'])->name('webrtc.signals')->middleware('throttle:120,1');
-        Route::post('/webrtc/signal', [OnlineExamWebRTCController::class, 'sendStudentSignal'])->name('webrtc.signal')->middleware('throttle:120,1');
-        Route::get('/webrtc/ice-servers', [OnlineExamWebRTCController::class, 'getStudentIceServers'])->name('webrtc.ice-servers')->middleware('throttle:60,1');
+        // Throttle at 300/min (5/sec) — polling runs every 1-3s and ICE negotiation bursts
+        Route::get('/webrtc/signals', [OnlineExamWebRTCController::class, 'getStudentSignals'])->name('webrtc.signals')->middleware('throttle:300,1');
+        Route::post('/webrtc/signal', [OnlineExamWebRTCController::class, 'sendStudentSignal'])->name('webrtc.signal')->middleware('throttle:300,1');
+        Route::get('/webrtc/ice-servers', [OnlineExamWebRTCController::class, 'getStudentIceServers'])->name('webrtc.ice-servers')->middleware('throttle:30,1');
 
         // Proctoring Video Recording & Live Snapshots
         Route::post('/proctoring/record-chunk', [OnlineExamProctoringController::class, 'recordChunk'])->name('proctoring.record-chunk')->middleware('throttle:30,1');
@@ -400,12 +402,20 @@ Route::middleware('auth')->group(function () {
             Route::get('/{online_exam}/live/poll', [OnlineExamLiveMonitoringController::class, 'poll'])->name('live.poll');
             Route::post('/{online_exam}/live/terminate/{session}', [OnlineExamLiveMonitoringController::class, 'terminateSession'])->name('live.terminate');
             Route::get('/{online_exam}/live/events/{session}', [OnlineExamLiveMonitoringController::class, 'sessionEvents'])->name('live.events');
-            Route::post('/{online_exam}/live/webrtc/{session}/signal', [OnlineExamWebRTCController::class, 'sendAdminSignal'])->name('live.webrtc.signal');
-            Route::get('/{online_exam}/live/webrtc/{session}/signals', [OnlineExamWebRTCController::class, 'getAdminSignals'])->name('live.webrtc.signals');
-            Route::get('/{online_exam}/live/webrtc/ice-servers', [OnlineExamWebRTCController::class, 'getAdminIceServers'])->name('live.webrtc.ice-servers');
+            Route::post('/{online_exam}/live/webrtc/{session}/signal', [OnlineExamWebRTCController::class, 'sendAdminSignal'])->name('live.webrtc.signal')->middleware('throttle:300,1');
+            Route::get('/{online_exam}/live/webrtc/{session}/signals', [OnlineExamWebRTCController::class, 'getAdminSignals'])->name('live.webrtc.signals')->middleware('throttle:300,1');
+            Route::get('/{online_exam}/live/webrtc/ice-servers', [OnlineExamWebRTCController::class, 'getAdminIceServers'])->name('live.webrtc.ice-servers')->middleware('throttle:30,1');
             Route::get('/{online_exam}/live/snapshot/{session}', [OnlineExamLiveMonitoringController::class, 'streamSnapshot'])->name('live.snapshot');
             Route::get('/{online_exam}/live/recordings/{session}', [OnlineExamLiveMonitoringController::class, 'recordingsList'])->name('live.recordings');
             Route::get('/{online_exam}/live/recordings/{session}/{recording}', [OnlineExamLiveMonitoringController::class, 'streamRecording'])->name('live.recording.stream');
+
+            // WebRTC & Live Proctoring Diagnostic Debugger
+            Route::get('/{online_exam}/debugger', [OnlineExamDebuggerController::class, 'show'])->name('debugger');
+            Route::get('/{online_exam}/debugger/data', [OnlineExamDebuggerController::class, 'diagnosticsData'])->name('debugger.data');
+            Route::post('/{online_exam}/debugger/test-metered', [OnlineExamDebuggerController::class, 'testMeteredApi'])->name('debugger.test-metered');
+            Route::post('/{online_exam}/debugger/test-signal', [OnlineExamDebuggerController::class, 'testSignal'])->name('debugger.test-signal');
+            Route::post('/{online_exam}/debugger/test-event', [OnlineExamDebuggerController::class, 'testEvent'])->name('debugger.test-event');
+            Route::post('/{online_exam}/debugger/sync-violations', [OnlineExamDebuggerController::class, 'syncViolations'])->name('debugger.sync-violations');
 
             // Results & Reports
             Route::get('/{online_exam}/results', [OnlineExamReportController::class, 'index'])->name('results');

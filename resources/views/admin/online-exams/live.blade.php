@@ -30,11 +30,19 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <div
+                <div id="pollStatusIndicator"
                     class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
                     <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
                     <span>Auto-refreshing (5s)</span>
                 </div>
+                <a href="{{ route('admin.online-exams.debugger', $exam) }}"
+                    class="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors flex items-center gap-1.5 shadow-sm"
+                    title="Open WebRTC & Live Proctoring Diagnostic Suite">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span>Debugger</span>
+                </a>
                 <button type="button" onclick="fetchLiveStats()"
                     class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
@@ -513,6 +521,7 @@
         let activeTermSessionId = null;
 
         async function fetchLiveStats() {
+            const pollStatusEl = document.getElementById('pollStatusIndicator');
             try {
                 const res = await fetch(POLL_URL, {
                     headers: {
@@ -522,12 +531,18 @@
                 });
                 if (!res.ok) {
                     console.warn('[LiveMonitor] Poll returned HTTP', res.status, '- session may have expired.');
+                    if (pollStatusEl) {
+                        pollStatusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span><span class="text-rose-400 font-bold">Poll Error (HTTP ${res.status})</span>`;
+                    }
                     return;
                 }
                 const data = await res.json();
                 if (data.success) {
-                    updateStatsCards(data.stats);
+                    if (pollStatusEl) {
+                        pollStatusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span class="text-emerald-400">Live (5s)</span>`;
+                    }
                     allSessions = data.sessions || [];
+                    updateStatsCards(data.stats);
                     filterSessionsTable();
 
                     // Auto-close inspector if monitored candidate has submitted or finished
