@@ -82,7 +82,7 @@ class SuperAdminManagementTest extends TestCase
     }
 
     /**
-     * Test Super Admin can create exactly 1 other Super Admin.
+     * Test Super Admin can create up to 7 Super Admins.
      */
     public function test_super_admin_can_create_one_additional_super_admin(): void
     {
@@ -116,22 +116,34 @@ class SuperAdminManagementTest extends TestCase
             return $mail->hasTo('second@erms.com');
         });
 
-        // 4. Try to navigate to create page when limit reached (2 admins exist)
+        // 4. Create remaining super admins until 7 are present
+        for ($i = 3; $i <= 7; $i++) {
+            $user = User::create([
+                'name' => "Admin {$i}",
+                'email' => "admin{$i}@erms.com",
+                'password' => bcrypt('Password@123'),
+            ]);
+            $user->assignRole($this->superAdminRole);
+        }
+
+        $this->assertEquals(7, User::role('super-admin')->count());
+
+        // 5. Try to navigate to create page when limit reached (7 admins exist)
         $responseBlocked = $this->actingAs($this->superAdmin)->get(route('admin.admins.create'));
         $responseBlocked->assertRedirect(route('admin.admins.index'));
-        $responseBlocked->assertSessionHas('error', 'The maximum limit of 2 Super Admin accounts has been reached.');
+        $responseBlocked->assertSessionHas('error', 'The maximum limit of 7 Super Admin accounts has been reached.');
 
-        // 5. Try to store third super admin
+        // 6. Try to store eighth super admin
         $responseStoreBlocked = $this->actingAs($this->superAdmin)->post(route('admin.admins.store'), [
-            'name' => 'Third Super Admin',
-            'email' => 'third@erms.com',
+            'name' => 'Eighth Super Admin',
+            'email' => 'eighth@erms.com',
             'password' => 'Password@123',
             'password_confirmation' => 'Password@123',
         ]);
 
         $responseStoreBlocked->assertRedirect(route('admin.admins.index'));
-        $responseStoreBlocked->assertSessionHas('error', 'The maximum limit of 2 Super Admin accounts has been reached.');
-        $this->assertEquals(2, User::role('super-admin')->count());
+        $responseStoreBlocked->assertSessionHas('error', 'The maximum limit of 7 Super Admin accounts has been reached.');
+        $this->assertEquals(7, User::role('super-admin')->count());
     }
 
     /**

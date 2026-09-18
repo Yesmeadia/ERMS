@@ -6,6 +6,7 @@ use App\Enums\ExamSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\OnlineExam;
 use App\Models\OnlineExamRecording;
+use App\Models\OnlineExamResult;
 use App\Models\OnlineExamSession;
 use App\Services\AntiCheatingService;
 use App\Services\ExamSessionService;
@@ -66,11 +67,21 @@ class OnlineExamLiveMonitoringController extends Controller
      */
     protected function buildMonitoringData(OnlineExam $exam): array
     {
-        $sessions = OnlineExamSession::with(['student.school', 'currentQuestion'])
-            ->withCount('recordings')
-            ->where('online_exam_id', $exam->id)
-            ->latest('last_activity_at')
-            ->get();
+        // Try to join recordings count; gracefully degrade if table doesn't exist yet.
+        try {
+            $sessions = OnlineExamSession::with(['student.school', 'currentQuestion'])
+                ->withCount('recordings')
+                ->where('online_exam_id', $exam->id)
+                ->latest('last_activity_at')
+                ->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('LiveMonitor: Could not load recordings count (table may not exist): ' . $e->getMessage());
+            $sessions = OnlineExamSession::with(['student.school', 'currentQuestion'])
+                ->where('online_exam_id', $exam->id)
+                ->latest('last_activity_at')
+                ->get()
+                ->each(fn ($s) => $s->recordings_count = 0);
+        }
 
         $now = now();
         $thresholdSeconds = 30; // Offline threshold
@@ -111,11 +122,14 @@ class OnlineExamLiveMonitoringController extends Controller
 
                 if ($s->status === ExamSessionStatus::TERMINATED) {
                     $stats['terminated']++;
-                } elseif ($isCompleted) {
+                } elseif ($s->status === ExamSessionStatus::SUBMITTED
+                    || (!empty($s->completed_at) && $s->status !== ExamSessionStatus::TERMINATED)) {
+                    // SUBMITTED = finished voluntarily or auto-scored
                     $stats['completed']++;
-                    if ($s->status === ExamSessionStatus::EXPIRED) {
-                        $stats['timed_out']++;
-                    }
+                } elseif ($s->status === ExamSessionStatus::EXPIRED) {
+                    // EXPIRED = timed out; counts as both completed and timed_out
+                    $stats['completed']++;
+                    $stats['timed_out']++;
                 } elseif ($s->status === ExamSessionStatus::QUESTION_TIMEOUT) {
                     $stats['timed_out']++;
                     $stats['in_progress']++;
@@ -157,49 +171,97 @@ class OnlineExamLiveMonitoringController extends Controller
             }
         }
 
-        // Add enrolled students who haven't logged in yet
+        // Add enrolled students who haven't logged in yet (or have no session record).
+        // Also look up whether they have a completed OnlineExamResult — if so, show them as Completed
+        // rather than Not Started (handles data migrations / session resets).
         $enrolledStudentsWithoutSession = $exam->examStudents()
             ->with(['student.school'])
             ->whereNotIn('student_id', $sessions->pluck('student_id'))
             ->get();
 
-        $stats['not_started'] += $enrolledStudentsWithoutSession->count();
-        // 'attended' = sessions that have actually progressed beyond NOT_STARTED
+        // Pre-load results for these students so we can show real completion data
+        $studentIdsWithoutSession = $enrolledStudentsWithoutSession->pluck('student_id');
+        $completedResults = OnlineExamResult::where('online_exam_id', $exam->id)
+            ->whereIn('student_id', $studentIdsWithoutSession)
+            ->get()
+            ->keyBy('student_id');
+
+        $resultBasedCompletedCount = $completedResults->count();
+
+        // Increase stats to reflect result-backed completions
+        $stats['completed'] += $resultBasedCompletedCount;
         $stats['attended'] = $sessions->filter(
             fn ($s) => $s->status !== ExamSessionStatus::NOT_STARTED
-        )->count();
+        )->count() + $resultBasedCompletedCount;
+
+        // Only count truly not-started (no result, no session)
+        $trueNotStarted = $enrolledStudentsWithoutSession->filter(
+            fn ($es) => !$completedResults->has($es->student_id)
+        );
+        $stats['not_started'] += $trueNotStarted->count();
 
         foreach ($enrolledStudentsWithoutSession as $es) {
-            $activeSessions[] = [
-                'session_id' => null,
-                'student_id' => $es->student_id,
-                'student_name' => $es->student?->name ?? 'Candidate #' . $es->student_id,
-                'registration_number' => $es->student?->registration_number ?? '-',
-                'school_name' => $es->student?->school?->name ?? 'N/A',
-                'status' => 'NOT_STARTED',
-                'status_label' => 'Not Started',
-                'status_color' => 'bg-slate-500/10 text-slate-400 border-slate-500/30',
-                'current_question_index' => 0,
-                'violations_count' => 0,
-                'is_online' => false,
-                'is_timed_out' => false,
-                'is_completed' => false,
-                'last_heartbeat_ago' => 'Not Logged In',
-                'camera_status' => 'NOT_REQUIRED',
-                'fullscreen_status' => false,
-                'started_at' => null,
-                'finished_at' => null,
-                'termination_reason' => null,
-                'has_snapshot' => false,
-                'snapshot_url' => null,
-                'recordings_count' => 0,
-            ];
+            $result = $completedResults->get($es->student_id);
+
+            if ($result) {
+                // Student has a completed result but no live session — show as Completed
+                $activeSessions[] = [
+                    'session_id'             => null,
+                    'student_id'             => $es->student_id,
+                    'student_name'           => $es->student?->name ?? 'Candidate #' . $es->student_id,
+                    'registration_number'    => $es->student?->registration_number ?? '-',
+                    'school_name'            => $es->student?->school?->name ?? 'N/A',
+                    'status'                 => 'SUBMITTED',
+                    'status_label'           => 'Submitted',
+                    'status_color'           => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+                    'current_question_index' => $result->total_attempted ?? 0,
+                    'violations_count'       => 0,
+                    'is_online'              => false,
+                    'is_timed_out'           => false,
+                    'is_completed'           => true,
+                    'last_heartbeat_ago'     => 'Submitted',
+                    'camera_status'          => 'NOT_REQUIRED',
+                    'fullscreen_status'      => false,
+                    'started_at'             => null,
+                    'finished_at'            => $result->created_at?->format('H:i:s'),
+                    'termination_reason'     => null,
+                    'has_snapshot'           => false,
+                    'snapshot_url'           => null,
+                    'recordings_count'       => 0,
+                ];
+            } else {
+                // Truly not started — no session and no result
+                $activeSessions[] = [
+                    'session_id'             => null,
+                    'student_id'             => $es->student_id,
+                    'student_name'           => $es->student?->name ?? 'Candidate #' . $es->student_id,
+                    'registration_number'    => $es->student?->registration_number ?? '-',
+                    'school_name'            => $es->student?->school?->name ?? 'N/A',
+                    'status'                 => 'NOT_STARTED',
+                    'status_label'           => 'Not Started',
+                    'status_color'           => 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+                    'current_question_index' => 0,
+                    'violations_count'       => 0,
+                    'is_online'              => false,
+                    'is_timed_out'           => false,
+                    'is_completed'           => false,
+                    'last_heartbeat_ago'     => 'Not Logged In',
+                    'camera_status'          => 'NOT_REQUIRED',
+                    'fullscreen_status'      => false,
+                    'started_at'             => null,
+                    'finished_at'            => null,
+                    'termination_reason'     => null,
+                    'has_snapshot'           => false,
+                    'snapshot_url'           => null,
+                    'recordings_count'       => 0,
+                ];
+            }
         }
 
         return [
-            'stats' => $stats,
-            'sessions' => $activeSessions,
-            'uninitiated_students_count' => $enrolledStudentsWithoutSession->count(),
+            'stats'                       => $stats,
+            'sessions'                    => $activeSessions,
+            'uninitiated_students_count'  => $trueNotStarted->count(),
         ];
     }
 
@@ -356,15 +418,27 @@ class OnlineExamLiveMonitoringController extends Controller
             abort(404);
         }
 
-        if (! Storage::disk($recording->storage_disk)->exists($recording->storage_path)) {
+        $disk = Storage::disk($recording->storage_disk);
+        if (! $disk->exists($recording->storage_path)) {
             abort(404, 'Recording file not found.');
         }
 
         $filename = "session_{$session->id}_chunk_{$recording->chunk_index}.webm";
         $mimeType = $recording->mime_type ?: 'video/webm';
 
-        // Use readStream for memory-efficient streaming of potentially large video chunks
-        $stream = Storage::disk($recording->storage_disk)->readStream($recording->storage_path);
+        try {
+            $fullPath = $disk->path($recording->storage_path);
+            if (file_exists($fullPath)) {
+                return response()->file($fullPath, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                    'Cache-Control' => 'private, max-age=3600',
+                ]);
+            }
+        } catch (\Throwable) {}
+
+        // Fallback for cloud/remote disks without local path
+        $stream = $disk->readStream($recording->storage_path);
 
         return response()->stream(function () use ($stream) {
             if (is_resource($stream)) {

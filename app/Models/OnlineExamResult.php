@@ -45,10 +45,6 @@ class OnlineExamResult extends Model
         'published_at' => 'datetime',
     ];
 
-    public function getIsPassedAttribute(): bool
-    {
-        return $this->status === 'PASS';
-    }
 
     public function getTotalMarksAttribute(): float
     {
@@ -116,15 +112,6 @@ class OnlineExamResult extends Model
         return sprintf('%02dm %02ds', $m, $s);
     }
 
-    public function scopePassed($query)
-    {
-        return $query->where('status', 'PASS');
-    }
-
-    public function scopeFailed($query)
-    {
-        return $query->where('status', 'FAIL');
-    }
 
     public function session(): BelongsTo
     {

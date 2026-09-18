@@ -335,7 +335,7 @@
 
             <!-- Inspector Video Stage -->
             <div class="relative bg-black flex-1 min-h-[300px] sm:min-h-[420px] flex items-center justify-center overflow-hidden">
-                <video id="inspectorVideo" autoplay playsinline class="w-full h-full max-h-[60vh] object-contain"></video>
+                <video id="inspectorVideo" autoplay playsinline muted class="w-full h-full max-h-[60vh] object-contain"></video>
 
                 <!-- Loading / Connecting Overlay -->
                 <div id="inspectorLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-center p-6 space-y-3 z-10">
@@ -360,6 +360,13 @@
                     </div>
 
                     <div class="pointer-events-auto flex items-center gap-2">
+                        <button type="button" id="inspectorAudioToggleBtn" onclick="toggleInspectorAudio()"
+                                class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 backdrop-blur border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-1.5 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24z" />
+                            </svg>
+                            <span id="inspectorAudioLabel">Unmute Audio</span>
+                        </button>
                         <button type="button" onclick="captureStreamSnapshot()"
                                 class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 backdrop-blur border border-slate-700 text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -710,7 +717,7 @@
                                         Rec (${s.recordings_count})
                                     </button>
                                 ` : ''}
-                                ${!isFinished ? `
+                                ${(!isFinished && s.session_id) ? `
                                     <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                             class="px-2.5 py-1 rounded-lg ${isCamActive ? 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'} text-[10px] font-semibold transition-colors flex items-center gap-1">
                                         <span class="w-1.5 h-1.5 rounded-full ${isCamActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}"></span>
@@ -779,7 +786,7 @@
                             <div class="w-full h-full flex items-center justify-center bg-slate-950">
                                 ${hasSnapshot ? `
                                     <div class="relative w-full h-full">
-                                        <img src="${s.snapshot_url}&_cb=${Date.now()}"
+                                        <img src="${s.snapshot_url}${s.snapshot_url.includes('?') ? '&' : '?'}_cb=${Date.now()}"
                                              alt="${s.student_name}"
                                              class="w-full h-full object-cover"
                                              loading="lazy" />
@@ -821,7 +828,7 @@
                             </div>
 
                             <!-- Click to Inspect Overlay Button -->
-                            ${!isFinished ? `
+                            ${(!isFinished && s.session_id) ? `
                                 <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                         class="absolute inset-0 bg-indigo-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs font-semibold text-white backdrop-blur-xs">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -849,7 +856,7 @@
                                         Rec (${recCount})
                                     </button>
                                 ` : ''}
-                                ${!isFinished ? `
+                                ${(!isFinished && s.session_id) ? `
                                     <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                             class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white text-[10px] font-semibold transition-colors">
                                         Inspect
@@ -935,7 +942,10 @@
             player.src = streamUrl;
             player.classList.remove('hidden');
             placeholder.classList.add('hidden');
-            player.play().catch(console.warn);
+            player.load();
+            player.play().catch(err => {
+                console.warn('[Recordings Player] Play error:', err);
+            });
         }
 
         function closeRecordingsModal() {
@@ -949,10 +959,7 @@
         // WebRTC Live Camera Inspector & Evidence
         // ==========================================
         const RTC_CONFIG = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
+            iceServers: @json(\App\Http\Controllers\OnlineExamWebRTCController::getIceServersConfig())
         };
 
         let currentInspectorSessionId = null;
@@ -963,6 +970,10 @@
         let isPollingInspector = false;
 
         async function openCameraInspector(sessionId, studentName, regNo, schoolName) {
+            if (!sessionId || sessionId === 'null') {
+                console.warn('[WebRTC Admin] Cannot open inspector: student has no active session yet.');
+                return;
+            }
             currentInspectorSessionId = sessionId;
             currentInspectorStudent = { name: studentName, regNo: regNo, school: schoolName };
 
@@ -1003,8 +1014,19 @@
 
             pc.ontrack = (event) => {
                 const video = document.getElementById('inspectorVideo');
-                if (video && event.streams && event.streams[0]) {
-                    video.srcObject = event.streams[0];
+                if (video) {
+                    if (event.streams && event.streams[0]) {
+                        video.srcObject = event.streams[0];
+                    } else {
+                        let stream = video.srcObject;
+                        if (!stream) {
+                            stream = new MediaStream();
+                            video.srcObject = stream;
+                        }
+                        stream.addTrack(event.track);
+                    }
+                    video.muted = true;
+                    video.play().catch(console.warn);
                     document.getElementById('inspectorLoadingOverlay').classList.add('hidden');
                     const badge = document.getElementById('inspectorLiveBadge');
                     const badgeText = document.getElementById('inspectorLiveText');
@@ -1181,6 +1203,16 @@
             dlBtn.download = `proctor-proof-${currentInspectorStudent.regNo}-${Date.now()}.jpg`;
 
             document.getElementById('snapshotModal').classList.remove('hidden');
+        }
+
+        function toggleInspectorAudio() {
+            const video = document.getElementById('inspectorVideo');
+            const label = document.getElementById('inspectorAudioLabel');
+            if (!video) return;
+            video.muted = !video.muted;
+            if (label) {
+                label.textContent = video.muted ? 'Unmute Audio' : 'Mute Audio';
+            }
         }
 
         function toggleInspectorFullscreen() {

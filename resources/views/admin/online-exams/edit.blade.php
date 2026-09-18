@@ -123,12 +123,6 @@
                     <input type="number" step="0.5" name="total_marks" value="{{ old('total_marks', $exam->total_marks) }}" min="1" required
                            class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Passing Marks *</label>
-                    <input type="number" step="0.5" name="pass_marks" value="{{ old('pass_marks', $exam->pass_marks) }}" min="0" required
-                           class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                </div>
             </div>
         </div>
 
@@ -261,31 +255,15 @@
                     Example with <em>"Remaining Seconds &divide; 100"</em>: if the timer is <strong>50s</strong> and the student answers at
                     the <strong>20s</strong> mark (30s remaining), the bonus = <strong>30 &divide; 100 = +0.30 marks</strong>.
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Formula</label>
-                        <select name="speed_bonus_formula" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
-                            <option value="remaining_seconds" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'remaining_seconds' ? 'selected' : '' }}>Remaining Seconds &divide; 100 (Recommended)</option>
-                            <option value="linear" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'linear' ? 'selected' : '' }}>Linear Degradation</option>
-                            <option value="tier" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'tier' ? 'selected' : '' }}>Tier-Based Slabs</option>
-                            <option value="percentage" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'percentage' ? 'selected' : '' }}>Percentage of Base Marks</option>
-                        </select>
-                        <span class="text-[11px] text-slate-500">"Remaining Seconds &divide; 100" matches the user rule.</span>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Bonus Per Question</label>
-                        <input type="number" step="0.05" name="max_bonus_per_question" value="{{ old('max_bonus_per_question', $exam->max_bonus_per_question) }}" min="0" max="5"
-                               class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
-                        <span class="text-[11px] text-slate-500">Cap per question (ignored by Remaining Seconds formula).</span>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Max Total Exam Bonus Cap</label>
-                        <input type="number" step="0.5" name="max_total_bonus" value="{{ old('max_total_bonus', $exam->max_total_bonus) }}" min="0" max="50"
-                               class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
-                        <span class="text-[11px] text-slate-500">Maximum total bonus a student can earn across all questions.</span>
-                    </div>
+                <div class="max-w-md">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Formula</label>
+                    <select name="speed_bonus_formula" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-sm text-white">
+                        <option value="remaining_seconds" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'remaining_seconds' ? 'selected' : '' }}>Remaining Seconds &divide; 100 (Recommended)</option>
+                        <option value="linear" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'linear' ? 'selected' : '' }}>Linear Degradation</option>
+                        <option value="tier" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'tier' ? 'selected' : '' }}>Tier-Based Slabs</option>
+                        <option value="percentage" {{ old('speed_bonus_formula', $exam->speed_bonus_formula) == 'percentage' ? 'selected' : '' }}>Percentage of Base Marks</option>
+                    </select>
+                    <span class="text-[11px] text-slate-500">"Remaining Seconds &divide; 100" calculates: Remaining Seconds &divide; 100 (e.g. 30s left = +0.30 marks).</span>
                 </div>
             </div>
         </div>

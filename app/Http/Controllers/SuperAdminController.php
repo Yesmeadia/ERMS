@@ -12,6 +12,8 @@ use Illuminate\Validation\Rules\Password;
 
 class SuperAdminController extends Controller
 {
+    public const MAX_SUPER_ADMINS = 7;
+
     /**
      * Display a listing of the resource.
      */
@@ -29,9 +31,10 @@ class SuperAdminController extends Controller
 
         $admins = $query->latest()->paginate(10);
         $totalAdmins = User::role('super-admin')->count();
-        $canCreateAdmin = $totalAdmins < 2;
+        $canCreateAdmin = $totalAdmins < self::MAX_SUPER_ADMINS;
+        $maxAdmins = self::MAX_SUPER_ADMINS;
 
-        return view('super-admin.admins.index', compact('admins', 'canCreateAdmin', 'totalAdmins'));
+        return view('super-admin.admins.index', compact('admins', 'canCreateAdmin', 'totalAdmins', 'maxAdmins'));
     }
 
     /**
@@ -39,9 +42,9 @@ class SuperAdminController extends Controller
      */
     public function create()
     {
-        if (User::role('super-admin')->count() >= 2) {
+        if (User::role('super-admin')->count() >= self::MAX_SUPER_ADMINS) {
             return redirect()->route('admin.admins.index')
-                ->with('error', 'The maximum limit of 2 Super Admin accounts has been reached.');
+                ->with('error', 'The maximum limit of ' . self::MAX_SUPER_ADMINS . ' Super Admin accounts has been reached.');
         }
 
         return view('super-admin.admins.create');
@@ -52,9 +55,9 @@ class SuperAdminController extends Controller
      */
     public function store(Request $request)
     {
-        if (User::role('super-admin')->count() >= 2) {
+        if (User::role('super-admin')->count() >= self::MAX_SUPER_ADMINS) {
             return redirect()->route('admin.admins.index')
-                ->with('error', 'The maximum limit of 2 Super Admin accounts has been reached.');
+                ->with('error', 'The maximum limit of ' . self::MAX_SUPER_ADMINS . ' Super Admin accounts has been reached.');
         }
 
         $validated = $request->validate([

@@ -195,8 +195,7 @@ class ExamScoringService
             $totalMarks = (float) $exam->total_marks > 0 ? (float) $exam->total_marks : 100.00;
             $percentage = round(($finalScore / $totalMarks) * 100, 2);
 
-            $passMarks = (float) $exam->pass_marks;
-            $status = ($finalScore >= $passMarks) ? 'PASS' : 'FAIL';
+            $status = 'PASS'; // Rank-based competitive exam: all submissions are recorded
 
             $grade = $this->calculateGrade($percentage);
 

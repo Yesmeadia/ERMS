@@ -29,13 +29,6 @@ class OnlineExamReportController extends Controller
         $query = OnlineExamResult::with(['student.school', 'student.class'])
             ->where('online_exam_id', $exam->id);
 
-        if ($request->filled('status')) {
-            if ($request->status === 'pass') {
-                $query->where('status', 'PASS');
-            } elseif ($request->status === 'fail') {
-                $query->where('status', 'FAIL');
-            }
-        }
 
         if ($request->filled('search')) {
             $term = $request->search;
@@ -49,7 +42,6 @@ class OnlineExamReportController extends Controller
 
         // Calculate summary metrics
         $totalCandidates = OnlineExamResult::where('online_exam_id', $exam->id)->count();
-        $passedCount = OnlineExamResult::where('online_exam_id', $exam->id)->where('status', 'PASS')->count();
         $avgScore = OnlineExamResult::where('online_exam_id', $exam->id)->avg('final_score') ?: 0;
         $highestScore = OnlineExamResult::where('online_exam_id', $exam->id)->max('final_score') ?: 0;
 
@@ -84,7 +76,6 @@ class OnlineExamReportController extends Controller
             'exam',
             'results',
             'totalCandidates',
-            'passedCount',
             'avgScore',
             'highestScore',
             'itemAnalysis'
@@ -146,7 +137,6 @@ class OnlineExamReportController extends Controller
                 'Max Marks',
                 'Percentage',
                 'Grade',
-                'Result Status',
                 'Time Taken (Seconds)',
                 'Violations Count',
             ]);
@@ -180,7 +170,6 @@ class OnlineExamReportController extends Controller
                     $res->total_marks,
                     $res->percentage.'%',
                     $res->grade ?: '-',
-                    $res->is_passed ? 'PASS' : 'FAIL',
                     $res->time_taken_seconds,
                     $res->session ? $res->session->violations_count : 0,
                 ]);

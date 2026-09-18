@@ -17,8 +17,6 @@
         .text-center { text-align: center !important; }
         .text-right { text-align: right !important; }
         .font-bold { font-weight: bold; }
-        .pass { color: #059669; font-weight: bold; }
-        .fail { color: #dc2626; font-weight: bold; }
         .footer { margin-top: 15px; font-size: 9px; text-align: right; color: #64748b; }
     </style>
 </head>
@@ -33,7 +31,6 @@
         <tr>
             <td><strong>Exam Date:</strong> {{ $exam->exam_date ? $exam->exam_date->format('d M Y') : 'N/A' }}</td>
             <td><strong>Total Marks:</strong> {{ $exam->total_marks }}</td>
-            <td><strong>Passing Marks:</strong> {{ $exam->pass_marks }}</td>
             <td><strong>Total Candidates:</strong> {{ $results->count() }}</td>
             <td class="text-right"><strong>Generated At:</strong> {{ now()->format('d M Y, H:i') }}</td>
         </tr>
@@ -55,7 +52,6 @@
                 <th class="text-right" style="width: 50px;">Total Mark</th>
                 <th class="text-center" style="width: 38px;">%</th>
                 <th class="text-center" style="width: 38px;">Grade</th>
-                <th class="text-center" style="width: 42px;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -77,15 +73,10 @@
                 <td class="text-right font-bold">{{ number_format($res->final_score, 2) }}</td>
                 <td class="text-center">{{ number_format($res->percentage, 1) }}%</td>
                 <td class="text-center font-bold">{{ $res->grade ?: '-' }}</td>
-                <td class="text-center">
-                    <span class="{{ $res->is_passed ? 'pass' : 'fail' }}">
-                        {{ $res->is_passed ? 'PASS' : 'FAIL' }}
-                    </span>
-                </td>
             </tr>
             @empty
             <tr>
-                <td colspan="{{ $exam->enable_speed_bonus ? 12 : 11 }}" class="text-center" style="padding: 15px;">No candidate results available for this examination.</td>
+                <td colspan="{{ $exam->enable_speed_bonus ? 11 : 10 }}" class="text-center" style="padding: 15px;">No candidate results available for this examination.</td>
             </tr>
             @endforelse
         </tbody>

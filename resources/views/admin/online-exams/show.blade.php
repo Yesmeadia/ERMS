@@ -234,9 +234,8 @@
             </div>
 
             <div>
-                <span class="text-xs text-slate-500 block uppercase">Marks & Passing</span>
-                <span class="text-slate-200 font-medium">{{ $exam->total_marks }} Total</span>
-                <span class="text-slate-400 text-xs block">{{ $exam->pass_marks }} Pass Marks</span>
+                <span class="text-xs text-slate-500 block uppercase">Total Exam Marks</span>
+                <span class="text-slate-200 font-medium">{{ $exam->total_marks }} Total Marks</span>
             </div>
 
             <div>

@@ -54,17 +54,10 @@
     </div>
 
     <!-- Overview Metrics Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
             <span class="text-[11px] uppercase tracking-wider text-slate-400 block mb-1">Total Submissions</span>
             <span class="text-2xl font-bold text-white font-mono">{{ $totalCandidates }}</span>
-        </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
-            <span class="text-[11px] uppercase tracking-wider text-emerald-400 block mb-1">Pass Rate</span>
-            <span class="text-2xl font-bold text-emerald-400 font-mono">
-                {{ $totalCandidates > 0 ? round(($passedCount / $totalCandidates) * 100, 1) : 0 }}%
-                <span class="text-xs text-slate-400 font-normal">({{ $passedCount }} passed)</span>
-            </span>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
             <span class="text-[11px] uppercase tracking-wider text-indigo-400 block mb-1">Average Score</span>
@@ -84,13 +77,7 @@
             <form method="GET" class="flex items-center gap-2">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or reg no..."
                        class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-                <select name="status" onchange="this.form.submit()"
-                        class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                    <option value="">All Candidates</option>
-                    <option value="pass" {{ request('status') === 'pass' ? 'selected' : '' }}>Passed</option>
-                    <option value="fail" {{ request('status') === 'fail' ? 'selected' : '' }}>Failed</option>
-                </select>
-                @if(request()->anyFilled(['search', 'status']))
+                @if(request()->anyFilled(['search']))
                     <a href="{{ route('admin.online-exams.results', $exam) }}" class="text-xs text-slate-400 hover:text-white px-2">Clear</a>
                 @endif
             </form>
@@ -112,7 +99,6 @@
                         <th class="py-3 px-4 text-right">Total Mark</th>
                         <th class="py-3 px-4 text-center">%</th>
                         <th class="py-3 px-4 text-center">Grade</th>
-                        <th class="py-3 px-6 text-center">Result</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60 text-slate-300">
@@ -158,21 +144,10 @@
                         </td>
                         <td class="py-3 px-4 text-center font-mono">{{ number_format((float)$res->percentage, 1) }}%</td>
                         <td class="py-3 px-4 text-center font-mono font-bold text-indigo-300">{{ $res->grade ?: '-' }}</td>
-                        <td class="py-3 px-6 text-center">
-                            @if($res->is_passed)
-                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                                    PASS
-                                </span>
-                            @else
-                                <span class="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-                                    FAIL
-                                </span>
-                            @endif
-                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $exam->enable_speed_bonus ? 10 : 9 }}" class="py-8 text-center text-slate-500">
+                        <td colspan="{{ $exam->enable_speed_bonus ? 9 : 8 }}" class="py-8 text-center text-slate-500">
                             No finalized examination results found.
                         </td>
                     </tr>

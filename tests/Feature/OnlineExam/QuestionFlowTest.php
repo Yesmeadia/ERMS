@@ -188,4 +188,47 @@ class QuestionFlowTest extends OnlineExamTestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_timeout_submission_sets_score_to_zero(): void
+    {
+        $response = $this->withSession(['online_exam_session_token' => $this->session->session_token])
+            ->postJson('/online-exam/submit-answer', [
+                'question_id' => $this->q1->id,
+                'is_timeout' => true,
+                'time_spent_ms' => 60000,
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'message' => 'Question Time Expired',
+        ]);
+
+        $this->assertDatabaseHas('online_exam_answers', [
+            'online_exam_session_id' => $this->session->id,
+            'question_id' => $this->q1->id,
+            'is_locked' => true,
+            'is_correct' => false,
+            'score_awarded' => 0.00,
+            'negative_marks_deducted' => 0.00,
+            'speed_bonus_awarded' => 0.00,
+            'evaluation_status' => 'TIMED_OUT',
+        ]);
+    }
+
+    public function test_advancing_unanswered_question_persists_timed_out_with_zero_marks(): void
+    {
+        $response = $this->withSession(['online_exam_session_token' => $this->session->session_token])
+            ->postJson('/online-exam/next-question');
+
+        $response->assertStatus(200);
+
+        // Verify Q1 was automatically recorded with 0 marks
+        $this->assertDatabaseHas('online_exam_answers', [
+            'online_exam_session_id' => $this->session->id,
+            'question_id' => $this->q1->id,
+            'score_awarded' => 0.00,
+            'evaluation_status' => 'TIMED_OUT',
+        ]);
+    }
 }

@@ -72,7 +72,7 @@
                         </li>
                         <li class="flex items-start gap-2">
                             <span class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold shrink-0 mt-0.5">3</span>
-                            <span><strong>Strict Server-Side Timing:</strong> If the question timer expires, whatever input is currently selected is automatically captured and the session moves forward.</span>
+                            <span><strong>Strict Server-Side Timing:</strong> If the question timer expires, the question is hidden and awarded 0 marks. The <span class="text-indigo-400 font-semibold">[ Next Question ]</span> button will then appear for you to proceed.</span>
                         </li>
                         @if($exam->enable_speed_bonus)
                         <li class="flex items-start gap-2">

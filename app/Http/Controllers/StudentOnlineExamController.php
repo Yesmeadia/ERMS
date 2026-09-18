@@ -200,6 +200,7 @@ class StudentOnlineExamController extends Controller
             'selected_option_ids.*' => ['integer'],
             'text_answer' => ['nullable', 'string', 'max:5000'],
             'time_spent_ms' => ['nullable', 'integer', 'min:0'],
+            'is_timeout' => ['nullable', 'boolean'],
         ]);
 
         $result = $this->questionService->submitAnswer(
@@ -209,7 +210,8 @@ class StudentOnlineExamController extends Controller
             $validated['text_answer'] ?? null,
             $request->ip(),
             $request->userAgent(),
-            isset($validated['time_spent_ms']) ? (int) $validated['time_spent_ms'] : null
+            isset($validated['time_spent_ms']) ? (int) $validated['time_spent_ms'] : null,
+            $request->boolean('is_timeout')
         );
 
         return response()->json($result);
