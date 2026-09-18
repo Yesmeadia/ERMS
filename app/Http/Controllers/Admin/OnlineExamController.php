@@ -85,7 +85,7 @@ class OnlineExamController extends Controller
             'duration_minutes' => ['required', 'integer', 'min:1', 'max:360'],
             'default_question_time_limit' => ['required', 'integer', 'min:5', 'max:600'],
             'total_marks' => ['required', 'numeric', 'min:1', 'max:1000'],
-            'pass_marks' => ['required', 'numeric', 'min:0', 'lte:total_marks'],
+            'pass_marks' => ['nullable', 'numeric', 'min:0'],
             'enable_camera' => ['nullable', 'boolean'],
             'enable_fullscreen' => ['nullable', 'boolean'],
             'max_fullscreen_violations' => ['required', 'integer', 'min:1', 'max:10'],
@@ -104,16 +104,19 @@ class OnlineExamController extends Controller
             'instructions' => ['nullable', 'string'],
         ]);
 
-        $validated['enable_camera'] = $request->boolean('enable_camera', true);
-        $validated['enable_fullscreen'] = $request->boolean('enable_fullscreen', true);
-        $validated['allow_previous_question'] = $request->boolean('allow_previous_question', false);
-        $validated['randomize_questions'] = $request->boolean('randomize_questions', true);
-        $validated['randomize_options'] = $request->boolean('randomize_options', true);
-        $validated['show_result_immediately'] = $request->boolean('show_result_immediately', true);
-        $validated['show_correct_answers'] = $request->boolean('show_correct_answers', false);
-        $validated['show_question_marks'] = $request->boolean('show_question_marks', true);
-        $validated['show_rank'] = $request->boolean('show_rank', false);
-        $validated['enable_speed_bonus'] = $request->boolean('enable_speed_bonus', false);
+        $validated['pass_marks'] = $validated['pass_marks'] ?? 0.00;
+        $validated['enable_camera'] = $request->boolean('enable_camera');
+        $validated['enable_fullscreen'] = $request->boolean('enable_fullscreen');
+        $validated['allow_previous_question'] = $request->boolean('allow_previous_question');
+        $validated['randomize_questions'] = $request->boolean('randomize_questions');
+        $validated['randomize_options'] = $request->boolean('randomize_options');
+        $validated['show_result_immediately'] = $request->boolean('show_result_immediately');
+        $validated['show_correct_answers'] = $request->boolean('show_correct_answers');
+        $validated['show_question_marks'] = $request->boolean('show_question_marks');
+        $validated['show_rank'] = $request->boolean('show_rank');
+        $validated['enable_speed_bonus'] = $request->boolean('enable_speed_bonus');
+        $validated['max_bonus_per_question'] = 0.00;
+        $validated['max_total_bonus'] = 0.00;
 
         $validated['status'] = ExamStatus::DRAFT;
         $validated['created_by'] = auth()->id();
@@ -174,7 +177,7 @@ class OnlineExamController extends Controller
             'duration_minutes' => $isLocked ? ['prohibited'] : ['required', 'integer', 'min:1', 'max:360'],
             'default_question_time_limit' => $isLocked ? ['prohibited'] : ['required', 'integer', 'min:5', 'max:600'],
             'total_marks' => $isLocked ? ['prohibited'] : ['required', 'numeric', 'min:1', 'max:1000'],
-            'pass_marks' => $isLocked ? ['prohibited'] : ['required', 'numeric', 'min:0', 'lte:total_marks'],
+            'pass_marks' => $isLocked ? ['prohibited'] : ['nullable', 'numeric', 'min:0'],
             'max_eligible_students' => $isLocked ? ['prohibited'] : ['required', 'integer', 'min:1', 'max:199'],
             'enable_camera' => ['nullable', 'boolean'],
             'enable_fullscreen' => ['nullable', 'boolean'],
@@ -193,18 +196,20 @@ class OnlineExamController extends Controller
             'instructions' => ['nullable', 'string'],
         ]);
 
-        $validated['enable_camera'] = $request->boolean('enable_camera', true);
-        $validated['enable_fullscreen'] = $request->boolean('enable_fullscreen', true);
-        $validated['allow_previous_question'] = $request->boolean('allow_previous_question', false);
-        $validated['show_result_immediately'] = $request->boolean('show_result_immediately', true);
-        $validated['show_correct_answers'] = $request->boolean('show_correct_answers', false);
-        $validated['show_question_marks'] = $request->boolean('show_question_marks', true);
-        $validated['show_rank'] = $request->boolean('show_rank', false);
+        $validated['enable_camera'] = $request->boolean('enable_camera');
+        $validated['enable_fullscreen'] = $request->boolean('enable_fullscreen');
+        $validated['allow_previous_question'] = $request->boolean('allow_previous_question');
+        $validated['show_result_immediately'] = $request->boolean('show_result_immediately');
+        $validated['show_correct_answers'] = $request->boolean('show_correct_answers');
+        $validated['show_question_marks'] = $request->boolean('show_question_marks');
+        $validated['show_rank'] = $request->boolean('show_rank');
 
         if (! $isLocked) {
-            $validated['randomize_questions'] = $request->boolean('randomize_questions', true);
-            $validated['randomize_options'] = $request->boolean('randomize_options', true);
-            $validated['enable_speed_bonus'] = $request->boolean('enable_speed_bonus', false);
+            $validated['randomize_questions'] = $request->boolean('randomize_questions');
+            $validated['randomize_options'] = $request->boolean('randomize_options');
+            $validated['enable_speed_bonus'] = $request->boolean('enable_speed_bonus');
+            $validated['max_bonus_per_question'] = 0.00;
+            $validated['max_total_bonus'] = 0.00;
         }
 
         $online_exam->update($validated);

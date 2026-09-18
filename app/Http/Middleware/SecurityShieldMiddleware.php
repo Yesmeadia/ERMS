@@ -89,28 +89,36 @@ class SecurityShieldMiddleware
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
+        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
 
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
 
-        // Add Content Security Policy (CSP) with nonce support
+        // Add Content Security Policy (CSP) with nonce and WebRTC/media support.
+        // Remove any stale Report-Only CSP header that Vite dev middleware or other layers may inject.
+        $response->headers->remove('Content-Security-Policy-Report-Only');
+
         $nonce = app()->has('csp-nonce') ? app('csp-nonce') : '';
         $nonceDirective = $nonce ? "'nonce-{$nonce}' " : "'unsafe-inline' ";
-        // Note: 'unsafe-inline' is only used as a fallback when no nonce is available (e.g. non-exam pages).
-        // On exam pages the @nonce Blade directive is used, making 'unsafe-inline' inert in modern browsers
-        // (nonce presence causes browsers to ignore 'unsafe-inline' per CSP Level 3 spec).
+
+        // Derive the app's own hostname so build assets from the production domain are allowed.
+        $appHost = parse_url(config('app.url'), PHP_URL_HOST) ?? '';
+        $ownHostDirective = $appHost ? "https://{$appHost} " : '';
+
         $csp = "default-src 'self'; " .
-               "script-src 'self' {$nonceDirective}'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com; " .
+               "script-src 'self' {$ownHostDirective}{$nonceDirective}'unsafe-eval' https://sdk.cashfree.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://*.cloudflare.com; " .
                "script-src-attr 'unsafe-inline'; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
-               "img-src 'self' data: https://* http://*; " .
+               "img-src 'self' data: blob: https: http:; " .
                "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; " .
-               "connect-src 'self' https://api.cashfree.com https://sandbox.cashfree.com https://challenges.cloudflare.com; " .
+               "connect-src 'self' blob: data: wss: ws: https://api.cashfree.com https://sandbox.cashfree.com https://challenges.cloudflare.com https://*.cloudflare.com https://*.cloudflareinsights.com; " .
+               "media-src 'self' blob: data: mediastream:; " .
                "frame-src 'self' https://sdk.cashfree.com https://challenges.cloudflare.com; " .
+               "worker-src 'self' blob:; " .
+               "manifest-src 'self'; " .
                "frame-ancestors 'none';";
-        
+
         $response->headers->set('Content-Security-Policy', $csp);
 
         return $response;

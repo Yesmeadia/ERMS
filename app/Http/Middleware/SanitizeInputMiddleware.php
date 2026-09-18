@@ -17,8 +17,8 @@ class SanitizeInputMiddleware
         $input = $request->all();
         array_walk_recursive($input, function (&$val, $key) {
             if (is_string($val)) {
-                // Skip any field representing passwords to prevent corruption (CWE-20)
-                if (stripos($key, 'password') !== false) {
+                // Skip any field representing passwords, binary uploads, or WebRTC/base64 payloads
+                if (in_array($key, ['password', 'snapshot', 'payload', 'video_chunk'], true) || stripos($key, 'password') !== false) {
                     return;
                 }
 
@@ -46,19 +46,21 @@ class SanitizeInputMiddleware
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'camera=*, microphone=(), geolocation=()');
+        $response->headers->set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
 
         // Configure Content Security Policy (CSP) with request-scoped nonce
-        $nonce = app('csp-nonce');
+        $nonce = app()->has('csp-nonce') ? app('csp-nonce') : '';
+        $nonceDirective = $nonce ? "'nonce-{$nonce}' " : "'unsafe-inline' ";
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'nonce-{$nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://sdk.cashfree.com; " .
+               "script-src 'self' {$nonceDirective}'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://sdk.cashfree.com https://static.cloudflareinsights.com https://*.cloudflare.com; " .
                "script-src-attr 'unsafe-inline'; " .
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; " .
-               "img-src 'self' data: https://*.cashfree.com; " .
-               "connect-src 'self' https://challenges.cloudflare.com https://api.cashfree.com https://sandbox.cashfree.com; " .
+               "img-src 'self' data: blob: https: http:; " .
+               "connect-src 'self' blob: data: wss: ws: https://challenges.cloudflare.com https://api.cashfree.com https://sandbox.cashfree.com https://*.cloudflare.com https://*.cloudflareinsights.com; " .
+               "media-src 'self' blob: data: mediastream:; " .
                "frame-src 'self' https://challenges.cloudflare.com https://sdk.cashfree.com; " .
-               "worker-src 'self'; " .
+               "worker-src 'self' blob:; " .
                "manifest-src 'self';";
                
         $response->headers->set('Content-Security-Policy', $csp);

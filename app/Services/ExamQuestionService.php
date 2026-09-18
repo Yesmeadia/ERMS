@@ -141,9 +141,10 @@ class ExamQuestionService
         ?string $textAnswer,
         ?string $ip = null,
         ?string $userAgent = null,
-        ?int $clientTimeSpentMs = null
+        ?int $clientTimeSpentMs = null,
+        bool $isTimeout = false
     ): array {
-        return DB::transaction(function () use ($session, $questionId, $selectedOptionIds, $textAnswer, $ip, $userAgent, $clientTimeSpentMs) {
+        return DB::transaction(function () use ($session, $questionId, $selectedOptionIds, $textAnswer, $ip, $userAgent, $clientTimeSpentMs, $isTimeout) {
             // Row-level lock on the session prevents concurrent answer submissions
             $lockedSession = OnlineExamSession::where('id', $session->id)->lockForUpdate()->firstOrFail();
 
@@ -191,19 +192,30 @@ class ExamQuestionService
                 $timeSpentMs = min($limitMs, $serverTimeSpentMs);
             }
 
-            // Accumulated speed bonus so far
-            $currentTotalBonus = (float) $session->answers()->sum('speed_bonus_awarded');
+            // If timeout occurred, answer awarded marks must strictly be 0
+            if ($isTimeout) {
+                $eval = [
+                    'is_correct' => false,
+                    'score_awarded' => 0.00,
+                    'negative_marks_deducted' => 0.00,
+                    'speed_bonus_awarded' => 0.00,
+                    'evaluation_status' => 'TIMED_OUT',
+                ];
+            } else {
+                // Accumulated speed bonus so far
+                $currentTotalBonus = (float) $session->answers()->sum('speed_bonus_awarded');
 
-            // Evaluate answer server-side
-            $eval = $this->scoringService->evaluateQuestionAnswer(
-                $question,
-                $examQuestion,
-                $selectedOptionIds,
-                $textAnswer,
-                $exam,
-                $timeSpentMs,
-                $currentTotalBonus
-            );
+                // Evaluate answer server-side
+                $eval = $this->scoringService->evaluateQuestionAnswer(
+                    $question,
+                    $examQuestion,
+                    $selectedOptionIds,
+                    $textAnswer,
+                    $exam,
+                    $timeSpentMs,
+                    $currentTotalBonus
+                );
+            }
 
             // Persist locked answer with exact answered time
             $answer = OnlineExamAnswer::updateOrCreate(
@@ -213,8 +225,8 @@ class ExamQuestionService
                 ],
                 [
                     'student_id' => $session->student_id,
-                    'selected_option_ids' => $selectedOptionIds ? array_values(array_map('intval', $selectedOptionIds)) : null,
-                    'text_answer' => $textAnswer,
+                    'selected_option_ids' => $isTimeout ? null : ($selectedOptionIds ? array_values(array_map('intval', $selectedOptionIds)) : null),
+                    'text_answer' => $isTimeout ? null : $textAnswer,
                     'submitted_at' => $now,
                     'time_spent_milliseconds' => $timeSpentMs,
                     'is_locked' => true,
@@ -245,7 +257,7 @@ class ExamQuestionService
 
             return [
                 'success' => true,
-                'message' => 'Answer Saved Successfully',
+                'message' => $isTimeout ? 'Question Time Expired' : 'Answer Saved Successfully',
                 'question_id' => $questionId,
                 'time_spent_ms' => $timeSpentMs,
                 'answered_time_seconds' => round($timeSpentMs / 1000, 1),
@@ -261,8 +273,36 @@ class ExamQuestionService
     public function getNextQuestion(OnlineExamSession $session): ?array
     {
         $questionOrder = $session->question_order ?: [];
+        $currentIndex = $session->current_question_index;
+        $currentQuestionId = $questionOrder[$currentIndex] ?? null;
+
+        // Ensure current question has an answer record with 0 marks if student advanced without submitting
+        if ($currentQuestionId) {
+            $hasAnswer = OnlineExamAnswer::where('online_exam_session_id', $session->id)
+                ->where('question_id', $currentQuestionId)
+                ->exists();
+
+            if (!$hasAnswer) {
+                OnlineExamAnswer::create([
+                    'online_exam_session_id' => $session->id,
+                    'student_id' => $session->student_id,
+                    'question_id' => $currentQuestionId,
+                    'selected_option_ids' => null,
+                    'text_answer' => null,
+                    'submitted_at' => now(),
+                    'time_spent_milliseconds' => 0,
+                    'is_locked' => true,
+                    'is_correct' => false,
+                    'score_awarded' => 0.00,
+                    'negative_marks_deducted' => 0.00,
+                    'speed_bonus_awarded' => 0.00,
+                    'evaluation_status' => 'TIMED_OUT',
+                ]);
+            }
+        }
+
         $total = count($questionOrder);
-        $nextIndex = $session->current_question_index + 1;
+        $nextIndex = $currentIndex + 1;
 
         if ($nextIndex >= $total) {
             return null; // Reached end of questions

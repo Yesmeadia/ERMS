@@ -7,7 +7,56 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script @nonce defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>body { font-family: 'Outfit', sans-serif; }</style>
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .q-layout-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .q-layout-row.has-image {
+                display: grid;
+                grid-template-columns: 320px minmax(0, 1fr);
+                align-items: start;
+                gap: 1.75rem;
+            }
+        }
+        .q-image-col {
+            width: 100%;
+        }
+        @media (min-width: 768px) {
+            .q-image-col {
+                width: 320px;
+                position: sticky;
+                top: 1.5rem;
+            }
+        }
+        .q-image-card {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid rgba(51, 65, 85, 0.8);
+            background: rgba(2, 6, 23, 0.8);
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+        .q-image-card img {
+            max-height: 260px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 0.75rem;
+            display: block;
+            margin: 0 auto;
+        }
+        .q-content-col {
+            min-width: 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col antialiased" 
       x-data="{ 
@@ -114,7 +163,7 @@
     </header>
 
     <!-- Question View Engine -->
-    <main class="flex-1 max-w-4xl w-full mx-auto p-6 flex flex-col justify-between">
+    <main class="flex-1 max-w-5xl w-full mx-auto p-6 flex flex-col justify-between">
         <template x-if="questions.length > 0">
             <div class="space-y-6">
                 <!-- Question Header -->
@@ -127,12 +176,6 @@
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <span class="text-xs text-slate-400 font-medium">
-                            Marks: <strong class="text-white" x-text="'+' + questions[currentIdx].marks"></strong>
-                            <template x-if="questions[currentIdx].negative > 0">
-                                <span class="text-rose-400" x-text="' / -' + questions[currentIdx].negative"></span>
-                            </template>
-                        </span>
 
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-mono text-sm font-bold">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -143,112 +186,122 @@
                     </div>
                 </div>
 
-                <!-- Question Text -->
-                <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                    <div class="text-base sm:text-lg font-medium text-white leading-relaxed" x-html="questions[currentIdx].text"></div>
+                <!-- Main Layout: Image Left + Content Right -->
+                <div class="q-layout-row"
+                     :class="(questions[currentIdx]?.images && questions[currentIdx].images.length > 0) ? 'has-image' : ''">
 
-                    <!-- Images if attached -->
-                    <template x-for="(img, imgIdx) in (questions[currentIdx].images || [])" :key="imgIdx">
-                        <div class="pt-2">
-                            <div class="p-2 bg-slate-950/80 rounded-2xl border border-slate-800 inline-block shadow-lg">
-                                <img :src="img.url" alt="Question media" class="max-h-80 max-w-full rounded-xl object-contain">
+                    <!-- Left: Attached Images (shown only when images exist) -->
+                    <template x-if="questions[currentIdx]?.images && questions[currentIdx].images.length > 0">
+                        <div class="q-image-col space-y-3">
+                            <template x-for="(img, imgIdx) in questions[currentIdx].images" :key="imgIdx">
+                                <div class="q-image-card">
+                                    <img :src="img.url" alt="Question Illustration">
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Right (or Full-Width): Question Text + Options -->
+                    <div class="q-content-col space-y-6">
+                        <!-- Question Text -->
+                        <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
+                            <div class="text-base sm:text-lg font-medium text-white leading-relaxed" x-html="questions[currentIdx].text"></div>
+                        </div>
+
+                        <!-- Fill in the Blank Input -->
+                        <template x-if="questions[currentIdx].type === 'FILL_IN_BLANK'">
+                            <div class="space-y-3">
+                                <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Your Answer</label>
+                                <input type="text" x-model="textAnswer"
+                                       :disabled="answerSubmitted"
+                                       @keydown.enter.prevent="if (canSubmit() && !answerSubmitted) submitAnswer()"
+                                       placeholder="Type your answer here (not case-sensitive)..."
+                                       autocomplete="off"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-base text-white font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                                       :class="answerSubmitted ? 'opacity-75 cursor-not-allowed' : ''">
+                                
+                                <p class="text-[11px] text-slate-400">Answer is case-insensitive (e.g., "paris" matches "Paris").</p>
+
+                                <!-- Admin indicator showing the correct answer -->
+                                <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs mt-2">
+                                    <span class="text-slate-400 font-medium">Expected Answer (Admin Only):</span>
+                                    <span class="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20"
+                                          x-text="(questions[currentIdx].options.find(o => o.is_correct) || questions[currentIdx].options[0])?.text || 'Not configured'"></span>
+                                </div>
                             </div>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- Fill in the Blank Input -->
-                <template x-if="questions[currentIdx].type === 'FILL_IN_BLANK'">
-                    <div class="space-y-3">
-                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Your Answer</label>
-                        <input type="text" x-model="textAnswer"
-                               :disabled="answerSubmitted"
-                               @keydown.enter.prevent="if (canSubmit() && !answerSubmitted) submitAnswer()"
-                               placeholder="Type your answer here (not case-sensitive)..."
-                               autocomplete="off"
-                               class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-base text-white font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-                               :class="answerSubmitted ? 'opacity-75 cursor-not-allowed' : ''">
-                        
-                        <p class="text-[11px] text-slate-400">Answer is case-insensitive (e.g., "paris" matches "Paris").</p>
-
-                        <!-- Admin indicator showing the correct answer -->
-                        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs mt-2">
-                            <span class="text-slate-400 font-medium">Expected Answer (Admin Only):</span>
-                            <span class="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20"
-                                  x-text="(questions[currentIdx].options.find(o => o.is_correct) || questions[currentIdx].options[0])?.text || 'Not configured'"></span>
-                        </div>
-                    </div>
-                </template>
-
-                <!-- Multiple Select Checkboxes -->
-                <template x-if="questions[currentIdx].type === 'MULTIPLE_SELECT'">
-                    <div class="space-y-3">
-                        <template x-for="opt in questions[currentIdx].options" :key="opt.identifier">
-                            <label class="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
-                                   :class="selectedOptions.includes(opt.identifier) ? 'bg-indigo-600/10 border-indigo-500 text-white shadow-sm' : 'bg-slate-900/40 border-slate-800/80 text-slate-300 hover:bg-slate-900/80'">
-                                <input type="checkbox" :value="opt.identifier" 
-                                       :checked="selectedOptions.includes(opt.identifier)"
-                                       @change="toggleOption(opt.identifier)"
-                                       :disabled="answerSubmitted"
-                                       class="w-4 h-4 text-indigo-600 rounded bg-slate-950 border-slate-700 focus:ring-indigo-500">
-                                
-                                <span class="w-7 h-7 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center shrink-0"
-                                      x-text="opt.identifier"></span>
-
-                                <span class="text-sm font-medium" x-text="opt.text"></span>
-
-                                <template x-if="opt.is_correct">
-                                    <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
-                                        Correct Option (Admin Only)
-                                    </span>
-                                </template>
-                            </label>
                         </template>
-                    </div>
-                </template>
 
-                <!-- Single Choice Radio (MCQ / TRUE_FALSE) -->
-                <template x-if="questions[currentIdx].type === 'MCQ' || questions[currentIdx].type === 'TRUE_FALSE'">
-                    <div class="space-y-3">
-                        <template x-for="opt in questions[currentIdx].options" :key="opt.identifier">
-                            <label class="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
-                                   :class="selectedOption === opt.identifier ? 'bg-indigo-600/10 border-indigo-500 text-white shadow-sm' : 'bg-slate-900/40 border-slate-800/80 text-slate-300 hover:bg-slate-900/80'">
-                                <input type="radio" name="preview_option" :value="opt.identifier" x-model="selectedOption"
-                                       :disabled="answerSubmitted"
-                                       class="w-4 h-4 text-indigo-600 bg-slate-950 border-slate-700 focus:ring-indigo-500">
-                                
-                                <span class="w-7 h-7 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center shrink-0"
-                                      x-text="opt.identifier"></span>
+                        <!-- Multiple Select Checkboxes -->
+                        <template x-if="questions[currentIdx].type === 'MULTIPLE_SELECT'">
+                            <div class="space-y-3">
+                                <template x-for="opt in questions[currentIdx].options" :key="opt.identifier">
+                                    <label class="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
+                                           :class="selectedOptions.includes(opt.identifier) ? 'bg-indigo-600/10 border-indigo-500 text-white shadow-sm' : 'bg-slate-900/40 border-slate-800/80 text-slate-300 hover:bg-slate-900/80'">
+                                        <input type="checkbox" :value="opt.identifier" 
+                                               :checked="selectedOptions.includes(opt.identifier)"
+                                               @change="toggleOption(opt.identifier)"
+                                               :disabled="answerSubmitted"
+                                               class="w-4 h-4 text-indigo-600 rounded bg-slate-950 border-slate-700 focus:ring-indigo-500">
+                                        
+                                        <span class="w-7 h-7 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center shrink-0"
+                                              x-text="opt.identifier"></span>
 
-                                <span class="text-sm font-medium" x-text="opt.text"></span>
+                                        <span class="text-sm font-medium" x-text="opt.text"></span>
 
-                                <template x-if="opt.is_correct">
-                                    <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
-                                        Correct Answer (Admin Only)
-                                    </span>
+                                        <template x-if="opt.is_correct">
+                                            <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
+                                                Correct Option (Admin Only)
+                                            </span>
+                                        </template>
+                                    </label>
                                 </template>
-                            </label>
+                            </div>
                         </template>
-                    </div>
-                </template>
 
-                <!-- Saved Banner Confirmation -->
-                <div x-show="answerSubmitted" x-transition class="space-y-2">
-                    <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-                        </svg>
-                        <span>✓ Answer Saved Successfully. Click [Next Question] to continue.</span>
-                    </div>
+                        <!-- Single Choice Radio (MCQ / TRUE_FALSE) -->
+                        <template x-if="questions[currentIdx].type === 'MCQ' || questions[currentIdx].type === 'TRUE_FALSE'">
+                            <div class="space-y-3">
+                                <template x-for="opt in questions[currentIdx].options" :key="opt.identifier">
+                                    <label class="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
+                                           :class="selectedOption === opt.identifier ? 'bg-indigo-600/10 border-indigo-500 text-white shadow-sm' : 'bg-slate-900/40 border-slate-800/80 text-slate-300 hover:bg-slate-900/80'">
+                                        <input type="radio" name="preview_option" :value="opt.identifier" x-model="selectedOption"
+                                               :disabled="answerSubmitted"
+                                               class="w-4 h-4 text-indigo-600 bg-slate-950 border-slate-700 focus:ring-indigo-500">
+                                        
+                                        <span class="w-7 h-7 rounded-lg bg-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center shrink-0"
+                                              x-text="opt.identifier"></span>
 
-                    <!-- In Fill in Blank, show case-insensitive verification preview for Admin -->
-                    <template x-if="questions[currentIdx].type === 'FILL_IN_BLANK'">
-                        <div class="p-3 rounded-xl text-xs font-mono flex items-center justify-between border"
-                             :class="isFillBlankCorrect() ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300'">
-                            <span x-text="isFillBlankCorrect() ? '✓ Matches expected answer (Case-Insensitive Match)' : '✗ Does not match expected answer'"></span>
-                            <span class="text-slate-400 font-sans text-[11px]">Simulated Evaluation</span>
+                                        <span class="text-sm font-medium" x-text="opt.text"></span>
+
+                                        <template x-if="opt.is_correct">
+                                            <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
+                                                Correct Answer (Admin Only)
+                                            </span>
+                                        </template>
+                                    </label>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Saved Banner Confirmation -->
+                        <div x-show="answerSubmitted" x-transition class="space-y-2">
+                            <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                                </svg>
+                                <span>✓ Answer Saved Successfully. Click [Next Question] to continue.</span>
+                            </div>
+
+                            <!-- In Fill in Blank, show case-insensitive verification preview for Admin -->
+                            <template x-if="questions[currentIdx].type === 'FILL_IN_BLANK'">
+                                <div class="p-3 rounded-xl text-xs font-mono flex items-center justify-between border"
+                                     :class="isFillBlankCorrect() ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300'">
+                                    <span x-text="isFillBlankCorrect() ? '✓ Matches expected answer (Case-Insensitive Match)' : '✗ Does not match expected answer'"></span>
+                                    <span class="text-slate-400 font-sans text-[11px]">Simulated Evaluation</span>
+                                </div>
+                            </template>
                         </div>
-                    </template>
+                    </div>
                 </div>
             </div>
         </template>

@@ -20,7 +20,7 @@
             <div
                 class="inline-flex items-center gap-2 bg-slate-800 text-slate-400 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700/60 shadow-inner">
                 <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                Limit Reached ({{ $totalAdmins }}/2 Admins)
+                Limit Reached ({{ $totalAdmins }}/{{ $maxAdmins ?? 7 }} Admins)
             </div>
         @endif
     </div>

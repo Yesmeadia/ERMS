@@ -71,6 +71,15 @@ class OnlineExamSessionMiddleware
                 return $next($request);
             }
 
+            // Allow final proctoring video chunk uploads and WebRTC close signals within a 2-minute grace period
+            if ($request->routeIs('online-exam.proctoring.record-chunk') || $request->routeIs('online-exam.webrtc.signal')) {
+                $completedAt = $session->completed_at ?: now();
+                if (now()->diffInSeconds($completedAt) <= 120) {
+                    $request->attributes->set('exam_session', $session);
+                    return $next($request);
+                }
+            }
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,

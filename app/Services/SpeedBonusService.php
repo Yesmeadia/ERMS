@@ -41,14 +41,14 @@ class SpeedBonusService
 
         $maxBonusPerQuestion = (float) ($exam->max_bonus_per_question ?? 0);
         $maxTotalBonus = (float) ($exam->max_total_bonus ?? 0);
+        $formula = $exam->speed_bonus_formula ?: 'remaining_seconds';
 
-        // If total bonus cap is set and student has already reached it
-        if ($maxTotalBonus > 0 && $currentTotalBonus >= $maxTotalBonus) {
+        // If total bonus cap is set and student has already reached it (bypassed for remaining_seconds)
+        if ($maxTotalBonus > 0 && $formula !== 'remaining_seconds' && $formula !== SpeedBonusFormula::REMAINING_SECONDS->value && $currentTotalBonus >= $maxTotalBonus) {
             return 0.00;
         }
 
         $timeSavedRatio = ($limitMs - $timeSpentMs) / $limitMs; // e.g. 0.60 if 60% time saved
-        $formula = $exam->speed_bonus_formula ?: 'remaining_seconds';
         $rawBonus = 0.0;
 
         switch ($formula) {
@@ -96,8 +96,8 @@ class SpeedBonusService
             $cappedQuestionBonus = $rawBonus;
         }
 
-        // Cap 2: Total bonus cap (only applies if max_total_bonus > 0)
-        if ($maxTotalBonus > 0) {
+        // Cap 2: Total bonus cap (only applies if max_total_bonus > 0 and not remaining_seconds)
+        if ($maxTotalBonus > 0 && $formula !== 'remaining_seconds' && $formula !== SpeedBonusFormula::REMAINING_SECONDS->value) {
             $remainingAllowedTotal = max(0.0, $maxTotalBonus - $currentTotalBonus);
             $finalBonus = min($cappedQuestionBonus, $remainingAllowedTotal);
         } else {

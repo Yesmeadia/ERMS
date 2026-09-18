@@ -335,7 +335,7 @@
 
             <!-- Inspector Video Stage -->
             <div class="relative bg-black flex-1 min-h-[300px] sm:min-h-[420px] flex items-center justify-center overflow-hidden">
-                <video id="inspectorVideo" autoplay playsinline class="w-full h-full max-h-[60vh] object-contain"></video>
+                <video id="inspectorVideo" autoplay playsinline muted class="w-full h-full max-h-[60vh] object-contain"></video>
 
                 <!-- Loading / Connecting Overlay -->
                 <div id="inspectorLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-center p-6 space-y-3 z-10">
@@ -360,6 +360,13 @@
                     </div>
 
                     <div class="pointer-events-auto flex items-center gap-2">
+                        <button type="button" id="inspectorAudioToggleBtn" onclick="toggleInspectorAudio()"
+                                class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 backdrop-blur border border-slate-700 text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-1.5 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24z" />
+                            </svg>
+                            <span id="inspectorAudioLabel">Unmute Audio</span>
+                        </button>
                         <button type="button" onclick="captureStreamSnapshot()"
                                 class="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 backdrop-blur border border-slate-700 text-xs font-semibold text-white transition-all flex items-center gap-1.5 shadow-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -522,6 +529,25 @@
                     updateStatsCards(data.stats);
                     allSessions = data.sessions || [];
                     filterSessionsTable();
+
+                    // Auto-close inspector if monitored candidate has submitted or finished
+                    if (currentInspectorSessionId) {
+                        const inspectedSession = allSessions.find(s => s.session_id === currentInspectorSessionId);
+                        if (inspectedSession && (inspectedSession.is_completed || ['SUBMITTED', 'COMPLETED', 'TERMINATED', 'EXPIRED'].includes(inspectedSession.status))) {
+                            const overlay = document.getElementById('inspectorLoadingOverlay');
+                            const subtext = document.getElementById('inspectorLoadingSubtext');
+                            const badge = document.getElementById('inspectorLiveBadge');
+                            const badgeText = document.getElementById('inspectorLiveText');
+                            if (overlay) overlay.classList.remove('hidden');
+                            if (subtext) subtext.innerHTML = `<span class="text-indigo-400 font-semibold">Candidate has ${inspectedSession.status_label.toLowerCase()} the examination.</span><br><span class="text-slate-400 text-xs">Live session closed. Returning to dashboard...</span>`;
+                            if (badge) badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/10 border border-slate-500/30 text-slate-400';
+                            if (badgeText) badgeText.textContent = 'Session Closed';
+                            cleanupInspectorPeer();
+                            setTimeout(() => {
+                                closeCameraInspector();
+                            }, 2500);
+                        }
+                    }
                 } else {
                     console.warn('[LiveMonitor] Poll returned success:false', data);
                 }
@@ -710,7 +736,7 @@
                                         Rec (${s.recordings_count})
                                     </button>
                                 ` : ''}
-                                ${!isFinished ? `
+                                ${(!isFinished && s.session_id) ? `
                                     <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                             class="px-2.5 py-1 rounded-lg ${isCamActive ? 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'} text-[10px] font-semibold transition-colors flex items-center gap-1">
                                         <span class="w-1.5 h-1.5 rounded-full ${isCamActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}"></span>
@@ -779,14 +805,20 @@
                             <div class="w-full h-full flex items-center justify-center bg-slate-950">
                                 ${hasSnapshot ? `
                                     <div class="relative w-full h-full">
-                                        <img src="${s.snapshot_url}&_cb=${Date.now()}"
+                                        <img src="${s.snapshot_url}${s.snapshot_url.includes('?') ? '&' : '?'}_cb=${Date.now()}"
                                              alt="${s.student_name}"
                                              class="w-full h-full object-cover"
                                              loading="lazy" />
                                         <div class="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
-                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-xs text-emerald-400 border border-emerald-500/40 shadow-sm">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE FEED
-                                            </span>
+                                            ${!isFinished ? `
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/80 backdrop-blur-xs text-emerald-400 border border-emerald-500/40 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE FEED
+                                                </span>
+                                            ` : `
+                                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-950/90 backdrop-blur-xs text-slate-300 border border-slate-700 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>EXAM SUBMITTED
+                                                </span>
+                                            `}
                                             ${recCount > 0 ? `
                                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-rose-950/90 text-rose-300 border border-rose-600/40 shadow-sm" title="${recCount} hashed chunks recorded">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>REC (${recCount})
@@ -821,7 +853,7 @@
                             </div>
 
                             <!-- Click to Inspect Overlay Button -->
-                            ${!isFinished ? `
+                            ${(!isFinished && s.session_id) ? `
                                 <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                         class="absolute inset-0 bg-indigo-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs font-semibold text-white backdrop-blur-xs">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -849,7 +881,7 @@
                                         Rec (${recCount})
                                     </button>
                                 ` : ''}
-                                ${!isFinished ? `
+                                ${(!isFinished && s.session_id) ? `
                                     <button type="button" onclick="openCameraInspector(${s.session_id}, '${safeName}', '${s.registration_number}', '${safeSchool}')"
                                             class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white text-[10px] font-semibold transition-colors">
                                         Inspect
@@ -935,7 +967,10 @@
             player.src = streamUrl;
             player.classList.remove('hidden');
             placeholder.classList.add('hidden');
-            player.play().catch(console.warn);
+            player.load();
+            player.play().catch(err => {
+                console.warn('[Recordings Player] Play error:', err);
+            });
         }
 
         function closeRecordingsModal() {
@@ -945,14 +980,9 @@
             document.getElementById('recordingsModal').classList.add('hidden');
         }
 
-        // ==========================================
-        // WebRTC Live Camera Inspector & Evidence
-        // ==========================================
+        const WEBRTC_ICE_SERVERS_URL = "{{ route('admin.online-exams.live.webrtc.ice-servers', $exam) }}";
         const RTC_CONFIG = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
+            iceServers: @json(\App\Http\Controllers\OnlineExamWebRTCController::getIceServersConfig())
         };
 
         let currentInspectorSessionId = null;
@@ -963,6 +993,10 @@
         let isPollingInspector = false;
 
         async function openCameraInspector(sessionId, studentName, regNo, schoolName) {
+            if (!sessionId || sessionId === 'null') {
+                console.warn('[WebRTC Admin] Cannot open inspector: student has no active session yet.');
+                return;
+            }
             currentInspectorSessionId = sessionId;
             currentInspectorStudent = { name: studentName, regNo: regNo, school: schoolName };
 
@@ -978,7 +1012,7 @@
             const video = document.getElementById('inspectorVideo');
 
             overlay.classList.remove('hidden');
-            document.getElementById('inspectorLoadingSubtext').textContent = "Establishing WebRTC connection with student's device...";
+            document.getElementById('inspectorLoadingSubtext').textContent = "Discovering network routes (ICE gathering)... this may take up to 5 seconds.";
             badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400';
             badgeText.textContent = 'Connecting P2P...';
             document.getElementById('inspectorIceState').textContent = 'ICE: starting';
@@ -1003,8 +1037,19 @@
 
             pc.ontrack = (event) => {
                 const video = document.getElementById('inspectorVideo');
-                if (video && event.streams && event.streams[0]) {
-                    video.srcObject = event.streams[0];
+                if (video) {
+                    if (event.streams && event.streams[0]) {
+                        video.srcObject = event.streams[0];
+                    } else {
+                        let stream = video.srcObject;
+                        if (!stream) {
+                            stream = new MediaStream();
+                            video.srcObject = stream;
+                        }
+                        stream.addTrack(event.track);
+                    }
+                    video.muted = true;
+                    video.play().catch(console.warn);
                     document.getElementById('inspectorLoadingOverlay').classList.add('hidden');
                     const badge = document.getElementById('inspectorLiveBadge');
                     const badgeText = document.getElementById('inspectorLiveText');
@@ -1017,11 +1062,11 @@
                 }
             };
 
-            pc.onicecandidate = (event) => {
-                if (event.candidate && currentInspectorSessionId === sessionId) {
-                    sendAdminWebRtcSignal(sessionId, 'candidate', event.candidate);
-                }
-            };
+            // NOTE: We use vanilla (non-trickle) ICE — no separate candidate signals.
+            // On shared-hosting HTTP polling (1.5s delay), trickle candidates arrive
+            // too late and the peer connection times out. Instead we wait for ICE
+            // gathering to complete so all candidates are bundled inside the offer SDP.
+            pc.onicecandidate = () => {}; // intentionally no-op; gathering handled below
 
             pc.oniceconnectionstatechange = () => {
                 const el = document.getElementById('inspectorIceState');
@@ -1037,9 +1082,26 @@
                 const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
                 await pc.setLocalDescription(offer);
 
+                // Wait for ICE gathering to complete (vanilla ICE)
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') return resolve();
+                    const checkDone = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            pc.removeEventListener('icegatheringstatechange', checkDone);
+                            resolve();
+                        }
+                    };
+                    pc.addEventListener('icegatheringstatechange', checkDone);
+                    // Safety timeout: proceed after 4s even if gathering stalls
+                    setTimeout(resolve, 4000);
+                });
+
+                if (currentInspectorSessionId !== sessionId) return; // inspector was closed during gathering
+
+                // Send the complete SDP (with all candidates embedded)
                 await sendAdminWebRtcSignal(sessionId, 'offer', pc.localDescription);
 
-                // Start polling signals from this student
+                // Start polling for answer from student
                 if (inspectorPollInterval) clearInterval(inspectorPollInterval);
                 pollStudentWebRtcSignals(sessionId);
                 inspectorPollInterval = setInterval(() => pollStudentWebRtcSignals(sessionId), 1500);
@@ -1096,24 +1158,16 @@
 
             if (sig.type === 'answer') {
                 try {
+                    // The student answer also uses vanilla ICE — all candidates are
+                    // embedded in the SDP, so no separate candidate signals are needed.
                     await pc.setRemoteDescription(new RTCSessionDescription(sig.payload));
-                    // Flush buffered candidates
-                    for (const cand of inspectorBufferedCandidates) {
-                        try {
-                            await pc.addIceCandidate(new RTCIceCandidate(cand));
-                        } catch (e) { console.warn(e); }
-                    }
-                    inspectorBufferedCandidates = [];
                 } catch (err) {
                     console.error('[WebRTC Admin] Failed setting remote answer:', err);
                 }
             } else if (sig.type === 'candidate') {
+                // Kept for backwards-compat but vanilla ICE makes these redundant.
                 if (pc.remoteDescription && pc.remoteDescription.type) {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(sig.payload));
-                    } catch (e) {
-                        console.warn('[WebRTC Admin] Add candidate error:', e);
-                    }
+                    try { await pc.addIceCandidate(new RTCIceCandidate(sig.payload)); } catch (e) {}
                 } else {
                     inspectorBufferedCandidates.push(sig.payload);
                 }
@@ -1181,6 +1235,16 @@
             dlBtn.download = `proctor-proof-${currentInspectorStudent.regNo}-${Date.now()}.jpg`;
 
             document.getElementById('snapshotModal').classList.remove('hidden');
+        }
+
+        function toggleInspectorAudio() {
+            const video = document.getElementById('inspectorVideo');
+            const label = document.getElementById('inspectorAudioLabel');
+            if (!video) return;
+            video.muted = !video.muted;
+            if (label) {
+                label.textContent = video.muted ? 'Unmute Audio' : 'Mute Audio';
+            }
         }
 
         function toggleInspectorFullscreen() {

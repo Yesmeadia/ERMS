@@ -13,6 +13,55 @@
         /* Prevent selection during test */
         * { -webkit-user-select: none; user-select: none; }
         input[type="text"], textarea { -webkit-user-select: auto; user-select: auto; }
+
+        /* Question layout with side-by-side image */
+        .q-layout-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .q-layout-row.has-image {
+                display: grid;
+                grid-template-columns: 320px minmax(0, 1fr);
+                align-items: start;
+                gap: 1.75rem;
+            }
+        }
+        .q-image-col {
+            width: 100%;
+        }
+        @media (min-width: 768px) {
+            .q-image-col {
+                width: 320px;
+                position: sticky;
+                top: 5.5rem;
+            }
+        }
+        .q-image-card {
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid rgba(51, 65, 85, 0.8);
+            background: rgba(2, 6, 23, 0.8);
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+        .q-image-card img {
+            max-height: 260px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            border-radius: 0.75rem;
+            display: block;
+            margin: 0 auto;
+        }
+        .q-content-col {
+            min-width: 0;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col justify-between overflow-x-hidden antialiased">
@@ -102,92 +151,102 @@
                     </span>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-xs font-semibold" id="qMarksBadge">
-                        +{{ $payload['marks'] }} marks
-                    </span>
-                    @if($payload['negative_marks'] > 0)
-                    <span class="px-2.5 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-mono text-xs" id="qNegMarksBadge">
-                        -{{ $payload['negative_marks'] }}
-                    </span>
-                    @endif
-                </div>
+
             </div>
 
             <!-- Question Body -->
-            <div class="py-6 space-y-6">
-                <!-- Question Text -->
-                <div id="questionTextContainer" class="text-base sm:text-lg text-white font-normal leading-relaxed">
-                    {!! preg_replace('/\s*on\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', strip_tags($payload['question_text'], '<p><br><b><strong><i><em><u><s><sub><sup><ul><ol><li><table><thead><tbody><tr><th><td><span><div><code><pre><blockquote><h1><h2><h3><h4><h5><h6>')) !!}
-                </div>
+            <div id="questionContentArea" class="py-6">
+                <!-- Main Layout: Image Left + Content Right -->
+                <div id="questionBodyLayout" class="q-layout-row {{ !empty($payload['images']) ? 'has-image' : '' }}">
 
-                <!-- Attached Images -->
-                <div id="questionImagesContainer" class="space-y-3 {{ empty($payload['images']) ? 'hidden' : '' }}">
-                    @if(!empty($payload['images']))
-                        @foreach($payload['images'] as $img)
-                            <div class="rounded-2xl overflow-hidden border border-slate-800 max-h-72 flex items-center justify-center bg-slate-950/60 p-2">
-                                <img src="{{ $img['url'] }}" alt="Question Illustration" class="max-h-64 object-contain rounded-xl">
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
-
-                <!-- Interactive Options / Input Area -->
-                <div id="optionsContainer" class="space-y-3 pt-2">
-                    @if(in_array($payload['question_type'], ['MCQ', 'TRUE_FALSE']))
-                        @foreach($payload['options'] as $opt)
-                            <label class="option-label group flex items-center gap-3.5 p-4 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-950 transition-all cursor-pointer select-none">
-                                <input type="radio" name="option_choice" value="{{ $opt['id'] }}"
-                                       {{ in_array($opt['id'], $payload['saved_option_ids'] ?? []) ? 'checked' : '' }}
-                                       {{ $payload['is_already_saved'] ? 'disabled' : '' }}
-                                       class="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 focus:ring-indigo-500">
-                                <span class="w-7 h-7 rounded-xl bg-slate-800 group-hover:bg-indigo-600/30 text-slate-300 group-hover:text-indigo-200 flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors">
-                                    {{ $opt['identifier'] }}
-                                </span>
-                                <span class="text-sm text-slate-200 group-hover:text-white leading-normal">
-                                    {{ $opt['text'] }}
-                                </span>
-                            </label>
-                        @endforeach
-                    @elseif($payload['question_type'] === 'MULTIPLE_SELECT')
-                        @foreach($payload['options'] as $opt)
-                            <label class="option-label group flex items-center gap-3.5 p-4 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-950 transition-all cursor-pointer select-none">
-                                <input type="checkbox" name="option_choices[]" value="{{ $opt['id'] }}"
-                                       {{ in_array($opt['id'], $payload['saved_option_ids'] ?? []) ? 'checked' : '' }}
-                                       {{ $payload['is_already_saved'] ? 'disabled' : '' }}
-                                       class="w-4 h-4 text-indigo-600 rounded bg-slate-900 border-slate-700 focus:ring-indigo-500">
-                                <span class="w-7 h-7 rounded-xl bg-slate-800 group-hover:bg-indigo-600/30 text-slate-300 group-hover:text-indigo-200 flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors">
-                                    {{ $opt['identifier'] }}
-                                </span>
-                                <span class="text-sm text-slate-200 group-hover:text-white leading-normal">
-                                    {{ $opt['text'] }}
-                                </span>
-                            </label>
-                        @endforeach
-                    @elseif($payload['question_type'] === 'FILL_IN_BLANK')
-                        <div class="space-y-3">
-                            <label for="fillBlankInput" class="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Your Answer</label>
-                            <input type="text" id="fillBlankInput" name="fill_blank_answer"
-                                   value="{{ $payload['saved_text_answer'] ?? '' }}"
-                                   {{ $payload['is_already_saved'] ? 'disabled' : '' }}
-                                   placeholder="Type your answer here (not case-sensitive)..."
-                                   autocomplete="off"
-                                   class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-base text-white font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors {{ $payload['is_already_saved'] ? 'opacity-75 cursor-not-allowed' : '' }}">
-                            <p class="text-[11px] text-slate-400">Answer is case-insensitive (capitalization does not matter).</p>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Answer Saved Notification Banner -->
-                <div id="answerSavedBanner" class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between {{ $payload['is_already_saved'] ? '' : 'hidden' }}">
-                    <div class="flex items-center gap-2.5 text-xs font-semibold">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                        <span>Answer Saved Successfully</span>
+                    <!-- Left: Attached Images (shown only when images exist) -->
+                    <div id="questionImagesContainer" class="q-image-col space-y-3 {{ empty($payload['images']) ? 'hidden' : '' }}">
+                        @if(!empty($payload['images']))
+                            @foreach($payload['images'] as $img)
+                                <div class="q-image-card">
+                                    <img src="{{ $img['url'] }}" alt="Question Illustration">
+                                </div>
+                            @endforeach
+                        @endif
                     </div>
-                    <span class="text-[11px] text-emerald-400/80 font-mono">Response Locked</span>
+
+                    <!-- Right (or Full-Width): Question Text + Options -->
+                    <div class="q-content-col space-y-6">
+                        <!-- Question Text -->
+                        <div id="questionTextContainer" class="text-base sm:text-lg text-white font-normal leading-relaxed">
+                            {!! preg_replace('/\s*on\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', strip_tags($payload['question_text'], '<p><br><b><strong><i><em><u><s><sub><sup><ul><ol><li><table><thead><tbody><tr><th><td><span><div><code><pre><blockquote><h1><h2><h3><h4><h5><h6>')) !!}
+                        </div>
+
+                        <!-- Interactive Options / Input Area -->
+                        <div id="optionsContainer" class="space-y-3 pt-2">
+                            @if(in_array($payload['question_type'], ['MCQ', 'TRUE_FALSE']))
+                                @foreach($payload['options'] as $opt)
+                                    <label class="option-label group flex items-center gap-3.5 p-4 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-950 transition-all cursor-pointer select-none">
+                                        <input type="radio" name="option_choice" value="{{ $opt['id'] }}"
+                                               {{ in_array($opt['id'], $payload['saved_option_ids'] ?? []) ? 'checked' : '' }}
+                                               {{ $payload['is_already_saved'] ? 'disabled' : '' }}
+                                               class="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-700 focus:ring-indigo-500">
+                                        <span class="w-7 h-7 rounded-xl bg-slate-800 group-hover:bg-indigo-600/30 text-slate-300 group-hover:text-indigo-200 flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors">
+                                            {{ $opt['identifier'] }}
+                                        </span>
+                                        <span class="text-sm text-slate-200 group-hover:text-white leading-normal">
+                                            {{ $opt['text'] }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            @elseif($payload['question_type'] === 'MULTIPLE_SELECT')
+                                @foreach($payload['options'] as $opt)
+                                    <label class="option-label group flex items-center gap-3.5 p-4 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-950 transition-all cursor-pointer select-none">
+                                        <input type="checkbox" name="option_choices[]" value="{{ $opt['id'] }}"
+                                               {{ in_array($opt['id'], $payload['saved_option_ids'] ?? []) ? 'checked' : '' }}
+                                               {{ $payload['is_already_saved'] ? 'disabled' : '' }}
+                                               class="w-4 h-4 text-indigo-600 rounded bg-slate-900 border-slate-700 focus:ring-indigo-500">
+                                        <span class="w-7 h-7 rounded-xl bg-slate-800 group-hover:bg-indigo-600/30 text-slate-300 group-hover:text-indigo-200 flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-colors">
+                                            {{ $opt['identifier'] }}
+                                        </span>
+                                        <span class="text-sm text-slate-200 group-hover:text-white leading-normal">
+                                            {{ $opt['text'] }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            @elseif($payload['question_type'] === 'FILL_IN_BLANK')
+                                <div class="space-y-3">
+                                    <label for="fillBlankInput" class="block text-xs uppercase tracking-wider text-slate-400 font-semibold">Your Answer</label>
+                                    <input type="text" id="fillBlankInput" name="fill_blank_answer"
+                                           value="{{ $payload['saved_text_answer'] ?? '' }}"
+                                           {{ $payload['is_already_saved'] ? 'disabled' : '' }}
+                                           placeholder="Type your answer here (not case-sensitive)..."
+                                           autocomplete="off"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-5 py-4 text-base text-white font-mono placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors {{ $payload['is_already_saved'] ? 'opacity-75 cursor-not-allowed' : '' }}">
+                                    <p class="text-[11px] text-slate-400">Answer is case-insensitive (capitalization does not matter).</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Answer Saved Notification Banner -->
+                        <div id="answerSavedBanner" class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center justify-between {{ $payload['is_already_saved'] ? '' : 'hidden' }}">
+                            <div class="flex items-center gap-2.5 text-xs font-semibold">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                                <span>Answer Saved Successfully</span>
+                            </div>
+                            <span class="text-[11px] text-emerald-400/80 font-mono">Response Locked</span>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Question Time Up Container (Hidden by default, shown when question timer expires) -->
+            <div id="timeUpContainer" class="hidden py-8 px-6 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center space-y-3 my-6">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                </div>
+                <h3 class="text-base sm:text-lg font-bold text-amber-300">Time's Up for This Question!</h3>
+                <p class="text-sm text-slate-300 max-w-md mx-auto">The allotted time has expired. This question has been hidden and cannot be answered.</p>
+                <p class="text-xs text-slate-400 font-medium">Click <span class="text-indigo-400 font-semibold">[ Next Question ]</span> to proceed to the next question.</p>
             </div>
 
             <!-- Footer Action Controls: SEPARATE SUBMIT & NEXT BUTTONS -->
@@ -217,18 +276,18 @@
                         <span>Submit Answer</span>
                     </button>
 
-                    <!-- Next Question Button -->
+                    <!-- Next Question Button (Hidden until answer is submitted, unless already saved) -->
                     <button type="button" id="nextQuestionBtn"
-                            class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 {{ $payload['is_last_question'] ? 'hidden' : '' }}">
+                            class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 {{ (!$payload['is_already_saved'] || $payload['is_last_question']) ? 'hidden' : '' }}">
                         <span>Next Question</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                         </svg>
                     </button>
 
-                    <!-- Finish Exam Button (shown on last question or when ready) -->
+                    <!-- Finish Exam Button (shown on last question ONLY after answer is submitted) -->
                     <button type="button" id="finishExamBtn"
-                            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 {{ $payload['is_last_question'] ? '' : 'hidden' }}">
+                            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 {{ ($payload['is_already_saved'] && $payload['is_last_question']) ? '' : 'hidden' }}">
                         <span>Finish Examination</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -306,7 +365,7 @@
                             </li>
                             <li class="flex items-start gap-2">
                                 <span class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold shrink-0 mt-0.5">3</span>
-                                <span><strong>Strict Server-Side Timing:</strong> If the question timer expires, whatever input is currently selected is automatically captured and the session moves forward.</span>
+                                <span><strong>Strict Server-Side Timing:</strong> If the question timer expires, the question is hidden and awarded 0 marks. The <span class="text-indigo-400 font-semibold">[ Next Question ]</span> button will then appear for you to proceed.</span>
                             </li>
                             @if($exam->enable_speed_bonus)
                             <li class="flex items-start gap-2">
@@ -494,8 +553,10 @@
         const RESULT_URL = "{{ route('online-exam.result') }}";
         const WEBRTC_SIGNALS_URL = "{{ route('online-exam.webrtc.signals') }}";
         const WEBRTC_SIGNAL_URL = "{{ route('online-exam.webrtc.signal') }}";
+        const WEBRTC_ICE_SERVERS_URL = "{{ route('online-exam.webrtc.ice-servers') }}";
         const PROCTORING_RECORD_CHUNK_URL = "{{ route('online-exam.proctoring.record-chunk') }}";
         const PROCTORING_SNAPSHOT_URL = "{{ route('online-exam.proctoring.snapshot') }}";
+        const EXAM_SESSION_TOKEN = "{{ $session->session_token }}";
 
         const RTC_CONFIG = {
             iceServers: @json(\App\Http\Controllers\OnlineExamWebRTCController::getIceServersConfig())
@@ -750,7 +811,8 @@
                 const res = await fetch(WEBRTC_SIGNALS_URL, {
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': CSRF_TOKEN
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'X-Exam-Session-Token': EXAM_SESSION_TOKEN
                     }
                 });
                 if (res.ok) {
@@ -796,12 +858,10 @@
             const pc = new RTCPeerConnection(RTC_CONFIG);
             activePeer = pc;
 
-            // Send ICE candidates to admin
-            pc.onicecandidate = (event) => {
-                if (event.candidate && currentAdminId === adminId) {
-                    sendWebRtcSignal('candidate', adminId, event.candidate);
-                }
-            };
+            // NOTE: vanilla (non-trickle) ICE — candidates are embedded in the answer SDP.
+            // On shared-hosting HTTP polling the 1.5-2s round-trip makes trickle ICE
+            // unreliable; bundling all candidates in the answer SDP fixes this.
+            pc.onicecandidate = () => {}; // intentionally no-op; gathering handled below
 
             // Stream camera tracks to the peer connection
             mediaStream.getTracks().forEach(track => {
@@ -817,21 +877,30 @@
             };
 
             try {
+                // The incoming offer already contains all admin candidates (vanilla ICE),
+                // so setRemoteDescription immediately gives us usable remote info.
                 await pc.setRemoteDescription(new RTCSessionDescription(offerPayload));
-
-                // Process buffered ICE candidates
-                for (const cand of bufferedCandidates) {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(cand));
-                    } catch (e) {
-                        console.warn('[WebRTC Student] Buffered candidate error:', e);
-                    }
-                }
-                bufferedCandidates = [];
 
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
 
+                // Wait for ICE gathering to complete before sending the answer
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') return resolve();
+                    const checkDone = () => {
+                        if (pc.iceGatheringState === 'complete') {
+                            pc.removeEventListener('icegatheringstatechange', checkDone);
+                            resolve();
+                        }
+                    };
+                    pc.addEventListener('icegatheringstatechange', checkDone);
+                    // Safety timeout: proceed after 4s even if gathering stalls
+                    setTimeout(resolve, 4000);
+                });
+
+                if (currentAdminId !== adminId) return; // admin inspector closed during gathering
+
+                // Send the complete answer SDP (all candidates embedded)
                 sendWebRtcSignal('answer', adminId, pc.localDescription);
             } catch (err) {
                 console.error('[WebRTC Student] Failed processing admin offer:', err);
@@ -840,14 +909,11 @@
         }
 
         async function processAdminCandidate(adminId, candidatePayload) {
+            // Kept for backwards-compat; vanilla ICE makes this a no-op in normal flow.
             if (currentAdminId !== adminId || !activePeer) return;
             const pc = activePeer;
             if (pc.remoteDescription && pc.remoteDescription.type) {
-                try {
-                    await pc.addIceCandidate(new RTCIceCandidate(candidatePayload));
-                } catch (err) {
-                    console.warn('[WebRTC Student] Candidate add failed:', err);
-                }
+                try { await pc.addIceCandidate(new RTCIceCandidate(candidatePayload)); } catch (e) {}
             } else {
                 bufferedCandidates.push(candidatePayload);
             }
@@ -871,6 +937,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'X-Exam-Session-Token': EXAM_SESSION_TOKEN,
                         'Accept': 'application/json',
                     },
                     body: JSON.stringify({
@@ -894,23 +961,33 @@
         function initProctoringVideoRecording() {
             if (!requiresCamera || !mediaStream || !window.MediaRecorder) return;
 
-            // Determine best supported MIME type
-            let mimeType = 'video/webm;codecs=vp8,opus';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                if (MediaRecorder.isTypeSupported('video/webm')) {
+            const hasAudio = mediaStream.getAudioTracks && mediaStream.getAudioTracks().length > 0;
+
+            // Determine best supported MIME type based on track availability
+            let mimeType = '';
+            if (hasAudio) {
+                if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+                    mimeType = 'video/webm;codecs=vp8,opus';
+                } else if (MediaRecorder.isTypeSupported('video/webm')) {
                     mimeType = 'video/webm';
                 } else if (MediaRecorder.isTypeSupported('video/mp4')) {
                     mimeType = 'video/mp4';
-                } else {
-                    mimeType = '';
+                }
+            } else {
+                if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+                    mimeType = 'video/webm;codecs=vp8';
+                } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                    mimeType = 'video/webm';
+                } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                    mimeType = 'video/mp4';
                 }
             }
 
-            // Start periodic lightweight snapshot sender (every 6 seconds) for the live admin grid
+            // Start periodic lightweight snapshot sender for the live admin grid
             startSnapshotBroadcaster();
 
-            // Start segmented video recorder (every 20 seconds)
-            startSegmentedVideoRecorder(mimeType);
+            // Start segmented video recorder (every 10 seconds)
+            startSegmentedVideoRecorder(mimeType, hasAudio);
         }
 
         function startSnapshotBroadcaster() {
@@ -919,7 +996,10 @@
             async function captureAndSendSnapshot() {
                 if (!mediaStream || isTerminated) return;
                 const video = document.getElementById('proctorWebcam');
-                if (!video || !video.videoWidth) return;
+                if (!video) return;
+
+                const width = video.videoWidth || 320;
+                const height = video.videoHeight || 240;
 
                 try {
                     const canvas = document.createElement('canvas');
@@ -929,37 +1009,54 @@
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                     const base64Jpeg = canvas.toDataURL('image/jpeg', 0.65);
+                    if (!base64Jpeg || base64Jpeg.length < 100) return;
 
                     await fetch(PROCTORING_SNAPSHOT_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': CSRF_TOKEN,
+                            'X-Exam-Session-Token': EXAM_SESSION_TOKEN,
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({ snapshot: base64Jpeg })
+                        body: JSON.stringify({ snapshot: base64Jpeg }),
+                        keepalive: true
                     });
                 } catch (err) {
                     // Non-blocking snapshot upload
                 }
             }
 
-            // Initial capture after 2 seconds, then every 6 seconds
-            setTimeout(captureAndSendSnapshot, 2000);
-            proctorSnapshotInterval = setInterval(captureAndSendSnapshot, 6000);
+            // Initial capture after 1.5 seconds, then every 5 seconds
+            setTimeout(captureAndSendSnapshot, 1500);
+            proctorSnapshotInterval = setInterval(captureAndSendSnapshot, 5000);
         }
 
-        function startSegmentedVideoRecorder(mimeType) {
+        function startSegmentedVideoRecorder(mimeType, hasAudio) {
             try {
-                const options = {
-                    videoBitsPerSecond: 250000, // 250 kbps: lightweight, high clarity for faces, low storage
-                    audioBitsPerSecond: 64000   // 64 kbps: clear voice recording
-                };
+                const options = {};
                 if (mimeType) {
                     options.mimeType = mimeType;
                 }
+                options.videoBitsPerSecond = 250000; // 250 kbps: lightweight, clear for faces
+                if (hasAudio) {
+                    options.audioBitsPerSecond = 64000; // 64 kbps: voice recording
+                }
 
-                proctorMediaRecorder = new MediaRecorder(mediaStream, options);
+                try {
+                    proctorMediaRecorder = new MediaRecorder(mediaStream, options);
+                } catch (e1) {
+                    console.warn('[Proctoring Recorder] Options error, falling back:', e1);
+                    if (mimeType) {
+                        try {
+                            proctorMediaRecorder = new MediaRecorder(mediaStream, { mimeType });
+                        } catch (e2) {
+                            proctorMediaRecorder = new MediaRecorder(mediaStream);
+                        }
+                    } else {
+                        proctorMediaRecorder = new MediaRecorder(mediaStream);
+                    }
+                }
 
                 proctorMediaRecorder.ondataavailable = async (event) => {
                     if (event.data && event.data.size > 0) {
@@ -967,8 +1064,8 @@
                     }
                 };
 
-                // Time slice: triggers ondataavailable every 20 seconds
-                proctorMediaRecorder.start(20000);
+                // Time slice: triggers ondataavailable every 10 seconds
+                proctorMediaRecorder.start(10000);
             } catch (err) {
                 console.warn('[Proctoring Recorder] MediaRecorder initialization failed:', err);
             }
@@ -981,16 +1078,18 @@
                 const formData = new FormData();
                 formData.append('video_chunk', blob, `chunk_${index}.webm`);
                 formData.append('chunk_index', index);
-                formData.append('duration', 20.0);
+                formData.append('duration', 10.0);
                 formData.append('is_final', isFinal ? 1 : 0);
 
                 await fetch(PROCTORING_RECORD_CHUNK_URL, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'X-Exam-Session-Token': EXAM_SESSION_TOKEN,
                         'Accept': 'application/json'
                     },
-                    body: formData
+                    body: formData,
+                    keepalive: true
                 });
             } catch (err) {
                 console.warn('[Proctoring Recorder] Chunk upload failed:', err);
@@ -1011,6 +1110,64 @@
             }
         }
 
+        async function finalizeAndUploadLastChunk() {
+            if (proctorSnapshotInterval) {
+                clearInterval(proctorSnapshotInterval);
+                proctorSnapshotInterval = null;
+            }
+
+            if (!proctorMediaRecorder || proctorMediaRecorder.state === 'inactive') {
+                return;
+            }
+
+            return new Promise((resolve) => {
+                let resolved = false;
+                const safeResolve = () => {
+                    if (!resolved) {
+                        resolved = true;
+                        resolve();
+                    }
+                };
+
+                // 2-second safety timeout so form submission is never blocked
+                const timeoutId = setTimeout(safeResolve, 2000);
+
+                proctorMediaRecorder.ondataavailable = async (event) => {
+                    if (event.data && event.data.size > 0) {
+                        try {
+                            await uploadRecordedChunk(event.data, proctorChunkIndex++, true);
+                        } catch (e) {
+                            console.warn('Final chunk upload error:', e);
+                        }
+                    }
+                    clearTimeout(timeoutId);
+                    safeResolve();
+                };
+
+                try {
+                    proctorMediaRecorder.stop();
+                } catch (e) {
+                    clearTimeout(timeoutId);
+                    safeResolve();
+                }
+            });
+        }
+
+        function stopCameraTracks() {
+            if (mediaStream) {
+                try {
+                    mediaStream.getTracks().forEach(track => {
+                        try { track.stop(); } catch (e) {}
+                    });
+                } catch (e) {}
+                mediaStream = null;
+            }
+            const video = document.getElementById('proctorWebcam');
+            if (video) {
+                video.srcObject = null;
+            }
+        }
+
         // Initialize Timers
         function startTimers() {
             if (timerInterval) clearInterval(timerInterval);
@@ -1022,17 +1179,20 @@
 
                 updateTimerDisplay();
 
-                // Question Timer Expiration: Auto-submit current answer and advance
+                // Question Timer Expiration: Hide question, set marks to 0, show Next Question button
                 if (questionRemainingMs <= 0 && !currentPayload.is_already_saved && !isSubmitting && !isTransitioning) {
-                    autoSubmitOnTimeout();
+                    handleQuestionTimeout();
                 }
 
                 // Overall Exam Expiration: Verify with server authoritative timer
                 if (examRemainingMs <= 0 && !isTransitioning) {
                     isTransitioning = true;
                     clearInterval(timerInterval);
-                    sendHeartbeat().finally(() => {
-                        window.location.href = RESULT_URL;
+                    finalizeAndUploadLastChunk().finally(() => {
+                        stopCameraTracks();
+                        sendHeartbeat().finally(() => {
+                            window.location.href = RESULT_URL;
+                        });
                     });
                 }
             }, 1000);
@@ -1140,6 +1300,7 @@
                         document.getElementById('nextQuestionBtn').classList.add('hidden');
                     } else {
                         document.getElementById('nextQuestionBtn').classList.remove('hidden');
+                        document.getElementById('finishExamBtn').classList.add('hidden');
                     }
                 } else {
                     alert(data.message || 'Error saving answer.');
@@ -1156,14 +1317,50 @@
             }
         }
 
-        // Auto-submit when question timer expires with strict transition lock
-        async function autoSubmitOnTimeout() {
-            if (isSubmitting || isTransitioning || currentPayload.is_already_saved) return;
+        // When question timer expires: hide question, set marks to 0, show Next Question button
+        async function handleQuestionTimeout() {
+            if (isSubmitting || currentPayload.is_already_saved) return;
             isSubmitting = true;
-            isTransitioning = true;
-            const answer = getSelectedAnswer();
-            const qLimitMs = (currentPayload.time_limit_seconds || 60) * 1000;
 
+            currentPayload.is_already_saved = true;
+            currentPayload.is_timed_out = true;
+
+            // 1. Hide the question content area
+            const questionContentArea = document.getElementById('questionContentArea');
+            if (questionContentArea) questionContentArea.classList.add('hidden');
+
+            // 2. Show the Time's Up notification container
+            const timeUpContainer = document.getElementById('timeUpContainer');
+            if (timeUpContainer) timeUpContainer.classList.remove('hidden');
+
+            // 3. Set the question mark as 0 in UI
+            const qMarksBadge = document.getElementById('qMarksBadge');
+            if (qMarksBadge) {
+                qMarksBadge.textContent = '0 marks';
+                qMarksBadge.className = 'px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 font-mono text-xs font-semibold';
+            }
+            const qNegMarksBadge = document.getElementById('qNegMarksBadge');
+            if (qNegMarksBadge) {
+                qNegMarksBadge.classList.add('hidden');
+            }
+
+            // 4. Hide Submit Answer button
+            const submitBtn = document.getElementById('submitAnswerBtn');
+            if (submitBtn) submitBtn.classList.add('hidden');
+
+            // 5. Show Next Question button (or Finish Exam button if last question)
+            const nextBtn = document.getElementById('nextQuestionBtn');
+            const finishBtn = document.getElementById('finishExamBtn');
+            if (currentPayload.is_last_question) {
+                if (finishBtn) finishBtn.classList.remove('hidden');
+                if (nextBtn) nextBtn.classList.add('hidden');
+            } else {
+                if (nextBtn) nextBtn.classList.remove('hidden');
+                if (finishBtn) finishBtn.classList.add('hidden');
+            }
+
+            // 6. Asynchronously record the timeout with 0 marks on the server
+            const qLimitMs = (currentPayload.time_limit_seconds || 60) * 1000;
             try {
                 await fetch(SUBMIT_ANSWER_URL, {
                     method: 'POST',
@@ -1174,22 +1371,16 @@
                     },
                     body: JSON.stringify({
                         question_id: currentPayload.question_id,
-                        selected_option_ids: answer.selectedOptionIds,
-                        text_answer: answer.textAnswer,
-                        time_spent_ms: qLimitMs
+                        selected_option_ids: null,
+                        text_answer: null,
+                        time_spent_ms: qLimitMs,
+                        is_timeout: true
                     })
                 });
             } catch (e) {
-                console.warn('Auto-submit timeout error:', e);
+                console.warn('Timeout submit error:', e);
             } finally {
                 isSubmitting = false;
-            }
-
-            // Advance automatically upon question timer expiration
-            if (!currentPayload.is_last_question) {
-                await handleNextQuestion();
-            } else {
-                window.location.href = RESULT_URL;
             }
         }
 
@@ -1280,21 +1471,17 @@
                 limitEl.textContent = `/ ${p.time_limit_seconds}s`;
             }
 
+            // Restore question content area visibility and hide time-up container
+            const questionContentArea = document.getElementById('questionContentArea');
+            if (questionContentArea) questionContentArea.classList.remove('hidden');
+            const timeUpContainer = document.getElementById('timeUpContainer');
+            if (timeUpContainer) timeUpContainer.classList.add('hidden');
+
             // Update Progress & Badges
             document.getElementById('qIndexText').textContent = p.question_index;
             document.getElementById('qTotalText').textContent = p.total_questions;
             document.getElementById('qTypeBadge').textContent = p.question_type_label;
-            document.getElementById('qMarksBadge').textContent = `+${p.marks} marks`;
 
-            const negBadge = document.getElementById('qNegMarksBadge');
-            if (negBadge) {
-                if (p.negative_marks > 0) {
-                    negBadge.textContent = `-${p.negative_marks}`;
-                    negBadge.classList.remove('hidden');
-                } else {
-                    negBadge.classList.add('hidden');
-                }
-            }
 
             const pct = (p.question_index / Math.max(1, p.total_questions)) * 100;
             document.getElementById('examProgressBar').style.width = `${pct}%`;
@@ -1302,19 +1489,28 @@
             // Question Text: sanitized HTML
             document.getElementById('questionTextContainer').innerHTML = sanitizeQuestionHtml(p.question_text);
 
-            // Images: validated URL and escaped attributes
+            // Images: validated URL and escaped attributes — shown on the LEFT side
             const imgContainer = document.getElementById('questionImagesContainer');
+            const bodyLayout = document.getElementById('questionBodyLayout');
             const validImages = (p.images || []).filter(img => isValidImageUrl(img.url));
             if (validImages.length > 0) {
                 imgContainer.innerHTML = validImages.map(img => `
-                    <div class="rounded-2xl overflow-hidden border border-slate-800 max-h-72 flex items-center justify-center bg-slate-950/60 p-2">
-                        <img src="${escapeHtml(img.url)}" alt="Question Illustration" class="max-h-64 object-contain rounded-xl">
+                    <div class="q-image-card">
+                        <img src="${escapeHtml(img.url)}" alt="Question Illustration">
                     </div>
                 `).join('');
                 imgContainer.classList.remove('hidden');
+                // Enable side-by-side layout
+                if (bodyLayout) {
+                    bodyLayout.classList.add('has-image');
+                }
             } else {
                 imgContainer.innerHTML = '';
                 imgContainer.classList.add('hidden');
+                // Revert to stacked layout
+                if (bodyLayout) {
+                    bodyLayout.classList.remove('has-image');
+                }
             }
 
             // Render Options with XSS escaping
@@ -1380,18 +1576,20 @@
             if (isSaved) {
                 banner.classList.remove('hidden');
                 submitBtn.classList.add('hidden');
+                if (p.is_last_question) {
+                    nextBtn.classList.add('hidden');
+                    finishBtn.classList.remove('hidden');
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    finishBtn.classList.add('hidden');
+                }
             } else {
                 banner.classList.add('hidden');
                 submitBtn.classList.remove('hidden');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg><span>Submit Answer</span>`;
-            }
-
-            if (p.is_last_question) {
+                // Hide Next and Finish buttons until question is submitted!
                 nextBtn.classList.add('hidden');
-                finishBtn.classList.remove('hidden');
-            } else {
-                nextBtn.classList.remove('hidden');
                 finishBtn.classList.add('hidden');
             }
 
@@ -1633,9 +1831,42 @@
             }
 
             const finishForm = document.querySelector('#finishModal form');
+            let isFinishSubmitting = false;
             if (finishForm) {
-                finishForm.addEventListener('submit', () => {
-                    stopProctoringRecording(true);
+                finishForm.addEventListener('submit', async (e) => {
+                    if (isFinishSubmitting) return;
+                    e.preventDefault();
+                    isFinishSubmitting = true;
+
+                    const submitBtn = finishForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = `
+                            <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Submitting...
+                        `;
+                    }
+
+                    // 1. Finalize and flush final video chunk
+                    try {
+                        await finalizeAndUploadLastChunk();
+                    } catch (err) {
+                        console.warn('Final chunk flush error:', err);
+                    }
+
+                    // 2. Send WebRTC close signal to proctor
+                    try {
+                        await sendWebRtcSignal('close', currentAdminId, { reason: 'exam_submitted' });
+                    } catch (err) {}
+
+                    // 3. Stop camera and microphone hardware tracks
+                    stopCameraTracks();
+
+                    // 4. Submit the form
+                    finishForm.submit();
                 });
             }
 
@@ -1777,6 +2008,19 @@
                     await startCamera();
                 }
 
+                // Mark fullscreen as already entered so resuming doesn't fire false FULLSCREEN_EXIT violations.
+                // The student was already in fullscreen when they started; page reload re-enters via the prompt.
+                if (requiresFullscreen) {
+                    hasEnteredFullscreenOnce = true;
+                    // If not currently fullscreen (e.g. after a hard refresh), show the prompt
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                        const resumePrompt = document.getElementById('fullscreenStartPrompt');
+                        if (resumePrompt) {
+                            resumePrompt.classList.remove('hidden');
+                        }
+                    }
+                }
+
                 setupAntiCheatingWatchdogs();
                 setupFillBlankEnterSubmit();
                 startTimers();
@@ -1787,6 +2031,7 @@
                 if (webrtcSignalingInterval) clearInterval(webrtcSignalingInterval);
                 closeAdminPeer();
                 stopProctoringRecording(true);
+                stopCameraTracks();
             });
         });
     </script>

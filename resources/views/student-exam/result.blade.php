@@ -226,6 +226,25 @@
                 </div>
             </div>
         </div>
+        @else
+        <!-- Results & Feedback Withheld Notice -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/60 text-center space-y-4">
+            <div class="inline-flex p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">Results &amp; Feedback Withheld</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto mt-1 leading-relaxed">
+                    Score calculation and detailed answer evaluation for this examination will be reviewed and published officially by the examination committee.
+                </p>
+            </div>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span>Evaluation Pending</span>
+            </div>
+        </div>
         @endif
 
         <!-- Action Button -->

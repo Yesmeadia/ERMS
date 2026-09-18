@@ -9,7 +9,7 @@
             Back to Admins List
         </a>
         <h2 class="text-xl font-bold text-white">Add Board Admin</h2>
-        <p class="text-sm text-slate-400">Create a secondary system administrator account with full board-level credentials</p>
+        <p class="text-sm text-slate-400">Create a system administrator account with full board-level credentials</p>
     </div>
 
     {{-- Form --}}
