@@ -896,12 +896,12 @@
 
         .winners-fallback-slider-track {
             display: flex;
-            width: 500%;
+            width: 700%;
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .winners-fallback-img {
-            width: 20%;
+            width: calc(100% / 7);
             height: auto;
             flex-shrink: 0;
             display: block;
@@ -2214,8 +2214,17 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.35; transform: scale(0.75); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.35;
+                transform: scale(0.75);
+            }
         }
     </style>
 </head>
@@ -2416,7 +2425,10 @@
                     <span>Hall of Fame</span>
                     <div class="section-tag-line"></div>
                 </div>
-                <h2 class="section-title">Previous Year Winners</h2>
+                <h2 class="section-title" style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <img src="{{ asset('logo-w.png') }}" alt="YES Genius Season 4" style="height: 48px; width: auto; object-fit: contain; vertical-align: middle;">
+                    <span>Winners</span>
+                </h2>
                 <p class="section-sub">Celebrating the brightest minds from YES India Schools & Yaseen Colleges of
                     Integrated Studies, recognized at Genius
                     Jam.</p>
@@ -2426,15 +2438,15 @@
                                 activeSlide: 0,
                                 init() {
                                     setInterval(() => {
-                                        this.activeSlide = (this.activeSlide + 1) % 5;
+                                        this.activeSlide = (this.activeSlide + 1) % 7;
                                     }, 3000);
                                 }
                             }" class="winners-fallback-slider">
                         <div class="winners-fallback-slider-track"
-                            :style="'transform: translateX(-' + (activeSlide * 20) + '%)'">
-                            @for($i = 1; $i <= 5; $i++)
-                                <img src="{{ asset('gallery/banner-0' . $i . '.jpeg') }}"
-                                    x-on:error="$event.target.src = '{{ asset('gallery/banner-0' . $i . '.jpg') }}'"
+                            :style="'transform: translateX(-' + (activeSlide * (100 / 7)) + '%)'">
+                            @for($i = 1; $i <= 7; $i++)
+                                <img src="{{ asset('gallery/b-0' . $i . '.jpeg') }}"
+                                    x-on:error="$event.target.src = '{{ asset('gallery/b-0' . $i . '.jpg') }}'"
                                     alt="Previous Winners" class="winners-fallback-img">
                             @endfor
                         </div>
@@ -2564,10 +2576,12 @@
 
                         <span class="util-badge util-badge-purple" id="home-result-badge">
                             @if($released ?? false)
-                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:6px;"></span>
+                                <span
+                                    style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:6px;"></span>
                                 Results Released
                             @else
-                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#c084fc;margin-right:6px;animation:pulse 1.4s ease-in-out infinite;"></span>
+                                <span
+                                    style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#c084fc;margin-right:6px;animation:pulse 1.4s ease-in-out infinite;"></span>
                                 Releasing Soon
                             @endif
                         </span>
@@ -2578,26 +2592,51 @@
 
                         {{-- ── LIVE COUNTDOWN (Shown before release) ── --}}
                         <div id="home-countdown-wrap" style="{{ ($released ?? false) ? 'display:none;' : '' }}">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                                <span style="font-size:10.5px;font-weight:700;color:#c084fc;letter-spacing:0.08em;text-transform:uppercase;">Scheduled Release</span>
-                                <span style="font-size:11px;font-weight:700;color:#e2e8f0;">{{ $releaseIst ?? '16 Sep 2026, 05:30 PM' }} IST</span>
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                <span
+                                    style="font-size:10.5px;font-weight:700;color:#c084fc;letter-spacing:0.08em;text-transform:uppercase;">Scheduled
+                                    Release</span>
+                                <span
+                                    style="font-size:11px;font-weight:700;color:#e2e8f0;">{{ $releaseIst ?? '16 Sep 2026, 05:30 PM' }}
+                                    IST</span>
                             </div>
                             <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:18px;">
-                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
-                                    <div id="home-cd-days" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
-                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Days</div>
+                                <div
+                                    style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-days"
+                                        style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">
+                                        --</div>
+                                    <div
+                                        style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">
+                                        Days</div>
                                 </div>
-                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
-                                    <div id="home-cd-hours" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
-                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Hours</div>
+                                <div
+                                    style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-hours"
+                                        style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">
+                                        --</div>
+                                    <div
+                                        style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">
+                                        Hours</div>
                                 </div>
-                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
-                                    <div id="home-cd-mins" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
-                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Mins</div>
+                                <div
+                                    style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-mins"
+                                        style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">
+                                        --</div>
+                                    <div
+                                        style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">
+                                        Mins</div>
                                 </div>
-                                <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
-                                    <div id="home-cd-secs" style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">--</div>
-                                    <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Secs</div>
+                                <div
+                                    style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.22);border-radius:12px;padding:10px 4px;text-align:center;">
+                                    <div id="home-cd-secs"
+                                        style="font-size:20px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1.1;">
+                                        --</div>
+                                    <div
+                                        style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">
+                                        Secs</div>
                                 </div>
                             </div>
                         </div>
@@ -2612,26 +2651,31 @@
                         {{-- ── CTA / INPUT SECTION ── --}}
                         <div id="home-result-action" class="verify-input-wrap">
                             @if($released ?? false)
-                                <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn" style="width:100%;">
+                                <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn"
+                                    style="width:100%;">
                                     Check Exam Results
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                        stroke="currentColor" style="width:15px;height:15px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="2.5" stroke="currentColor" style="width:15px;height:15px;">
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                     </svg>
                                 </a>
                             @else
-                                <div id="home-result-locked-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);color:#c084fc;font-size:13px;font-weight:700;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                <div id="home-result-locked-btn"
+                                    style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:14px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);color:#c084fc;font-size:13px;font-weight:700;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                        stroke="currentColor" style="width:16px;height:16px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
                                     </svg>
                                     Result Portal Opens at 5:30 PM IST
                                 </div>
                                 <div id="home-result-unlocked-btn" style="display:none;">
-                                    <a href="{{ route('results.check-form') }}" class="btn-purple-solid" id="check-results-btn" style="width:100%;">
+                                    <a href="{{ route('results.check-form') }}" class="btn-purple-solid"
+                                        id="check-results-btn" style="width:100%;">
                                         Check Exam Results
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                                            stroke="currentColor" style="width:15px;height:15px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="2.5" stroke="currentColor" style="width:15px;height:15px;">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                                         </svg>
@@ -2873,57 +2917,57 @@
         }
     </script>
     @if(!($released ?? false))
-    <script @nonce>
-        (function () {
-            const releaseIso = '{{ $releaseIso ?? "2026-09-16T12:00:00Z" }}';
-            const releaseMs = new Date(releaseIso).getTime();
-            const daysEl = document.getElementById('home-cd-days');
-            const hoursEl = document.getElementById('home-cd-hours');
-            const minsEl = document.getElementById('home-cd-mins');
-            const secsEl = document.getElementById('home-cd-secs');
+        <script @nonce>
+            (function () {
+                const releaseIso = '{{ $releaseIso ?? "2026-09-16T12:00:00Z" }}';
+                const releaseMs = new Date(releaseIso).getTime();
+                const daysEl = document.getElementById('home-cd-days');
+                const hoursEl = document.getElementById('home-cd-hours');
+                const minsEl = document.getElementById('home-cd-mins');
+                const secsEl = document.getElementById('home-cd-secs');
 
-            const lockedBtn = document.getElementById('home-result-locked-btn');
-            const unlockedBtn = document.getElementById('home-result-unlocked-btn');
-            const badgeEl = document.getElementById('home-result-badge');
+                const lockedBtn = document.getElementById('home-result-locked-btn');
+                const unlockedBtn = document.getElementById('home-result-unlocked-btn');
+                const badgeEl = document.getElementById('home-result-badge');
 
-            function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
+                function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
 
-            function update() {
-                const diff = releaseMs - Date.now();
-                if (diff <= 0) {
-                    if (daysEl) daysEl.textContent = '00';
-                    if (hoursEl) hoursEl.textContent = '00';
-                    if (minsEl) minsEl.textContent = '00';
-                    if (secsEl) secsEl.textContent = '00';
+                function update() {
+                    const diff = releaseMs - Date.now();
+                    if (diff <= 0) {
+                        if (daysEl) daysEl.textContent = '00';
+                        if (hoursEl) hoursEl.textContent = '00';
+                        if (minsEl) minsEl.textContent = '00';
+                        if (secsEl) secsEl.textContent = '00';
 
-                    if (lockedBtn) lockedBtn.style.display = 'none';
-                    if (unlockedBtn) unlockedBtn.style.display = 'block';
-                    if (badgeEl) {
-                        badgeEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:6px;"></span> Results Released';
+                        if (lockedBtn) lockedBtn.style.display = 'none';
+                        if (unlockedBtn) unlockedBtn.style.display = 'block';
+                        if (badgeEl) {
+                            badgeEl.innerHTML = '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;margin-right:6px;"></span> Results Released';
+                        }
+                        return;
                     }
-                    return;
+
+                    const days = Math.floor(diff / 86400000);
+                    const hours = Math.floor((diff % 86400000) / 3600000);
+                    const mins = Math.floor((diff % 3600000) / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+
+                    const dStr = pad(days);
+                    const hStr = pad(hours);
+                    const mStr = pad(mins);
+                    const sStr = pad(secs);
+
+                    if (daysEl) daysEl.textContent = dStr;
+                    if (hoursEl) hoursEl.textContent = hStr;
+                    if (minsEl) minsEl.textContent = mStr;
+                    if (secsEl) secsEl.textContent = sStr;
                 }
 
-                const days = Math.floor(diff / 86400000);
-                const hours = Math.floor((diff % 86400000) / 3600000);
-                const mins = Math.floor((diff % 3600000) / 60000);
-                const secs = Math.floor((diff % 60000) / 1000);
-
-                const dStr = pad(days);
-                const hStr = pad(hours);
-                const mStr = pad(mins);
-                const sStr = pad(secs);
-
-                if (daysEl) daysEl.textContent = dStr;
-                if (hoursEl) hoursEl.textContent = hStr;
-                if (minsEl) minsEl.textContent = mStr;
-                if (secsEl) secsEl.textContent = sStr;
-            }
-
-            update();
-            setInterval(update, 1000);
-        })();
-    </script>
+                update();
+                setInterval(update, 1000);
+            })();
+        </script>
     @endif
 </body>
 
