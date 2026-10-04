@@ -7,6 +7,7 @@ use App\Models\Examination;
 use App\Models\Payment;
 use App\Models\School;
 use App\Models\Student;
+use Barryvdh\DomPDF\Facade\Pdf;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
@@ -209,6 +210,9 @@ class PaymentController extends Controller
 
     /**
      * School Admin: Create a Cashfree order and redirect to checkout with session details.
+     *
+     * @param  Request  $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function initiate(Request $request)
     {
@@ -246,193 +250,18 @@ class PaymentController extends Controller
             return redirect()->route('school.students.index')->with('error', 'One or more selected students are invalid, already paid, or do not belong to your school.');
         }
 
-        // Cashfree API configuration
-        $isProduction = config('services.cashfree.env') === 'production';
-        $baseUrl = $isProduction
-            ? 'https://api.cashfree.com/pg'
-            : 'https://sandbox.cashfree.com/pg';
-        $clientId = config('services.cashfree.client_id');
-        $clientSecret = config('services.cashfree.client_secret');
-
-        $headers = [
-            'x-client-id' => $clientId,
-            'x-client-secret' => $clientSecret,
-            'x-api-version' => '2023-08-01',
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ];
-
-        // CWE-362: Check for an exact matching pending payment to reuse and prevent duplicate charges/orders
-        $matchingPayment = Payment::where('school_id', $school->id)
-            ->where('status', 'Pending')
-            ->whereHas('students', function ($query) use ($studentIds) {
-                $query->whereIn('students.id', $studentIds);
-            }, '=', count($studentIds))
-            ->withCount('students')
-            ->get()
-            ->first(function ($p) use ($studentIds) {
-                return $p->students_count === count($studentIds);
-            });
-
-        $paymentSessionId = null;
-        $cfOrderId = null;
-        $paymentDbId = null;
-        $totalAmount = 0.00;
-        $students = collect();
-
-        if ($matchingPayment) {
-            $cfOrderId = $matchingPayment->cashfree_order_id;
-            $paymentDbId = $matchingPayment->id;
-
-            // Verify existing session against Cashfree
-            try {
-                $http = new GuzzleClient(['timeout' => 15]);
-                $cfResponse = $http->get($baseUrl.'/orders/'.$cfOrderId, [
-                    'headers' => $headers,
-                ]);
-                $cfOrder = json_decode((string) $cfResponse->getBody(), true);
-                if (isset($cfOrder['payment_session_id']) && ($cfOrder['order_status'] ?? '') === 'ACTIVE') {
-                    $paymentSessionId = $cfOrder['payment_session_id'];
-                    $totalAmount = $matchingPayment->amount;
-                    $students = $matchingPayment->students;
-                } else {
-                    // Mark as failed if order is not active or payment_session_id is missing, let it fall through to create a new one
-                    $matchingPayment->status = 'Failed';
-                    $matchingPayment->save();
-                    $matchingPayment = null;
-                }
-            } catch (\Exception $e) {
-                $matchingPayment->status = 'Failed';
-                $matchingPayment->save();
-                $matchingPayment = null;
-            }
+        try {
+            $sessionData = $this->createOrRetrieveCashfreeSession($school, $studentIds);
+        } catch (\Exception $e) {
+            return redirect()->route('school.students.index')
+                ->with('error', 'Could not initiate payment: '.$e->getMessage());
         }
 
-        // If no matching payment session was found or verified, initiate a new one
-        if (! $matchingPayment) {
-            try {
-                // CWE-362 & CWE-602: Perform database locks and calculations inside a transaction
-                $checkoutData = DB::transaction(function () use ($school, $studentIds, $baseUrl, $headers) {
-                    // Lock student rows for update to ensure serial execution under high concurrency
-                    $students = Student::where('school_id', $school->id)
-                        ->whereIn('id', $studentIds)
-                        ->where('payment_status', 'Unpaid')
-                        ->lockForUpdate()
-                        ->get();
-
-                    if ($students->isEmpty() || $students->count() !== count(array_unique($studentIds))) {
-                        throw new \Exception('One or more selected students are invalid, already paid, or do not belong to your school.');
-                    }
-
-                    // Cancel/Fail any older Pending payments that contain overlapping student IDs
-                    $overlappingPaymentIds = DB::table('payment_student')
-                        ->join('payments', 'payment_student.payment_id', '=', 'payments.id')
-                        ->where('payments.school_id', $school->id)
-                        ->where('payments.status', 'Pending')
-                        ->whereIn('payment_student.student_id', $studentIds)
-                        ->pluck('payments.id')
-                        ->unique();
-
-                    if ($overlappingPaymentIds->isNotEmpty()) {
-                        Payment::whereIn('id', $overlappingPaymentIds)
-                            ->update(['status' => 'Failed']);
-                    }
-
-                    // CWE-602: Always calculate total payable amount server-side based on secure DB records
-                    $finePerStudent = $school->getFinePerStudentAmount();
-                    $baseAmount = 0.00;
-                    $fineAmount = 0.00;
-
-                    foreach ($students as $student) {
-                        $baseAmount += $student->registration_fee;
-                        $fineAmount += $finePerStudent;
-                    }
-                    $totalAmount = $baseAmount + $fineAmount;
-
-                    // Build a unique order ID
-                    $cfOrderId = 'ERMS_'.strtoupper(bin2hex(random_bytes(8)));
-                    $returnUrl = route('school.payments.callback').'?order_id='.$cfOrderId;
-
-                    // Extract and sanitize customer phone number from school profile
-                    $phoneDigits = preg_replace('/[^0-9]/', '', $school->mobile_number ?? '');
-                    if (strlen($phoneDigits) === 12 && str_starts_with($phoneDigits, '91')) {
-                        $phoneDigits = substr($phoneDigits, 2);
-                    }
-                    $customerPhone = (strlen($phoneDigits) >= 10 && strlen($phoneDigits) <= 15) ? $phoneDigits : '9999999999';
-
-                    $payload = [
-                        'order_id' => $cfOrderId,
-                        'order_amount' => round($totalAmount, 2),
-                        'order_currency' => 'INR',
-                        'order_note' => 'YES GENIUS — Registration Fee for '.$school->name,
-                        'customer_details' => [
-                            'customer_id' => 'school_'.$school->id,
-                            'customer_phone' => $customerPhone,
-                            'customer_email' => Auth::user()->email,
-                            'customer_name' => Auth::user()->name,
-                        ],
-                        'order_meta' => [
-                            'return_url' => $returnUrl,
-                        ],
-                    ];
-
-                    $http = new GuzzleClient(['timeout' => 15]);
-                    $cfResponse = $http->post($baseUrl.'/orders', [
-                        'headers' => $headers,
-                        'json' => $payload,
-                    ]);
-                    $cfOrder = json_decode((string) $cfResponse->getBody(), true);
-                    $paymentSessionId = $cfOrder['payment_session_id'] ?? null;
-
-                    if (! $paymentSessionId) {
-                        throw new \Exception('Failed to get payment session ID from Cashfree.');
-                    }
-
-                    // Create the payment record in DB
-                    $payment = Payment::create([
-                        'school_id' => $school->id,
-                        'cashfree_order_id' => $cfOrderId,
-                        'amount' => $totalAmount,
-                        'base_amount' => $baseAmount,
-                        'fine_amount' => $fineAmount,
-                        'payment_method' => 'Cashfree',
-                        'status' => 'Pending',
-                        'paid_at' => null,
-                    ]);
-
-                    // Attach students to this payment record
-                    foreach ($students as $student) {
-                        $stBase = $student->registration_fee;
-                        $stFine = $finePerStudent;
-                        $stTotal = $stBase + $stFine;
-
-                        $payment->students()->attach($student->id, [
-                            'amount' => $stTotal,
-                            'base_amount' => $stBase,
-                            'fine_amount' => $stFine,
-                        ]);
-                    }
-
-                    return [
-                        'paymentDbId' => $payment->id,
-                        'cfOrderId' => $cfOrderId,
-                        'paymentSessionId' => $paymentSessionId,
-                        'totalAmount' => $totalAmount,
-                        'students' => $students,
-                    ];
-                });
-
-                $paymentDbId = $checkoutData['paymentDbId'];
-                $cfOrderId = $checkoutData['cfOrderId'];
-                $paymentSessionId = $checkoutData['paymentSessionId'];
-                $totalAmount = $checkoutData['totalAmount'];
-                $students = $checkoutData['students'];
-
-            } catch (\Exception $e) {
-                return redirect()->route('school.students.index')
-                    ->with('error', 'Could not initiate payment: '.$e->getMessage());
-            }
-        }
+        $cfOrderId = $sessionData['cfOrderId'];
+        $paymentDbId = $sessionData['paymentDbId'];
+        $paymentSessionId = $sessionData['paymentSessionId'];
+        $totalAmount = $sessionData['totalAmount'];
+        $students = $sessionData['students'];
 
         // Reload the checkout view with Cashfree session details
         $finePerStudent = $school->getFinePerStudentAmount();
@@ -483,6 +312,176 @@ class PaymentController extends Controller
             'adminEmail' => Auth::user()->email,
             'adminName' => Auth::user()->name,
         ]);
+    }
+
+    /**
+     * Helper to create a new Cashfree order or retrieve an existing active session.
+     *
+     * @param  School  $school
+     * @param  array  $studentIds
+     * @return array
+     */
+    private function createOrRetrieveCashfreeSession(School $school, array $studentIds): array
+    {
+        $isProduction = config('services.cashfree.env') === 'production';
+        $baseUrl = $isProduction
+            ? 'https://api.cashfree.com/pg'
+            : 'https://sandbox.cashfree.com/pg';
+        $clientId = config('services.cashfree.client_id');
+        $clientSecret = config('services.cashfree.client_secret');
+
+        $headers = [
+            'x-client-id' => $clientId,
+            'x-client-secret' => $clientSecret,
+            'x-api-version' => '2023-08-01',
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ];
+
+        // CWE-362: Check for an exact matching pending payment to reuse and prevent duplicate charges/orders
+        $matchingPayment = Payment::where('school_id', $school->id)
+            ->where('status', 'Pending')
+            ->whereHas('students', function ($query) use ($studentIds) {
+                $query->whereIn('students.id', $studentIds);
+            }, '=', count($studentIds))
+            ->withCount('students')
+            ->get()
+            ->first(function ($p) use ($studentIds) {
+                return $p->students_count === count($studentIds);
+            });
+
+        if ($matchingPayment) {
+            $cfOrderId = $matchingPayment->cashfree_order_id;
+            $paymentDbId = $matchingPayment->id;
+
+            // Verify existing session against Cashfree
+            try {
+                $http = new GuzzleClient(['timeout' => 15]);
+                $cfResponse = $http->get($baseUrl.'/orders/'.$cfOrderId, [
+                    'headers' => $headers,
+                ]);
+                $cfOrder = json_decode((string) $cfResponse->getBody(), true);
+                if (isset($cfOrder['payment_session_id']) && ($cfOrder['order_status'] ?? '') === 'ACTIVE') {
+                    return [
+                        'cfOrderId' => $cfOrderId,
+                        'paymentDbId' => $paymentDbId,
+                        'paymentSessionId' => $cfOrder['payment_session_id'],
+                        'totalAmount' => $matchingPayment->amount,
+                        'students' => $matchingPayment->students,
+                    ];
+                } else {
+                    $matchingPayment->status = 'Failed';
+                    $matchingPayment->save();
+                }
+            } catch (\Exception $e) {
+                $matchingPayment->status = 'Failed';
+                $matchingPayment->save();
+            }
+        }
+
+        // Initiate a new payment session inside a database transaction
+        return DB::transaction(function () use ($school, $studentIds, $baseUrl, $headers) {
+            $students = Student::where('school_id', $school->id)
+                ->whereIn('id', $studentIds)
+                ->where('payment_status', 'Unpaid')
+                ->lockForUpdate()
+                ->get();
+
+            if ($students->isEmpty() || $students->count() !== count(array_unique($studentIds))) {
+                throw new \Exception('One or more selected students are invalid, already paid, or do not belong to your school.');
+            }
+
+            // Cancel/Fail older pending payments with overlapping student IDs
+            $overlappingPaymentIds = DB::table('payment_student')
+                ->join('payments', 'payment_student.payment_id', '=', 'payments.id')
+                ->where('payments.school_id', $school->id)
+                ->where('payments.status', 'Pending')
+                ->whereIn('payment_student.student_id', $studentIds)
+                ->pluck('payments.id')
+                ->unique();
+
+            if ($overlappingPaymentIds->isNotEmpty()) {
+                Payment::whereIn('id', $overlappingPaymentIds)->update(['status' => 'Failed']);
+            }
+
+            $finePerStudent = $school->getFinePerStudentAmount();
+            $baseAmount = 0.00;
+            $fineAmount = 0.00;
+
+            foreach ($students as $student) {
+                $baseAmount += $student->registration_fee;
+                $fineAmount += $finePerStudent;
+            }
+            $totalAmount = $baseAmount + $fineAmount;
+
+            $cfOrderId = 'ERMS_'.strtoupper(bin2hex(random_bytes(8)));
+            $returnUrl = route('school.payments.callback').'?order_id='.$cfOrderId;
+
+            $phoneDigits = preg_replace('/[^0-9]/', '', $school->mobile_number ?? '');
+            if (strlen($phoneDigits) === 12 && str_starts_with($phoneDigits, '91')) {
+                $phoneDigits = substr($phoneDigits, 2);
+            }
+            $customerPhone = (strlen($phoneDigits) >= 10 && strlen($phoneDigits) <= 15) ? $phoneDigits : '9999999999';
+
+            $payload = [
+                'order_id' => $cfOrderId,
+                'order_amount' => round($totalAmount, 2),
+                'order_currency' => 'INR',
+                'order_note' => 'YES GENIUS — Registration Fee for '.$school->name,
+                'customer_details' => [
+                    'customer_id' => 'school_'.$school->id,
+                    'customer_phone' => $customerPhone,
+                    'customer_email' => Auth::user()->email,
+                    'customer_name' => Auth::user()->name,
+                ],
+                'order_meta' => [
+                    'return_url' => $returnUrl,
+                ],
+            ];
+
+            $http = new GuzzleClient(['timeout' => 15]);
+            $cfResponse = $http->post($baseUrl.'/orders', [
+                'headers' => $headers,
+                'json' => $payload,
+            ]);
+            $cfOrder = json_decode((string) $cfResponse->getBody(), true);
+            $paymentSessionId = $cfOrder['payment_session_id'] ?? null;
+
+            if (! $paymentSessionId) {
+                throw new \Exception('Failed to get payment session ID from Cashfree.');
+            }
+
+            $payment = Payment::create([
+                'school_id' => $school->id,
+                'cashfree_order_id' => $cfOrderId,
+                'amount' => $totalAmount,
+                'base_amount' => $baseAmount,
+                'fine_amount' => $fineAmount,
+                'payment_method' => 'Cashfree',
+                'status' => 'Pending',
+                'paid_at' => null,
+            ]);
+
+            foreach ($students as $student) {
+                $stBase = $student->registration_fee;
+                $stFine = $finePerStudent;
+                $stTotal = $stBase + $stFine;
+
+                $payment->students()->attach($student->id, [
+                    'amount' => $stTotal,
+                    'base_amount' => $stBase,
+                    'fine_amount' => $stFine,
+                ]);
+            }
+
+            return [
+                'cfOrderId' => $cfOrderId,
+                'paymentDbId' => $payment->id,
+                'paymentSessionId' => $paymentSessionId,
+                'totalAmount' => $totalAmount,
+                'students' => $students,
+            ];
+        });
     }
 
     /**
@@ -787,11 +786,13 @@ class PaymentController extends Controller
      */
     public function adminIndex(Request $request)
     {
+        $selectedSchool = $request->filled('school_id') ? School::find($request->school_id) : null;
+
         $query = Payment::with(['school', 'students.class']);
 
         // Filter by school
-        if ($request->filled('school_id')) {
-            $query->where('school_id', $request->school_id);
+        if ($selectedSchool) {
+            $query->where('school_id', $selectedSchool->id);
         }
 
         // Filter by status
@@ -807,10 +808,16 @@ class PaymentController extends Controller
             });
         }
         if ($request->filled('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', '>=', $request->start_date)
+                    ->orWhereDate('created_at', '>=', $request->start_date);
+            });
         }
         if ($request->filled('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', '<=', $request->end_date)
+                    ->orWhereDate('created_at', '<=', $request->end_date);
+            });
         }
 
         // Search Transaction ID
@@ -824,10 +831,15 @@ class PaymentController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Metrics
-        $totalCollected = Payment::where('status', 'Paid')->sum('amount');
-        $totalBaseCollected = Payment::where('status', 'Paid')->sum('base_amount');
-        $totalFineCollected = Payment::where('status', 'Paid')->sum('fine_amount');
+        // Metrics base query
+        $metricPaymentsQuery = Payment::query();
+        if ($selectedSchool) {
+            $metricPaymentsQuery->where('school_id', $selectedSchool->id);
+        }
+
+        $totalCollected = (clone $metricPaymentsQuery)->where('status', 'Paid')->sum('amount');
+        $totalBaseCollected = (clone $metricPaymentsQuery)->where('status', 'Paid')->sum('base_amount');
+        $totalFineCollected = (clone $metricPaymentsQuery)->where('status', 'Paid')->sum('fine_amount');
 
         // Fallback for past payments where base_amount was 0 but amount > 0
         if ($totalBaseCollected == 0 && $totalCollected > 0) {
@@ -835,31 +847,41 @@ class PaymentController extends Controller
         }
 
         // Outstanding calculations (Draft and unpaid students across active classes/categories)
-        $unpaidStudents = Student::with(['school', 'category', 'class'])
+        $unpaidQuery = Student::with(['school', 'category', 'class'])
             ->where('payment_status', 'Unpaid')
-            ->whereNull('deleted_at')
-            ->get();
+            ->whereNull('deleted_at');
+
+        if ($selectedSchool) {
+            $unpaidQuery->where('school_id', $selectedSchool->id);
+        }
+
+        $unpaidStudents = $unpaidQuery->get();
 
         $totalOutstandingBase = 0.00;
         $totalOutstandingFine = 0.00;
 
         foreach ($unpaidStudents as $st) {
-            $base = $st->registration_fee;
-            $fine = $st->fine_amount;
+            $base = $st->registration_fee ?? 0;
+            $fine = $st->fine_amount ?? 0;
             $totalOutstandingBase += $base;
             $totalOutstandingFine += $fine;
         }
 
         $totalOutstanding = $totalOutstandingBase + $totalOutstandingFine;
 
-        $paymentsCount = Payment::count();
-        $activeSchoolsPaid = School::whereHas('payments')->count();
+        $paymentsCount = (clone $metricPaymentsQuery)->count();
+        $activeSchoolsPaid = $selectedSchool
+            ? ((clone $metricPaymentsQuery)->where('status', 'Paid')->exists() ? 1 : 0)
+            : School::whereHas('payments', function ($q) {
+                $q->where('status', 'Paid');
+            })->count();
 
-        $schools = School::where('status', true)->get();
+        $schools = School::where('status', true)->orderBy('name')->get();
 
         return view('super-admin.payments.index', compact(
             'payments',
             'schools',
+            'selectedSchool',
             'totalCollected',
             'totalBaseCollected',
             'totalFineCollected',
@@ -876,7 +898,7 @@ class PaymentController extends Controller
      */
     public function adminExport(Request $request)
     {
-        $query = Payment::with(['school', 'students']);
+        $query = Payment::with(['school', 'students'])->withCount('students');
 
         if ($request->filled('school_id')) {
             $query->where('school_id', $request->school_id);
@@ -887,13 +909,22 @@ class PaymentController extends Controller
         }
 
         if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', $request->date)
+                    ->orWhereDate('created_at', $request->date);
+            });
         }
         if ($request->filled('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', '>=', $request->start_date)
+                    ->orWhereDate('created_at', '>=', $request->start_date);
+            });
         }
         if ($request->filled('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', '<=', $request->end_date)
+                    ->orWhereDate('created_at', '<=', $request->end_date);
+            });
         }
 
         if ($request->filled('search')) {
@@ -929,18 +960,21 @@ class PaymentController extends Controller
                 return $value;
             };
 
+            /** @var Payment $payment */
             foreach ($payments as $payment) {
-                $baseFee = $payment->base_amount > 0 ? $payment->base_amount : ($payment->amount - $payment->fine_amount);
+                $baseFee = (float) ($payment->base_amount > 0 ? $payment->base_amount : ($payment->amount - $payment->fine_amount));
+                $txDate = ($payment->paid_at ?? $payment->created_at)->format('Y-m-d H:i:s');
+                $candidatesCount = $payment->students_count ?? ($payment->students ? $payment->students->count() : 0);
                 fputcsv($file, [
-                    $payment->created_at->format('Y-m-d H:i:s'),
-                    $sanitizeCsvField($payment->school->name),
-                    $sanitizeCsvField($payment->school->code),
-                    $sanitizeCsvField($payment->transaction_id),
-                    $sanitizeCsvField($payment->payment_method),
-                    $payment->students_count ?? $payment->students()->count(),
-                    number_format($baseFee, 2, '.', ''),
-                    number_format($payment->fine_amount, 2, '.', ''),
-                    number_format($payment->amount, 2, '.', ''),
+                    $txDate,
+                    $sanitizeCsvField($payment->school->name ?? 'N/A'),
+                    $sanitizeCsvField($payment->school->code ?? 'N/A'),
+                    $sanitizeCsvField($payment->transaction_id ?? $payment->cashfree_order_id ?? ''),
+                    $sanitizeCsvField($payment->payment_method ?? 'ONLINE'),
+                    $candidatesCount,
+                    number_format((float) $baseFee, 2, '.', ''),
+                    number_format((float) ($payment->fine_amount ?? 0), 2, '.', ''),
+                    number_format((float) ($payment->amount ?? 0), 2, '.', ''),
                     $sanitizeCsvField($payment->status),
                 ]);
             }
@@ -949,5 +983,145 @@ class PaymentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Super Admin: Export School Financial Report to PDF.
+     */
+    public function adminExportPdf(Request $request)
+    {
+        $query = Payment::with(['school', 'students.class']);
+
+        $selectedSchool = $request->filled('school_id') ? School::find($request->school_id) : null;
+        if ($selectedSchool) {
+            $query->where('school_id', $selectedSchool->id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', $request->date)
+                    ->orWhereDate('created_at', $request->date);
+            });
+        }
+        if ($request->filled('start_date')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', '>=', $request->start_date)
+                    ->orWhereDate('created_at', '>=', $request->start_date);
+            });
+        }
+        if ($request->filled('end_date')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('paid_at', '<=', $request->end_date)
+                    ->orWhereDate('created_at', '<=', $request->end_date);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->search);
+            $query->where('transaction_id', 'like', "%{$search}%");
+        }
+
+        $payments = $query->orderByRaw('COALESCE(paid_at, created_at) DESC')->orderBy('id', 'DESC')->get();
+
+        // Build active filters summary for display in PDF
+        $filterDetails = [];
+        if ($selectedSchool) {
+            $filterDetails[] = 'School: ' . $selectedSchool->name . ' (' . $selectedSchool->code . ')';
+        }
+        if ($request->filled('status')) {
+            $filterDetails[] = 'Status: ' . $request->status;
+        }
+        if ($request->filled('date')) {
+            $filterDetails[] = 'Date: ' . \Carbon\Carbon::parse($request->date)->format('d M Y');
+        }
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $filterDetails[] = 'Period: ' . \Carbon\Carbon::parse($request->start_date)->format('d M Y') . ' - ' . \Carbon\Carbon::parse($request->end_date)->format('d M Y');
+        } elseif ($request->filled('start_date')) {
+            $filterDetails[] = 'From: ' . \Carbon\Carbon::parse($request->start_date)->format('d M Y');
+        } elseif ($request->filled('end_date')) {
+            $filterDetails[] = 'To: ' . \Carbon\Carbon::parse($request->end_date)->format('d M Y');
+        }
+        if ($request->filled('search')) {
+            $filterDetails[] = 'Search: ' . $request->search;
+        }
+
+        // Metrics for Single School vs Multi-School
+        if ($selectedSchool) {
+            $totalCollected = Payment::where('school_id', $selectedSchool->id)->where('status', 'Paid')->sum('amount');
+            $totalBaseCollected = Payment::where('school_id', $selectedSchool->id)->where('status', 'Paid')->sum('base_amount');
+            $totalFineCollected = Payment::where('school_id', $selectedSchool->id)->where('status', 'Paid')->sum('fine_amount');
+            if ($totalBaseCollected == 0 && $totalCollected > 0) {
+                $totalBaseCollected = $totalCollected - $totalFineCollected;
+            }
+
+            $unpaidStudents = Student::where('school_id', $selectedSchool->id)
+                ->where('payment_status', 'Unpaid')
+                ->whereNull('deleted_at')
+                ->get();
+
+            $totalOutstanding = $unpaidStudents->sum(function ($st) {
+                return ($st->registration_fee ?? 0) + ($st->fine_amount ?? 0);
+            });
+            $totalOutstandingBase = $unpaidStudents->sum('registration_fee');
+            $totalOutstandingFine = $unpaidStudents->sum('fine_amount');
+            $unpaidCount = $unpaidStudents->count();
+
+            $paidStudentsCount = Student::where('school_id', $selectedSchool->id)
+                ->where('payment_status', 'Paid')
+                ->whereNull('deleted_at')
+                ->count();
+
+            $title = $selectedSchool->name . ' (' . $selectedSchool->code . ') - Financial Report';
+            $fileName = 'financial_report_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $selectedSchool->code) . '_' . date('Ymd_His') . '.pdf';
+        } else {
+            $totalCollected = $payments->where('status', 'Paid')->sum('amount');
+            $totalBaseCollected = $payments->where('status', 'Paid')->sum('base_amount');
+            $totalFineCollected = $payments->where('status', 'Paid')->sum('fine_amount');
+            if ($totalBaseCollected == 0 && $totalCollected > 0) {
+                $totalBaseCollected = $totalCollected - $totalFineCollected;
+            }
+
+            $totalOutstanding = 0;
+            $totalOutstandingBase = 0;
+            $totalOutstandingFine = 0;
+            $unpaidCount = 0;
+            $paidStudentsCount = 0;
+
+            $title = 'Consolidated School Financial Report';
+            $fileName = 'consolidated_financial_report_' . date('Ymd_His') . '.pdf';
+        }
+
+        // Group payments by school
+        $groupedPayments = $payments->groupBy('school_id');
+
+        $adminName = Auth::user()?->name ?? 'Authorized Super Administrator';
+
+        $pdf = Pdf::loadView('pdf.payments-report', compact(
+            'payments',
+            'groupedPayments',
+            'selectedSchool',
+            'totalCollected',
+            'totalBaseCollected',
+            'totalFineCollected',
+            'totalOutstanding',
+            'totalOutstandingBase',
+            'totalOutstandingFine',
+            'unpaidCount',
+            'paidStudentsCount',
+            'filterDetails',
+            'title',
+            'adminName'
+        ));
+
+        $pdf->setPaper('a4', 'landscape');
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isFontSubsettingEnabled', false);
+        $pdf->setOption('defaultFont', 'Helvetica');
+
+        return $pdf->download($fileName);
     }
 }

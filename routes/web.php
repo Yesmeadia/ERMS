@@ -238,6 +238,7 @@ Route::middleware('auth')->group(function () {
         // Payments & Payouts Report
         Route::get('/payments', [PaymentController::class, 'adminIndex'])->name('payments.index');
         Route::get('/payments/export', [PaymentController::class, 'adminExport'])->name('payments.export');
+        Route::get('/payments/pdf', [PaymentController::class, 'adminExportPdf'])->name('payments.pdf');
         Route::get('/payments/{payment}/receipt', [PaymentController::class, 'adminReceipt'])->name('payments.receipt');
 
         // Attendance Management

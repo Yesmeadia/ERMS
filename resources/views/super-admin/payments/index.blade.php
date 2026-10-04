@@ -9,8 +9,18 @@
                 audits.</p>
         </div>
         <div class="flex items-center gap-3">
+            <a href="{{ route('admin.payments.pdf', request()->all()) }}"
+                target="_blank"
+                class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-600/20 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                Export PDF Report
+            </a>
             <a href="{{ route('admin.payments.export', request()->all()) }}"
-                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 cursor-pointer">
+                class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                     stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -116,13 +126,96 @@
             <div class="flex gap-2 justify-end mt-2">
                 <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all cursor-pointer">Filter</button>
-                @if(request()->hasAny(['search', 'school_id', 'status', 'date']))
+                @if(request()->hasAny(['search', 'school_id', 'status', 'date', 'start_date', 'end_date']))
                     <a href="{{ route('admin.payments.index') }}"
                         class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition-all flex items-center justify-center">Clear</a>
                 @endif
             </div>
         </form>
     </div>
+
+    {{-- School Financial Report Banner (Shown when a school is filtered) --}}
+    @if($selectedSchool)
+        <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900/80 to-slate-900/60 border border-indigo-500/30 rounded-2xl p-6 mb-8 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-12 -top-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div class="flex items-start gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-7 h-7">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">School Financial Report</span>
+                            <span class="text-xs font-mono font-bold text-slate-300 bg-slate-800/80 border border-slate-700/60 px-2 py-0.5 rounded-md">Code: {{ $selectedSchool->code }}</span>
+                            @if($selectedSchool->zone)
+                                <span class="text-xs font-semibold text-slate-300 bg-slate-800/80 border border-slate-700/60 px-2 py-0.5 rounded-md">Zone: {{ $selectedSchool->zone }}</span>
+                            @endif
+                        </div>
+                        <h2 class="text-2xl font-black text-white mt-1.5 tracking-tight">{{ $selectedSchool->name }}</h2>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 mt-2 font-medium">
+                            @if($selectedSchool->contact_person)
+                                <span class="flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-3.5 h-3.5 text-slate-500">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                                    </svg>
+                                    {{ $selectedSchool->contact_person }}
+                                </span>
+                            @endif
+                            @if($selectedSchool->mobile_number)
+                                <span class="flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-3.5 h-3.5 text-slate-500">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                                    </svg>
+                                    {{ $selectedSchool->mobile_number }}
+                                </span>
+                            @endif
+                            @if($selectedSchool->email)
+                                <span class="flex items-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-3.5 h-3.5 text-slate-500">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                    </svg>
+                                    {{ $selectedSchool->email }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('admin.payments.pdf', array_merge(request()->all(), ['school_id' => $selectedSchool->id])) }}"
+                        target="_blank"
+                        class="inline-flex items-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white text-sm font-bold px-5 py-3 rounded-xl transition-all shadow-xl shadow-rose-600/25 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        Download {{ $selectedSchool->code }} Financial Report (PDF)
+                    </a>
+                </div>
+            </div>
+
+            {{-- Financial overview cards --}}
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-800/80">
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Collected</span>
+                    <p class="text-xl font-extrabold text-emerald-400 mt-1 font-mono">₹{{ number_format($totalCollected, 2) }}</p>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Base Fees</span>
+                    <p class="text-xl font-extrabold text-indigo-300 mt-1 font-mono">₹{{ number_format($totalBaseCollected, 2) }}</p>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fine Fees</span>
+                    <p class="text-xl font-extrabold text-amber-400 mt-1 font-mono">₹{{ number_format($totalFineCollected, 2) }}</p>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-3.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Outstanding Due</span>
+                    <p class="text-xl font-extrabold text-rose-400 mt-1 font-mono">₹{{ number_format($totalOutstanding, 2) }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Transactions table --}}
     <div class="bg-slate-900/60 border border-slate-800/60 rounded-2xl overflow-hidden mb-12">
@@ -194,6 +287,17 @@
                             </td>
                             <td class="px-6 py-4 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('admin.payments.pdf', ['school_id' => $payment->school_id]) }}"
+                                        target="_blank"
+                                        class="text-rose-400 hover:text-rose-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg border border-rose-500/20 transition-all"
+                                        title="Download {{ $payment->school->name ?? 'School' }} Financial Report (PDF)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                            stroke="currentColor" class="w-3.5 h-3.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                        </svg>
+                                        School PDF
+                                    </a>
                                     @if($payment->status === 'Paid')
                                         <a href="{{ route('admin.payments.receipt', $payment->id) }}"
                                             class="text-emerald-400 hover:text-emerald-300 font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg border border-emerald-500/20 transition-all"
